@@ -12,10 +12,10 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 import unittest
-from byCycle.util import meter
-from byCycle.model import StreetName
-from byCycle.model.geocode import *
-from byCycle.services.geocode import *
+from bycycle.core.util import meter
+from bycycle.core.model import StreetName
+from bycycle.core.model.geocode import *
+from bycycle.core.services.geocode import *
 
 
 quiet = 1

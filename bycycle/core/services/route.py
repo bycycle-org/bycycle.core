@@ -46,15 +46,15 @@ import dijkstar
 
 from shapely.geometry import Point, LineString
 
-from byCycle.util import gis
+from bycycle.core.util import gis
 
-from byCycle.model.address import *
-from byCycle.model.geocode import *
-from byCycle.model.route import *
+from bycycle.core.model.address import *
+from bycycle.core.model.geocode import *
+from bycycle.core.model.route import *
 
-from byCycle import services
-from byCycle.services import geocode
-from byCycle.services.exceptions import ByCycleError, InputError, NotFoundError
+from bycycle.core import services
+from bycycle.core.services import geocode
+from bycycle.core.services.exceptions import ByCycleError, InputError, NotFoundError
 
 
 class RouteError(ByCycleError):
@@ -147,7 +147,7 @@ class Service(services.Service):
         geocodes = self._getGeocodes(waypoints)
 
         # Get weight function for specified travel mode
-        path = 'byCycle.model.%s.%s' % (self.region.slug, tmode)
+        path = 'bycycle.core.model.%s.%s' % (self.region.slug, tmode)
         module = __import__(path, globals(), locals(), [''])
         mode = module.TravelMode(self.region, pref=pref)
         getEdgeWeight = mode.getEdgeWeight

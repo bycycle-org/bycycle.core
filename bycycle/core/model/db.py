@@ -25,7 +25,7 @@ import psycopg2
 import sqlalchemy
 from sqlalchemy import MetaData, orm, create_engine
 
-from byCycle import model_path
+from bycycle.core import model_path
 
 
 user = os.environ['USER']
@@ -224,7 +224,7 @@ init()
 
 if __name__ == '__main__':
     import sys
-    from byCycle import model
+    from bycycle.core import model
     try:
         action = sys.argv[1]
     except IndexError:

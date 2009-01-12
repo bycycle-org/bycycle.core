@@ -11,9 +11,9 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-from byCycle.model.data import integrator
-from byCycle.model import milwaukeewi
-from byCycle.model.milwaukeewi import data
+from bycycle.core.model.data import integrator
+from bycycle.core.model import milwaukeewi
+from bycycle.core.model.milwaukeewi import data
 
 
 class Integrator(integrator.Integrator):

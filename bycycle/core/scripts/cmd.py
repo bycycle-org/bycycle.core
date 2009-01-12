@@ -2,35 +2,14 @@
 # $Id$
 # Created: 2006-09-26
 
-"""
-Command-line interface to the byCycle library.
-
-"""
-import os
-def __getbyCycleImportPath(level):
-    """Get path to dir containing the byCycle package this module is part of.
-    
-    ``level`` `int`
-        How many levels up the dir containing the package is.
-        
-    TODO: In Python 2.5 I think this just becomes 
-          "from ...byCycle.model import <stuff>" or maybe
-          "from ..model import <stuff>"
-    
-    """
-    path = os.path.abspath(__file__)
-    opd = os.path.dirname
-    for i in range(level):
-        path = opd(path)
-    return path
-
+"""Command-line interface to the byCycle library."""
 import sys
-sys.path.insert(0, __getbyCycleImportPath(3))
-from byCycle.model import regions
-from byCycle.util import meter
+
+from bycycle.core.model import regions
+from bycycle.core.util import meter
 
 
-import_path = 'byCycle.services.%s'
+import_path = 'bycycle.core.services.%s'
 
 services = {
     'n': 'normaddr',
@@ -39,10 +18,10 @@ services = {
     }
 
 errors = []
- 
+
 timer = meter.Timer()
 
-   
+
 def main(argv):
     checkForErrors()
 
@@ -51,15 +30,13 @@ def main(argv):
     except IndexError:
         addError('No service specified')
     else:
-        if service in services:
-            service = services[service]
+        service = services[service]
+        path = import_path % service
         try:
-            service_module = __import__(import_path % service,
-                                        globals(), locals(), [''])
+            service_module = __import__(path, globals(), locals(), [''])
         except ImportError:
             raise
-            addError('Unknown service "%s"' % service)
-        
+
     try:
         q = argv[2]
     except IndexError:
@@ -97,7 +74,7 @@ def checkForErrors():
         usage(errors)
         sys.exit(2)
 
-        
+
 def usage(msgs=[]):
     print 'Usage: bycycle.py ' \
           '<normaddr|n|geocode|g|route|r> ' \

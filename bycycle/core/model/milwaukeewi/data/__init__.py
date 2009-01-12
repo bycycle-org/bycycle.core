@@ -12,12 +12,12 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """This package contains everything to do with this region's data and DB."""
-from elixir import Entity, using_options, using_table_options
-from elixir import has_field
-from elixir import Integer, String, Integer, Float
+from sqlalchemy import Column
+from sqlalchemy.types import Integer, String, Integer, Float, Numeric
 
-from byCycle.model import db
-from byCycle.model.data.sqltypes import MULTILINESTRING
+from bycycle.core.model import db
+from bycycle.core.model.entities import DeclarativeBase
+from bycycle.core.model.data.sqltypes import MULTILINESTRING
 
 __all__ = ['title', 'slug', 'SRID', 'units', 'earth_circumference',
            'block_length', 'jog_length', 'cities_atof', 'states', 'one_ways',
@@ -72,40 +72,41 @@ bikemodes = {
     None: None,
 }
 
-class Raw(Entity):
-    using_options(tablename=slug)
-    using_table_options(schema='raw')
+class Raw(DeclarativeBase):
+    __tablename__ = slug
+    __table_args__ = dict(schema='raw')
 
-    has_field('gid', Integer, primary_key=True, key='id')
+    gid = Column(Integer, primary_key=True, key='id')
 
-    # To edge table (core)
-    has_field('the_geom', MULTILINESTRING(SRID), key='geom')
-    has_field('fnode', Integer, key='node_f_id')
-    has_field('tnode', Integer, key='node_t_id')
-    has_field('fraddl', Integer, key='addr_f_l')
-    has_field('toaddl', Integer, key='addr_t_l')
-    has_field('fraddr', Integer, key='addr_f_r')
-    has_field('toaddr', Integer, key='addr_t_r')
-    has_field('tlid', Float, key='permanent_id')
-    has_field('cfcc', Integer, key='code')
-    has_field('one_way', String(2))
-    has_field('bike_facil', String(2), key='bikemode')
+    # TODO: Convert to SA declarative
+    ## To edge table (core)
+    #has_field('the_geom', MULTILINESTRING(SRID), key='geom')
+    #has_field('fnode', Integer, key='node_f_id')
+    #has_field('tnode', Integer, key='node_t_id')
+    #has_field('fraddl', Integer, key='addr_f_l')
+    #has_field('toaddl', Integer, key='addr_t_l')
+    #has_field('fraddr', Integer, key='addr_f_r')
+    #has_field('toaddr', Integer, key='addr_t_r')
+    #has_field('tlid', Float, key='permanent_id')
+    #has_field('cfcc', Integer, key='code')
+    #has_field('one_way', String(2))
+    #has_field('bike_facil', String(2), key='bikemode')
 
-    # To street names table
-    has_field('fedirp', String(2), key='prefix')
-    has_field('fename', String(30), key='name')
-    has_field('fetype', String(4), key='sttype')
-    has_field('fedirs', String(2), key='suffix')
+    ## To street names table
+    #has_field('fedirp', String(2), key='prefix')
+    #has_field('fename', String(30), key='name')
+    #has_field('fetype', String(4), key='sttype')
+    #has_field('fedirs', String(2), key='suffix')
 
-    # To cities table
-    has_field('cityl', String(4), key='city_l')
-    has_field('cityr', String(4), key='city_r')
+    ## To cities table
+    #has_field('cityl', String(4), key='city_l')
+    #has_field('cityr', String(4), key='city_r')
 
-    # To places table
-    has_field('zipl', Integer, key='zip_code_l')
-    has_field('zipr', Integer, key='zip_code_r')
+    ## To places table
+    #has_field('zipl', Integer, key='zip_code_l')
+    #has_field('zipr', Integer, key='zip_code_r')
 
-    # To edge table (supplemental)
-    has_field('lanes', Integer)
-    has_field('adt', Integer)
-    has_field('spd', Integer)
+    ## To edge table (supplemental)
+    #has_field('lanes', Integer)
+    #has_field('adt', Integer)
+    #has_field('spd', Integer)

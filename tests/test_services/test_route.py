@@ -13,8 +13,8 @@
 ################################################################################
 import unittest
 
-from byCycle.services.route import *
-from byCycle.model.route import Route
+from bycycle.core.services.route import *
+from bycycle.core.model.route import Route
 
 
 class Test_A_Route(unittest.TestCase):

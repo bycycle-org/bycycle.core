@@ -14,7 +14,7 @@
 """Route entity."""
 from shapely.geometry import LineString
 
-from byCycle.model import glineenc
+from bycycle.core.model import glineenc
 
 __all__ = ['Route']
 

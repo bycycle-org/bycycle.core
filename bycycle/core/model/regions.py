@@ -16,7 +16,7 @@
 TODO: This should stored in the database.
 
 """
-from byCycle.model.entities import Region
+from bycycle.core.model.entities import Region
 
 
 unknown_region = None
