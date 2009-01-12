@@ -1,0 +1,27 @@
+SVN
+* 2007-04-24:
+    * Made changes necessary to get normaddr service tests to pass
+    * Made changes necessary to get all but one geocode service tests to pass
+* 2007-04-25
+    * Made changes necessary to get ALL geocode service tests to pass
+* 2007-04-26
+    * Made changes necessary to get ALL tests to pass, including for routes
+    * Changed Node and Edge inheritance so that subclasses classes point at
+      base classes (with a Foreign Key) instead of the other way around.
+      Base classes now have no knowledge of subclasses.
+* 2007-04-27
+    * Made changes necessary to get route tests to pass AND be *meaningful*;
+      previously, the tests were passing, but the edges were out of order
+      due to the fact that doing a "SELECT ... IN ..." doesn't necessarily
+      return rows in the same order as the IDs in the IN clause.
+    * Made some incidental changes affecting routing also.
+* 2007-05-01
+    * Removed address unification scheme. It didn't accomplish very well what
+      is was trying to accomplish, and there are better ways of locating an
+      address when the number is not in range for a given street name (A: make
+      sure address ranges are all correct, B: search for the edge with the
+      address range that has the smallest delta from the input number).
+* 2007-05-02
+    * Went back to schema scheme (each region has it's own schema). This
+      removes some complexity and fixes some issues with locating the
+      correct attributes for edges and nodes.
