@@ -12,9 +12,9 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Address classes."""
-from byCycle.util import joinAttrs
-from byCycle.model.point import Point
-from byCycle.model.entities import StreetName, Place
+from bycycle.core.util import joinAttrs
+from bycycle.core.model.point import Point
+from bycycle.core.model.entities import StreetName, Place
 
 __all__ = ['AddressError', 'Address', 'PostalAddress', 'EdgeAddress',
            'IntersectionAddress', 'PointAddress', 'NodeAddress']

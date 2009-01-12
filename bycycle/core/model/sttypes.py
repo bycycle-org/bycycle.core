@@ -21,7 +21,7 @@ TODO
 - Make sure sttypes in the DB are using the USPS abbreviations
 
 """
-from byCycle.util import swapKeysAndValues
+from bycycle.core.util import swapKeysAndValues
 
 
 street_types_ftoa = {

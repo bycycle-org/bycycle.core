@@ -33,14 +33,14 @@ from sqlalchemy import orm
 from sqlalchemy.sql import select, func, and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 
-from byCycle.model import db
-from byCycle.model import StreetName, City, State, Place
-from byCycle.model.address import *
-from byCycle.model.geocode import *
+from bycycle.core.model import db
+from bycycle.core.model import StreetName, City, State, Place
+from bycycle.core.model.address import *
+from bycycle.core.model.geocode import *
 
-from byCycle import services
-from byCycle.services import normaddr, identify
-from byCycle.services.exceptions import *
+from bycycle.core import services
+from bycycle.core.services import normaddr, identify
+from bycycle.core.services.exceptions import *
 
 
 class GeocodeError(ByCycleError):

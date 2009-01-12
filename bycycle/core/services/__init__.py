@@ -12,8 +12,8 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 """Provides a base class for the byCycle core services."""
-from byCycle.model import regions
-from byCycle.model import db
+from bycycle.core.model import regions
+from bycycle.core.model import db
 
 
 class Service(object):

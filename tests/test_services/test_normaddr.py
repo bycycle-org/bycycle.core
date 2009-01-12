@@ -12,9 +12,9 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 import unittest
-from byCycle.services.normaddr import *
-from byCycle.model import address, db
-from byCycle.model.entities import Region, StreetName
+from bycycle.core.services.normaddr import *
+from bycycle.core.model import address, db
+from bycycle.core.model.entities import Region, StreetName
 from sqlalchemy import *
 
 

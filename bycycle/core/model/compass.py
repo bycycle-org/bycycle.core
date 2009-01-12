@@ -10,7 +10,7 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-from byCycle.util import swapKeysAndValues
+from bycycle.core.util import swapKeysAndValues
 
 
 directions_ftoa = {

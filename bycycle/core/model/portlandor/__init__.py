@@ -14,11 +14,11 @@
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.types import Unicode, Integer, String, CHAR, Integer, Numeric, Float
 
-from byCycle.model import db
-from byCycle.model.entities import base
-from byCycle.model.entities.util import encodeFloat
-from byCycle.model.data.sqltypes import POINT, LINESTRING
-from byCycle.model.portlandor.data import SRID, slug
+from bycycle.core.model import db
+from bycycle.core.model.entities import base
+from bycycle.core.model.entities.util import encodeFloat
+from bycycle.core.model.data.sqltypes import POINT, LINESTRING
+from bycycle.core.model.portlandor.data import SRID, slug
 
 from dijkstar import infinity
 

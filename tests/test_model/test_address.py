@@ -15,8 +15,8 @@
 
 """
 import unittest
-from byCycle.model.address import *
-from byCycle.model.entities import *
+from bycycle.core.model.address import *
+from bycycle.core.model.entities import *
 
 
 class TestPostalAddress(unittest.TestCase):
@@ -79,21 +79,21 @@ class TestIntersectionAddress(unittest.TestCase):
         )
         sAddr = 'SE Kelly St & SE 49th Ave\nPortland, OR 97206'
         assert(str(oAddr) == sAddr)
-        
+
 
 class TestPointAddress(unittest.TestCase):
     """Test creation of `PointAddress`es."""
-    
+
     def test_WKT(self):
         oAddr = PointAddress(x=-123.12, y=45)
         self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
-        
+
     def test_Eval(self):
         oAddr = PointAddress(point='(-123.12, 45)')
         self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
         oAddr = PointAddress(point='{"x": -123.12, "y": 45}')
         self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
-        
+
     def test_Kwargs(self):
         oAddr = PointAddress(point='x=-123.12, y=45')
         self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
@@ -111,8 +111,8 @@ class TestPointAddress(unittest.TestCase):
 
     def test_Sequence(self):
         oAddr = PointAddress(point=(-123.12, 45))
-        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')        
-        
-        
+        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
+
+
 if __name__ == "__main__":
     unittest.main()

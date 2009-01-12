@@ -29,9 +29,9 @@ from shapely import geometry, wkt
 
 import simplejson
 
-from byCycle.util import gis, joinAttrs
-from byCycle.model.db import engine, metadata, Session
-from byCycle.model.entities.util import cascade_arg
+from bycycle.core.util import gis, joinAttrs
+from bycycle.core.model.db import engine, metadata, Session
+from bycycle.core.model.entities.util import cascade_arg
 
 
 __all__ = ['DeclarativeBase', 'Node', 'Edge']

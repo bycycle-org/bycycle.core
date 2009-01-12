@@ -11,55 +11,54 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-from sqlalchemy.types import Integer, String, CHAR, Integer
+from sqlalchemy import Column, ForeignKey
+from sqlalchemy.types import Integer, CHAR
 
-from byCycle.util import gis
-from byCycle.model import db
-from byCycle.model.entities import base
-from byCycle.model.entities.util import encodeFloat
-from byCycle.model.entities.base import base_statements
-from byCycle.model.data.sqltypes import POINT, LINESTRING
-from byCycle.model.milwaukeewi.data import SRID, slug
+from bycycle.core.model import db
+from bycycle.core.model.entities import base
+from bycycle.core.model.entities.util import encodeFloat
+from bycycle.core.model.data.sqltypes import POINT, LINESTRING
+from bycycle.core.model.milwaukeewi.data import SRID, slug
 
-
-__all__ = ['Edge', 'Node', 'StreetName', 'City', 'State', 'Place']
+from dijkstar import infinity
 
 
-class Edge(base.Edge):
-    base_statements('Edge')
-    has_field('geom', LINESTRING(SRID))
-    has_field('code', CHAR(3))
-    has_field('bikemode', CHAR(1))  # enum(t, r, l, p)
-    has_field('lanes', Integer)
-    has_field('adt', Integer)
-    has_field('spd', Integer)
-
-    @classmethod
-    def _adjustRowForMatrix(cls, row):
-        length = row.geom.length
-        return {'length': encodeFloat(length)}
+__all__ = ['MilwaukeeWINode', 'MilwaukeeWIEdge']
 
 
-class Node(base.Node):
-    base_statements('Node')
-    has_field('geom', POINT(SRID))
+table_args = dict(schema='milwaukeewi')
+
+
+class MilwaukeeWINode(base.Node):
+    __tablename__ = 'nodes'
+    __table_args__ = table_args
+    __mapper_args__ = dict(polymorphic_identity='milwaukeewi_node')
+
+    id = Column(Integer, ForeignKey('public.nodes.id'), primary_key=True)
+    geom = Column(POINT(SRID))
 
     @property
     def edges(self):
         return super(Node, self).edges
 
-
-class StreetName(base.StreetName):
-    base_statements('StreetName')
+Node = MilwaukeeWINode
 
 
-class City(base.City):
-    base_statements('City')
+class MilwaukeeWIEdge(base.Edge):
+    __tablename__ = 'edges'
+    __table_args__ = table_args
+    __mapper_args__ = dict(polymorphic_identity='milwaukeewi_edge')
 
+    id = Column('id', Integer, ForeignKey('public.edges.id'), primary_key=True)
+    geom = Column(LINESTRING(SRID))
+    code = Column(CHAR(3))
+    bikemode = Column(CHAR(1))  # enum(t, r, l, p)
+    lanes = Column(Integer)
+    adt = Column(Integer)
+    spd = Column(Integer)
 
-class State(base.State):
-    base_statements('State')
+    @classmethod
+    def _adjustRowForMatrix(cls, row):
+        return {'length': encodeFloat(row.geom.length)}
 
-
-class Place(base.Place):
-    base_statements('Place')
+Edge = MilwaukeeWIEdge

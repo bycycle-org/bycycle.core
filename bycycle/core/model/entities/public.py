@@ -21,12 +21,12 @@ from sqlalchemy.types import Integer, String, CHAR, Float, Date
 from shapely import geometry
 import pyproj
 
-from byCycle import model_path
-from byCycle.util import gis, joinAttrs
-from byCycle.model import db
-from byCycle.model.entities import DeclarativeBase
-from byCycle.model.entities.util import cascade_arg, encodeFloat
-from byCycle.model.data.sqltypes import POINT
+from bycycle.core import model_path
+from bycycle.core.util import gis, joinAttrs
+from bycycle.core.model import db
+from bycycle.core.model.entities import DeclarativeBase
+from bycycle.core.model.entities.util import cascade_arg, encodeFloat
+from bycycle.core.model.data.sqltypes import POINT
 
 __all__ = [
     'Region', 'EdgeAttr', 'Service', 'Geocode', 'Route', 'StreetName',
@@ -185,7 +185,7 @@ class Region(DeclarativeBase):
                     edges: {e: (attrs), e: (attrs), ...}
 
         """
-        from byCycle.util.meter import Meter, Timer
+        from bycycle.core.util.meter import Meter, Timer
 
         timer = Timer()
 
@@ -248,7 +248,7 @@ class Region(DeclarativeBase):
     def module(self):
         module = getattr(self, '_module', None)
         if module is None:
-            path = 'byCycle.model.%s' % self.slug
+            path = 'bycycle.core.model.%s' % self.slug
             exec 'from %s import Node as _RegionNode' % path
             exec 'from %s import Edge as _RegionEdge' % path
             class _Module(object): pass

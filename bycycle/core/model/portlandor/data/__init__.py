@@ -15,9 +15,9 @@
 from sqlalchemy import Column
 from sqlalchemy.types import Integer, String, Integer, Float, Numeric
 
-from byCycle.model import db
-from byCycle.model.entities import DeclarativeBase
-from byCycle.model.data.sqltypes import MULTILINESTRING
+from bycycle.core.model import db
+from bycycle.core.model.entities import DeclarativeBase
+from bycycle.core.model.data.sqltypes import MULTILINESTRING
 
 from cities import cities_atof
 

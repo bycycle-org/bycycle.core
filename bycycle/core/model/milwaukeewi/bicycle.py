@@ -6,14 +6,14 @@
 #
 # Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
-# 
+#
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Bicycle travel mode for Milwaukee, WI, region."""
-from byCycle.model import tmode
-from byCycle.model.entities.util import float_decode
+from bycycle.core.model import tmode
+from bycycle.core.model.entities.util import float_decode
 
 
 class TravelMode(tmode.TravelMode):

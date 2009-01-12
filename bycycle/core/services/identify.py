@@ -19,10 +19,10 @@ Given a region (i.e., data source), a layer within that region, and a point, fin
 from sqlalchemy.sql import select, func
 from sqlalchemy.orm.exc import NoResultFound
 
-from byCycle.model import db
-from byCycle.model.point import Point
-from byCycle import services
-from byCycle.services.exceptions import IdentifyError
+from bycycle.core.model import db
+from bycycle.core.model.point import Point
+from bycycle.core import services
+from bycycle.core.services.exceptions import IdentifyError
 
 
 class Service(services.Service):

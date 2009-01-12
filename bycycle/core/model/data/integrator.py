@@ -46,11 +46,11 @@ import psycopg2
 import sqlalchemy
 from sqlalchemy import func, select, text, and_, or_
 
-from byCycle.util import meter
-from byCycle import model_path
-from byCycle.model import db
-from byCycle.model.entities import base, public
-from byCycle.model.sttypes import street_types_ftoa
+from bycycle.core.util import meter
+from bycycle.core import model_path
+from bycycle.core.model import db
+from bycycle.core.model.entities import base, public
+from bycycle.core.model.sttypes import street_types_ftoa
 
 
 db.connectMetadata()

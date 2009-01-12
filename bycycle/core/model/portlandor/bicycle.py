@@ -5,14 +5,14 @@
 #
 # Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
-# 
+#
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Bicycle travel mode for Portland, OR, region."""
-from byCycle.model import tmode
-from byCycle.model.entities.util import float_decode
+from bycycle.core.model import tmode
+from bycycle.core.model.entities.util import float_decode
 
 
 # Preferences
@@ -32,7 +32,7 @@ class TravelMode(tmode.TravelMode):
     def __init__(self, region, pref='default'):
         """
 
-        ``pref`` `string`        
+        ``pref`` `string`
             User's simple preference option. Can be empty or one of "default",
             "flatter", "safer", "shorter", or "faster".
 
@@ -43,8 +43,8 @@ class TravelMode(tmode.TravelMode):
         pct_slopes = [p*.01 for p in
                       (0,    0.65, 1.8, 3.7, 7,  12, 21,  500)]
         mph_up     =  (12.5, 11,   9.5, 7.5, 5,  3,  2.5, 2.5)
-        mph_down   =  (12.5, 14,   17,  21,  26, 31, 32,  32)        
-        
+        mph_down   =  (12.5, 14,   17,  21,  26, 31, 32,  32)
+
         global edge_attrs_index, length_index, code_index, bikemode_index
         global abs_slp_index, up_frac_index, node_f_id_index
         global street_name_id_index
@@ -54,7 +54,7 @@ class TravelMode(tmode.TravelMode):
         bikemode_index = edge_attrs_index['bikemode']
         abs_slp_index = edge_attrs_index['abs_slope']
         up_frac_index = edge_attrs_index['up_frac']
-        node_f_id_index = edge_attrs_index['node_f_id']        
+        node_f_id_index = edge_attrs_index['node_f_id']
         street_name_id_index = edge_attrs_index['street_name_id']
 
         try:
@@ -91,7 +91,7 @@ class TravelMode(tmode.TravelMode):
             mm = .9
             lt = 1
             mt = 1.17
-            ht = 1.33            
+            ht = 1.33
             ca = 2.67
             cca = 10
             ccca = 100
@@ -101,7 +101,7 @@ class TravelMode(tmode.TravelMode):
             bht = 1
             bca = 2
             bcca = 3
-            bccca = 4 
+            bccca = 4
             # no bike mode
             mult = 2
             no_bm_lt = blt * mult
@@ -110,7 +110,7 @@ class TravelMode(tmode.TravelMode):
             no_bm_ca = bca * mult
             no_bm_cca = bcca * mult
             no_bm_ccca = bccca * mult
- 
+
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
         length = edge_attrs[length_index] * float_decode
@@ -123,7 +123,7 @@ class TravelMode(tmode.TravelMode):
         street_name_id = edge_attrs[street_name_id_index]
 
         # -- Calculate base weight of edge (in hours)
-        
+
         # Length of edge that is uphill in from => to direction
         up_len = length * upfrac
 
@@ -178,7 +178,7 @@ class TravelMode(tmode.TravelMode):
                 elif code == 1300:         hours *= bca    #ca
                 elif 1200 <= code < 1300:  hours *= bcca   #ca+
                 elif 1100 <= code < 1200:  hours *= bccca  #ca++
-                else:                      hours *= xxx    #?          
+                else:                      hours *= xxx    #?
             elif bikemode == 'l':          hours *= lt
             elif bikemode == 'm':          hours *= mt
             elif bikemode == 'h':          hours *= ht
@@ -205,6 +205,6 @@ class TravelMode(tmode.TravelMode):
             if street_name_id != prev_ix_sn:
                 hours += .0027777  # 10 seconds
         except TypeError:
-            pass        
+            pass
 
         return hours

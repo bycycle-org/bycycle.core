@@ -8,53 +8,53 @@ All rights reserved.
 
 TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
 
-1. The software may be used and modified by individuals for noncommercial, 
+1. The software may be used and modified by individuals for noncommercial,
 private use.
 
 2. The software may not be used for any commercial purpose.
 
-3. The software may not be made available as a service to the public or within 
+3. The software may not be made available as a service to the public or within
 any organization.
 
 4. The software may not be redistributed.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-# shp2sql.py 
+# shp2sql.py
 #  Milwaukee, WI, shp/dbf import
-#   
-# AUTHOR 
+#
+# AUTHOR
 #  Wyatt Baldwin <wyatt@bycycle.org>
-# DATE 
+# DATE
 #  January 27, 2006
 #  March 30, 2006 [Switched from SQLite to MySQL]
 #  April 4, 2006 [Converted to single-DB, shared with other regions]
-# VERSION 
+# VERSION
 #  0.1
-# PURPOSE 
+# PURPOSE
 #  Script to import line geometry and associated attributes from a street layer
 #  shapefile into a normalized database
-# USAGE 
+# USAGE
 #  python shp2sql.py
-# LICENSE 
+# LICENSE
 #  GNU Public License (GPL)
 #  See LICENSE in top-level package directory
-# WARRANTY 
+# WARRANTY
 #  This program comes with NO warranty, real or implied.
 # TODO
 #  Turn this into a derived class; create a base class that all regions can use
 import sys, os
-from byCycle.util import gis, meter
+from bycycle.core.util import gis, meter
 
 
 region = 'milwaukeewi'
@@ -119,7 +119,7 @@ raw = '%s_raw' % region
 
 timer = None
 
-    
+
 def shpToRawSql():
     datasource = 'route_roads84psrenode'
     layer = 'route_roads84psrenode'
@@ -137,9 +137,9 @@ def shpToRawSql():
     cmd = 'mysql -u root --password="" bycycle-1 < %s.sql' % raw
     if not _wait('Load SQL into DB'):
         _system(cmd)
-    
+
 def addColumns():
-    # Add missing...    
+    # Add missing...
     # INTEGER columns
     Q = 'ALTER TABLE %s ADD COLUMN %%s %%s NOT NULL' % raw
     cols = ('addr_f', 'addr_t', 'street_name_id', 'city_l_id', 'city_r_id')
@@ -176,7 +176,7 @@ def createSchema():
         _execute('DROP TABLE IF EXISTS %s_%s' % (region, table))
     cmd = 'mysql -u root --password="" < ./schema.sql'
     _system(cmd)
-            
+
 def unifyAddressRanges():
     """Combine left and right side address number into a single value."""
     QF = 'UPDATE %s ' \
@@ -223,9 +223,9 @@ def updateRawStreetNameIds():
     _execute(Q)
     for row in db.fetchAll():
         stid = stnames[(row[1],row[2],row[3],row[4])]
-        if stid in stid_rawids: 
+        if stid in stid_rawids:
             stid_rawids[stid].append(row[0])
-        else: 
+        else:
             stid_rawids[stid] = [row[0]]
     # Iterate over street name IDs and set street name IDs of raw records
     Q = 'UPDATE %s SET street_name_id=%%s WHERE id IN %%s' % raw
@@ -278,7 +278,7 @@ def createNodes():
     Q = 'INSERT INTO %s_layer_node ' \
         '(SELECT DISTINCT fnode, startpoint(geo)' \
         ' FROM %s)' % (region, raw)
-    _execute(Q)    
+    _execute(Q)
     Q = 'INSERT INTO %s_layer_node ' \
         '(SELECT DISTINCT tnode, endpoint(geo)' \
         ' FROM %s' \
@@ -313,9 +313,9 @@ def _wait(msg='Continue or skip'):
 def _openDB():
     """Set up DB connection."""
     global db
-    path = 'byCycle.model.%s' % region
+    path = 'bycycle.core.model.%s' % region
     db = __import__(path, globals(), locals(), ['']).Mode()
- 
+
 def _execute(Q, show=True):
     """Execute a SQL query."""
     if db is None:
@@ -330,12 +330,12 @@ def _execute(Q, show=True):
 
 def run():
     global start, only, no_prompt, timer
-    
+
     overall_timer = meter.Timer()
     overall_timer.start()
 
     # Reset for each function
-    timer = meter.Timer()    
+    timer = meter.Timer()
     timer.start()
 
     pairs = [('Convert shapefile to monolithic SQL table',
@@ -343,34 +343,34 @@ def run():
 
              ('Add columns to raw',
               addColumns),
-             
+
              ('Fix raw table: Remove NULLs, add columns, etc',
               fixRaw),
-             
+
              ('Create byCycle schema tables',
               createSchema),
-             
+
              ('Unify address ranges',
               unifyAddressRanges),
-             
+
              ('Transfer street names',
               transferStreetNames),
-             
+
              ('Update street name IDs in raw table',
               updateRawStreetNameIds),
-             
+
              ('Transfer city names',
               transferCityNames),
-             
+
              ('Update city IDs in raw table',
               updateRawCityIds),
-             
+
              ('Update state IDs in raw table',
               updateRawStateIds),
-             
+
              ('Create nodes',
               createNodes),
-             
+
              ('Transfer attributes',
               transferAttrs),
              ]
@@ -380,7 +380,7 @@ def run():
         arg1 = sys.argv[1]
     except IndexError:
       pass
-    else: 
+    else:
         try:
             start = int(arg1)
         except ValueError:
@@ -393,7 +393,7 @@ def run():
             else:
                 only = arg2 == 'only'
                 no_prompt = arg2 == 'no_prompt'
-  
+
     print 'Transferring data into byCycle schema...\n' \
           '----------------------------------------' \
           '----------------------------------------'
@@ -408,8 +408,8 @@ def run():
             args = pair[2]
         except IndexError:
             args = ()
-        # Do function            
-        timer.start() 
+        # Do function
+        timer.start()
         apply(func, args)
         print timer.stop()
     else:
