@@ -1,0 +1,25 @@
+# PostgreSQL
+./configure --prefix=$HOME --with-perl
+gmake
+gmake install
+initdb -D share/postgresql/data
+pg_ctl -D share/postgresql/data -l logfile start
+createdb bycycle
+createlang plpgsql bycycle
+psql
+ALTER ROLE bycycle password 'sekret';
+
+vi pg_hba.conf
+# Change password METHOD for local to trust and host to md5; disable the rest
+# Restart postgres
+
+# Might need to do this for psycopg2:
+su -
+/sbin/ldconfig ~bycycle/lib
+# OR (in .bashrc)
+LD_LIBRARY_PATH=/usr/local/pgsql/lib
+export LD_LIBRARY_PATH
+
+# PCL extensions (do this, then run `setup.py install`)
+python2.5 setup.py build_ext -I$HOME/include -L/home/bycycle/lib
+

@@ -1,0 +1,11 @@
+Architect/Designer/Lead Developer:
+    Wyatt Baldwin <wyatt@byCycle.org>
+    
+Portland data wrangling:
+    Jack Newlevant <jack@newlevant.com>
+
+Pittsburgh Integration:
+    Jessi Berkelhammer <jessi@cmu.edu>, <jessi@bycycle.org>
+
+Seattle Integration:
+    Daniel Carleton <dacc@marcade.org>
