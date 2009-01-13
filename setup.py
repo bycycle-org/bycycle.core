@@ -46,7 +46,7 @@ setup(
         'Elixir==0.3.0',
         'Dijkstar>=1.0',
         'nose>=0.10.4',
-        'simplejson>=2.0.4',
+        'simplejson>=2.0.7',
         ),
 )
 

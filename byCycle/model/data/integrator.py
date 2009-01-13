@@ -17,7 +17,7 @@ Notes:
 
     - Expects `psql` and `shp2pgsql` to be on your ${PATH}
 
-    - Expects a module at byCycle/model/<region key> that contains the 
+    - Expects a module at byCycle/model/<region key> that contains the
       region's entity classes
 
     - Expects a module at byCycle/model/<region key>/data that contains the
@@ -53,27 +53,27 @@ from byCycle.model.sttypes import street_types_ftoa
 
 
 class Integrator(object):
-    
+
     db_name = os.environ['USER']
     base_data_path = os.path.join('/home/%s' % db_name, 'byCycleData')
     overall_timer = meter.Timer(start_now=True)
     timer = meter.Timer(start_now=False)
-    
+
     def __init__(self, region_key, source, layer, no_prompt, **opts):
         self.region_key = region_key
 
         path = 'byCycle.model.%s' % region_key
         self.region_module = __import__(path, locals(), globals(), [''])
-        
+
         path = path + '.data'
         self.region_data_module = __import__(path, locals(), globals(), [''])
-        
+
         self.raw_table = self.region_data_module.Raw.table
-        
+
         self.source = source
         self.layer = layer
         self.no_prompt = no_prompt
-        
+
     def run(self, start=0, end=None, no_prompt=False, only=None):
         if only is not None:
             start = only
@@ -119,13 +119,13 @@ class Integrator(object):
 
         # Path to layer within data source
         layer_path = os.path.join(data_path, self.layer)
-    
+
         # Command to convert shapefile to raw SQL
         # Ex: shp2pgsql -c -i -I -s 2913 str06oct raw.portlandor > \
         #               /path/portlandor_str06oct_raw.sql
         shp2sql_cmd = 'shp2pgsql -c -i -I -s %s %s %s.%s > %s'
                                  # % (SRID, layer, schema, SQL file)
-        
+
         shp2sql_cmd = shp2sql_cmd % (self.region_data_module.SRID,
                                      layer_path, self.raw_table.schema,
                                      self.raw_table.name,
@@ -135,7 +135,7 @@ class Integrator(object):
     def shp2db(self):
         """Drop existing raw table and insert raw SQL into database."""
         # Command to import raw SQL into database
-        # Ex: psql --quiet -d ${USER }-f /path/to/portlandor_raw.sql    
+        # Ex: psql --quiet -d ${USER }-f /path/to/portlandor_raw.sql
         sql2db_cmd = 'psql --quiet -d %s -f %s'  # % (database, SQL file)
         sql2db_cmd = sql2db_cmd % (self.db_name, self.get_sql_file_path())
         db.createSchema('raw')   # if it doesn't exist
@@ -181,7 +181,7 @@ class Integrator(object):
             self.insert_records(public.EdgeAttr.table, attrs, 'edge attributes')
             region.refresh()
         return region
-   
+
     def drop_schema(self):
         """Drop SCHEMA for region."""
         db.dropSchema(self.region_key, cascade=True)
@@ -197,8 +197,8 @@ class Integrator(object):
         md = region.module.metadata
         for t in md.table_iterator():
             db.dropTable(t, cascade=True)
-    
-    
+
+
     def create_tables(self):
         """Create all regional tables. Ignores existing tables."""
         region = self.get_or_create_region()
@@ -310,9 +310,9 @@ class Integrator(object):
     def transfer_nodes(self):
         """Transfer nodes from raw table to node table."""
         Node = self.region_module.Node
-        
+
         region = self.get_or_create_region()
-    
+
         self.echo('Getting columns from raw table...')
         c = self.raw_table.c
         raw_records_f = self.get_records([c.node_f_id,
@@ -321,7 +321,7 @@ class Integrator(object):
         raw_records_t = self.get_records([c.node_t_id,
                                           func.endPoint(c.geom)],
                                           distinct=False)
-    
+
         records = []
         seen_nodes = {}
         def collect_records(raw_records):
@@ -334,10 +334,10 @@ class Integrator(object):
                 records.append(dict(id=node_id, geom=geom))
         collect_records(raw_records_f)
         collect_records(raw_records_t)
-    
+
         self.echo('Inserting records into node table...')
         self.insert_records(Node.table, records, 'nodes')
-    
+
         self.vacuum_entity(Node)
 
     def transfer_edges(self):
@@ -351,27 +351,28 @@ class Integrator(object):
         one_ways = self.region_data_module.one_ways
         bikemodes = self.region_data_module.bikemodes
         edge_attrs = self.region_data_module.edge_attrs
-    
+
         self.echo('Getting columns from raw table...')
         c = self.raw_table.c
         cols = [
             c.id, c.geom, c.node_f_id, c.node_t_id,
             c.addr_f_l, c.addr_t_l, c.addr_f_r, c.addr_t_r,
             c.zip_code_l, c.zip_code_r,
-            c.permanent_id, c.code
+            c.permanent_id, c.code,
+            c.one_way
         ]
         cols += [c[name] for name in edge_attrs]
         for i, col in enumerate(cols):
-            cols[i] = col.label(col.key)    
+            cols[i] = col.label(col.key)
         lower_cols = [
             c.prefix, c.name, c.sttype, c.suffix,
-            c.city_l, c.city_r, c.one_way, c.bikemode
+            c.city_l, c.city_r, c.bikemode
         ]
         for i, col in enumerate(lower_cols):
             lower_cols[i] = func.lower(col).label(col.key)
         cols += lower_cols
         raw_records = select(cols).execute()
-    
+
         self.echo('Getting street names...')
         c = StreetName.c
         street_names = self.get_records((c.prefix, c.name, c.sttype, c.suffix,
@@ -379,13 +380,13 @@ class Integrator(object):
         street_names = dict([((r[0], r[1], r[2], r[3]), r[4]) for r in
                              street_names])
         street_names[(None, None, None, None)] = None
-    
+
         self.echo('Getting places...')
         places = Place.select()
-        places = dict([((p.city_name, p.state_code, p.zip_code), p.id) for p 
+        places = dict([((p.city_name, p.state_code, p.zip_code), p.id) for p
                        in places])
         places[(None, None, None)] = None
-    
+
         self.echo('Transferring edges...')
         i = 1
         step = 2500
@@ -463,24 +464,24 @@ class Integrator(object):
 
     def prompt(self, msg='', prefix=None, default='no'):
         """Prompt, wait for response, and return response.
-    
+
         ``msg`` `string`
             The prompt message, in the form of a question.
-    
-        ``prefix``        
+
+        ``prefix``
             Something to prefix the prompt with (like a number to indicate
             which action we're on).
-    
+
         ``default`` `string` `bool`
             The default response for this prompt (when the user just presses
             Enter). Can be 'n', 'no', or anything that will evaluate as False
             to set the default response to 'no'. Otherwise the default
             response will be 'yes'.
-    
+
         Return `bool`
             True indicates a positive (Go ahead) response.
             False indicates a negative (Don't do it!) response.
-    
+
         """
         msg = msg.strip() or 'Are you sure'
         # Prefix prompt with prefix if prefix supplied
@@ -546,14 +547,14 @@ class Integrator(object):
 
     def get_records(self, cols, distinct=True):
         """Get distinct records.
-    
+
         ``cols``
             The list of cols to select
-    
+
         return
             A ``set`` of ``tuple``s of column values, in the same order as
             ``cols``
-    
+
         """
         result = select(cols, distinct=distinct).execute()
         records = set([tuple([v for v in row]) for row in result])
@@ -562,13 +563,13 @@ class Integrator(object):
 
     def insert_records(self, table, records, kind='records'):
         """Insert ``records`` into ``table``.
-    
+
         ``table``
             SQLAlchemy table object
-    
+
         ``records``
             A ``list`` of ``dict``s representing the records
-    
+
         """
         if records:
             table.insert().execute(records)
@@ -578,12 +579,12 @@ class Integrator(object):
 
     def get_sql_file_path(self):
         """Get output file for SQL imported from shapefile.
-    
+
         The output file will be created in the directory this script is in. It
         will include the region's schema (AKA slug), datasource, and layer::
-    
+
             /path/to/here/<slug>_<source>_<layer>_raw.sql
-    
+
         """
         sql_file_path = getattr(self, '_sql_file_path', None)
         if sql_file_path is None:
