@@ -54,8 +54,6 @@ from byCycle.model.sttypes import street_types_ftoa
 
 class Integrator(object):
 
-    db_name = os.environ['USER']
-    base_data_path = os.path.join('/home/%s' % db_name, 'byCycleData')
     overall_timer = meter.Timer(start_now=True)
     timer = meter.Timer(start_now=False)
 
@@ -72,6 +70,7 @@ class Integrator(object):
 
         self.source = source
         self.layer = layer
+        self.database = os.environ['USER']
         self.no_prompt = no_prompt
 
     def run(self, start=0, end=None, no_prompt=False, only=None):
@@ -112,13 +111,8 @@ class Integrator(object):
     #-- Actions the user may or may not want to take. --#
     def shp2sql(self):
         """Convert shapefile to raw SQL and save to file."""
-        # Path to regional shapefiles (i.e., to a particular datasource for
-        # the region)
-        data_path = os.path.join(self.base_data_path, self.region_key,
-                                 self.source)
-
         # Path to layer within data source
-        layer_path = os.path.join(data_path, self.layer)
+        layer_path = os.path.join(self.source, self.layer)
 
         # Command to convert shapefile to raw SQL
         # Ex: shp2pgsql -c -i -I -s 2913 str06oct raw.portlandor > \
@@ -137,7 +131,7 @@ class Integrator(object):
         # Command to import raw SQL into database
         # Ex: psql --quiet -d ${USER }-f /path/to/portlandor_raw.sql
         sql2db_cmd = 'psql --quiet -d %s -f %s'  # % (database, SQL file)
-        sql2db_cmd = sql2db_cmd % (self.db_name, self.get_sql_file_path())
+        sql2db_cmd = sql2db_cmd % (self.database, self.get_sql_file_path())
         db.createSchema('raw')   # if it doesn't exist
         db.dropTable(self.raw_table)  # if it exists
         self.system(sql2db_cmd)
