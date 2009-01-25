@@ -253,11 +253,12 @@ Another possible reason is that you entered a street name without a number. For 
             except ValueError:
                 pass
             else:
-                del tokens[-1]
-                if zip_code in regions.zip_codes:
-                    if not self.region:
-                        zip_region_key = regions.zip_codes[zip_code]
-                    place.zip_code = zip_code
+                if 10000 <= zip_code <= 99999:
+                    del tokens[-1]
+                    if zip_code in regions.zip_codes:
+                        if not self.region:
+                            zip_region_key = regions.zip_codes[zip_code]
+                        place.zip_code = zip_code
 
             # state
             for i in (-1, -2, -3, -4):
