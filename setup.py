@@ -13,21 +13,18 @@
 ###############################################################################
 from setuptools import setup, find_packages
 
+
 setup(
     name='byCycleCore',
-    version='0.4a0',
+    version='0.5',
     description='byCycle Core Services',
-    long_description="""\
-Address normalization, geocoding, routing and other GIS-related services. We
-still have not decided on a license, but it will most likely end up being the
-GPL.""",
+    long_description='byCycle model, routing, and GIS related services.',
     license='GNU General Public License (GPL)',
     author='Wyatt L Baldwin, byCycle.org',
-    author_email='wyatt@byCycle.org',
+    author_email='wyatt@bycycle.org',
     keywords='bicycle bike cycyle trip planner route finder',
     url='http://bycycle.org/',
-    # This, in effect, creates an alias to the latest 0.4 dev version
-    download_url='http://guest:guest@code.bycycle.org/core/trunk#egg=byCycleCore-dev',
+    download_url='http://guest:guest@code.bycycle.org/Core/trunk#egg=byCycleCore-dev',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
@@ -46,10 +43,9 @@ GPL.""",
         'pyproj>=1.8.5',
         'GeoJSON>=1.0.1',
         'psycopg2>=2.0.8',
-        'SQLAlchemy>=0.5',
+        'SQLAlchemy>=0.5.2',
         'Dijkstar>=1.0',
         'nose>=0.10.4',
         'simplejson>=2.0.7',
         ),
 )
-
