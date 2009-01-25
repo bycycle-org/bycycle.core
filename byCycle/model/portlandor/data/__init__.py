@@ -39,7 +39,7 @@ edge_attrs = ['up_frac', 'abs_slope', 'cpd', 'sscode']
 states = {'or': 'oregon', 'wa': 'washington'}
 
 # dbf value => database value
-one_ways = {'n': 0, 'f': 1, 't': 2, '':  3, None: 3}
+one_ways = {'N': 0, 'F': 1, 'T': 2, '':  3, None: 3}
 
 # dbf value => database value
 bikemodes = {
@@ -90,8 +90,8 @@ class Raw(Entity):
     has_field('rcity', String(4), key='city_r')
 
     # To places table
-    has_field('zipcolef', Integer, key='zip_code_l')
-    has_field('zipcorgt', Integer, key='zip_code_r')
+    has_field('lzip', Integer, key='zip_code_l')
+    has_field('rzip', Integer, key='zip_code_r')
 
     # To edge table (supplemental)
     has_field('upfrc', Float, key='up_frac')
