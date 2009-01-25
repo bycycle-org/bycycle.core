@@ -32,7 +32,6 @@ class Route(object):
         self.directions = directions
         self.distance = distance
         self.linestring = linestring
-        self.linestring_ll = LineString(region.proj(linestring.coords, inverse=True))
 
     def to_simple_object(self):
         coords = self.linestring.coords
