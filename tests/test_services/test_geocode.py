@@ -149,7 +149,7 @@ class TestPortlandOR(unittest.TestCase):
         self._queryRaises(q, AddressNotFoundError)
 
     def test_PostalAddress_Clackamas(self):
-        q = '37798 S Hwy 213 Hwy, Clackamas, OR 97362'
+        q = '37798 S Hwy 213, Clackamas, OR 97362'
         geocode = self._query(q)
 
     def _test_PostalAddress_MultipleMatches(self):
