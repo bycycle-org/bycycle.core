@@ -11,7 +11,14 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
+import os
+
 from setuptools import setup, find_packages
+
+
+pcl_core_svn_url = 'http://svn.gispython.org/svn/gispy/PCL/tags/rel-0.11.0/PCL-Core/'
+os.system('easy_install -U %s' % pcl_core_svn_url)
+
 
 setup(
     name='byCycleCore',
@@ -40,7 +47,7 @@ setup(
     zip_safe=False,
     install_requires=(
         'zope.interface==3.3.0.1',
-        'PCL-Core==0.11.0',
+        #'PCL-Core==0.11.0',
         'psycopg2==2.0.8',
         'SQLAlchemy==0.3.7',
         'Elixir==0.3.0',
