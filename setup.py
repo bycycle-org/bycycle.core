@@ -49,7 +49,7 @@ setup(
         'Elixir==0.3.0',
         'nose==0.10.4',
         #'PCL-Core==0.11.0',
-        'psycopg2==2.0.8',
+        'psycopg2==2.0.11',
         'simplejson==2.0.7',
         'SQLAlchemy==0.3.7',
         'zope.interface==3.3.0.1',
