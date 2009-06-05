@@ -16,8 +16,7 @@ import os
 from setuptools import setup, find_packages
 
 
-pcl_core_svn_url = 'http://svn.gispython.org/svn/gispy/PCL/tags/rel-0.11.0/PCL-Core/'
-os.system('easy_install -U %s' % pcl_core_svn_url)
+os.system('easy_install -U ./PCL-Core')
 
 
 setup(
