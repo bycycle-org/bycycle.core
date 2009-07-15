@@ -7,7 +7,7 @@ Created 2006-01-23
 Packages
 ========
 
-byCycle is developed on Ubuntu 8.04  and deployed to Fedora Core 9. This
+byCycle is developed on Ubuntu 9.04  and deployed to Fedora Core 9. This
 section includes the packages needed for both. 
 
 Dev Tools
@@ -20,9 +20,9 @@ All: postgresql
 Ubuntu: libpq-dev postgresql-server-dev-8.3
 FC9: postgresql-server postgresql-devel
 
-GEOS 2.2.3
-----------
-Ubuntu: libgeos2c2a libgeos-dev
+GEOS 3
+------
+Ubuntu: libgeos-3.0.0 libgeos-dev
 FC9: geos geos-devel
 
 Proj 4.5.0
@@ -35,15 +35,11 @@ PostGIS
 All: postgis
 Ubuntu: postgresql-8.3-postgis
 
-Python 2.5.1 <http://www.python.org/>
+Python 2.6 <http://www.python.org/>
 -------------------------------------
 Python development package is needed by psycopg2
-Ubuntu: python2.5-dev
+Ubuntu: python2.6-dev
 FC9: python-devel
-
-One-liner for Ubuntu
---------------------
-sudo apt-get install postgresql libpq-dev postgresql-server-dev-8.3 libgeos2c2a libgeos-dev proj postgresql-8.3-postgis postgis python2.5-dev
 
 
 Python Packages
@@ -56,7 +52,6 @@ cd <some project directory>
 virtualenv byCycle
 cd byCycle
 mkdir src
-mkdir repo
 source bin/activate
 
 # Most of the python packages required by byCycle are automatically installed
@@ -80,17 +75,17 @@ Installation of byCycle Core
 
 # Check out the code in virtualenv code directory. Use guest:guest credentials
 # unless you've got an SVN login.
-svn co http://guest:guest@code.bycycle.org/byCycle/core/trunk byCycle
+svn co http://guest:guest@code.bycycle.org/byCycle/Core/trunk src/byCycle/Core
 
 Installation
 ------------
-You'll need to create the file repo/core/trunk/byCycle/model/.pw containing
-a single line with your PostgreSQL password. See Configuration section below
-for more info on setting up Postgres.
+You'll need to create the file src/byCycle/Core/trunk/bycycle/core/model/.pw
+containing a single line with your PostgreSQL password. See Configuration
+section below for more info on setting up Postgres.
 
 Development
 ~~~~~~~~~~~
-In repo/core/trunk, run `python setup.py develop`
+In src/byCycle/Core/trunk, run `python setup.py develop`
 
 Production
 ~~~~~~~~~~
@@ -110,15 +105,14 @@ its dependencies using the instructions at..."
 
 # Check out the trip planner Web app (in virtualenv repo directory).
 # Use guest:guest credentials unless you've got an SVN login.
-cd repo
-svn co http://code.bycycle.org/byCycle/apps/web/tripplanner/trunk TripPlanner
+svn co http://code.bycycle.org/byCycle/TripPlanner/trunk src/byCycle/TripPlanner
 
 Installation
 ------------
 
 Development
 ~~~~~~~~~~
-In repo/core/trunk, run `python setup.py develop`
+In src/byCycle/TripPlanner/trunk, run `python setup.py develop`
 
 Production
 ~~~~~~~~~
@@ -127,7 +121,7 @@ See Development
 Testing
 -------
 # More unit tests needed
-cd trunk/tripplanner
+cd src/byCycle/TripPlanner/trunk
 paster serve --reload development.ini
 firefox http://localhost:5000/
 
@@ -175,10 +169,10 @@ PostgreSQL
 
 * Exit from postgres user
 
-* Run core/trunk/byCycle/scripts/integrate.py for each region. The following
-  is an example for Portland, OR.
-  * `cd repo/core/trunk/byCycle/scripts`
-  * `./integrate.py -r portlandor -d pirate -l str06oct`
+* Run Core/trunk/bycycle/core/scripts/integrate.py for each region. The
+  following is an example for Portland, OR.
+  * `cd src/byCycle/Core/trunk/bycycle/core/scripts`
+  * `./integrate.py -r portlandor -d pirate -l str`
 
 Deployment
 ==========
