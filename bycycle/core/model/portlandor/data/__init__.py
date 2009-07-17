@@ -90,8 +90,8 @@ class Raw(DeclarativeBase):
     rcity = Column(String(4), key='city_r')
 
     # To places table
-    zipcolef = Column(Integer, key='zip_code_l')
-    zipcorgt = Column(Integer, key='zip_code_r')
+    lzip = Column(Integer, key='zip_code_l')
+    rzip = Column(Integer, key='zip_code_r')
 
     # To edge table (supplemental)
     upfrc = Column(Float, key='up_frac')

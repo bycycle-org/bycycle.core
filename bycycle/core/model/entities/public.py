@@ -18,7 +18,7 @@ from sqlalchemy import Column, ForeignKey, func, select
 from sqlalchemy.orm import relation
 from sqlalchemy.types import Integer, String, CHAR, Float, Date
 
-from shapely import geometry
+from shapely import geometry, wkt
 import pyproj
 
 from bycycle.core import model_path
@@ -77,28 +77,18 @@ class Region(DeclarativeBase):
         return self._proj
 
     def bounds(self, srid=None):
-        srs = str(SpatialReference(epsg=self.srid))
-        f = func.extent(self.module.Node.__table__.c.geom)
-        result = select([f.label('ext')], bind=db.engine).execute()
-        result = result.fetchone()
-        extent = result.ext.lstrip('BOX').strip().lstrip('(').rstrip(')')
-        sw, ne = extent.split(',')
-        sw, ne = 'POINT(%s)' % sw, 'POINT(%s)' % ne
-        sw = geometry.Geometry.fromWKT(sw, srs=srs)
-        ne = geometry.Geometry.fromWKT(ne, srs=srs)
-        if srid is not None:
-            srid = int(srid)
-            new_srs = str(SpatialReference(epsg=srid))
-            sw.transform(src_proj=srs, dst_proj=new_srs)
-            ne.transform(src_proj=srs, dst_proj=new_srs)
+        f = func.astext(func.envelope(func.extent(self.module.Node.__table__.c.geom)))
+        result = select([f.label('envelope')], bind=db.engine).execute()
+        envelope = wkt.loads(result.fetchone().envelope)
+        bounds = envelope.bounds
         return {
-            'sw': {'x': sw.x, 'y': sw.y},
-            'ne': {'x': ne.x, 'y': ne.y}
+            'sw': {'x': bounds[0], 'y': bounds[1]},
+            'ne': {'x': bounds[2], 'y': bounds[3]}
         }
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         # Append dynamically computed geometries to default simple object
-        obj = super(Region, self).to_simple_object();
+        obj = super(Region, self).to_simple_object(fields=fields);
         obj['geometry'] = {'4326': {}}
 
         def set_geom(geom, bounds):
@@ -117,6 +107,9 @@ class Region(DeclarativeBase):
         srid = '4326'
         bounds = self.bounds(srid)
         set_geom(obj['geometry'][srid], bounds)
+        
+        obj.pop('module', None)
+        obj.pop('proj', None)
 
         return obj
 
