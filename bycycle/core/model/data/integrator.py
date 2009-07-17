@@ -470,7 +470,7 @@ class Integrator(object):
             base_records.append(base_record)
             record = dict(
                 id=id,
-                geom=r.geom.geometryN(0),
+                geom=(r.geom.geoms[0] if r.geom is not None else None),
                 permanent_id=r.permanent_id,
                 bikemode=bikemodes[r.bikemode],
                 code=r.code,

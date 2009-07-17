@@ -1,9 +1,6 @@
 import sqlalchemy
 
 from shapely import geometry, wkb
-import pyproj
-
-from binascii import a2b_hex, b2a_hex
 
 
 class Geometry(sqlalchemy.types.TypeEngine):
@@ -12,7 +9,6 @@ class Geometry(sqlalchemy.types.TypeEngine):
     def __init__(self, SRID, type_, dimension):
         super(Geometry, self).__init__()
         self.SRID = SRID
-        self.proj = pyproj.Proj(init='epsg:%s' % SRID)
         self.type = type_.upper()
         self.dimension = dimension
 
@@ -22,19 +18,21 @@ class Geometry(sqlalchemy.types.TypeEngine):
     def bind_processor(self, dialect):
         """Convert from Python type to database type."""
         def process(value):
+            """``value`` is a Python/Shapely geometry object."""
             if value is None:
                 return None
             else:
-                return 'SRID=%s;%s' % (self.SRID, b2a_hex(value.to_wkb()))
+                return 'SRID=%s;%s' % (self.SRID, value)
         return process
 
     def result_processor(self, dialect):
         """Convert from database type to Python type."""
         def process(value):
+            """``value`` is a hex-encoded WKB string."""
             if value is None:
                 return None
             else:
-                return wkb.loads(a2b_hex(value))
+                return wkb.loads(value.decode('hex'))
         return process
 
 

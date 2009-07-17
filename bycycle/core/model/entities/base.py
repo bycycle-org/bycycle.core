@@ -19,6 +19,9 @@ and calling ``base_statements`` first in the subclass definition.
 
 """
 import sys
+import json
+import decimal
+import datetime
 
 from sqlalchemy import func, select, Column, ForeignKey
 from sqlalchemy.orm import relation
@@ -26,8 +29,7 @@ from sqlalchemy.types import Integer, String, CHAR, Integer
 from sqlalchemy.ext.declarative import declarative_base
 
 from shapely import geometry, wkt
-
-import simplejson
+from shapely.geometry.base import BaseGeometry
 
 from bycycle.core.util import gis, joinAttrs
 from bycycle.core.model.db import engine, metadata, Session
@@ -35,6 +37,9 @@ from bycycle.core.model.entities.util import cascade_arg
 
 
 __all__ = ['DeclarativeBase', 'Node', 'Edge']
+
+
+datetime_types = (datetime.time, datetime.date, datetime.datetime)
 
 
 class Entity(object):
@@ -86,32 +91,47 @@ class Entity(object):
             result = objects[0] if len(objects) == 1 else objects
         return result
 
-    def to_simple_object(self):
-        """Return an object that can be serialized by ``simplejson.dumps``."""
-        obj = dict(type=self.__class__.__name__)
-        attrs = set(self._attrs)
+    @classmethod
+    def simplify_object(cls, obj):
+        """Convert ``obj`` to something JSON encoder can handle."""
         try:
-            self.__table__
+            obj = obj.to_simple_object()
         except AttributeError:
             pass
-        else:
-            attrs = attrs.union(set(self.__table__.columns.keys()))
-        for name in attrs:
-            value = getattr(self, name)
-            try:
-                value = value.to_simple_object()
-            except AttributeError:
-                pass
-            obj[name] = value
+        if isinstance(obj, decimal.Decimal):
+            obj = float(obj)
+            # HACK: Convert decimal with 0 fractional part to int
+            decimal_part = int(str(obj).split('.')[1])
+            if decimal_part == 0:
+                obj = int(obj)
+        elif isinstance(obj, datetime_types):
+            obj = str(obj)
+        elif isinstance(obj, BaseGeometry):
+            obj = obj.__geo_interface__
         return obj
 
-    def to_json(self):
-        return simplejson.dumps(self.to_simple_object())
+    def to_simple_object(self, fields=None):
+        obj = dict(type=self.__class__.__name__)
+        names = fields or self.public_names
+        for name in names:
+            val = getattr(self, name)
+            val = self.simplify_object(val)
+            obj[name] = val
+        return obj
 
-    @staticmethod
-    def to_json_collection(instances):
-        simple_obj = {'result': [i.to_simple_object() for i in instances]}
-        return simplejson.dumps(simple_obj)
+    def to_json(self, fields=None):
+        return json.dumps(self.to_simple_object(fields=fields))
+
+    @classmethod
+    def to_simple_collection(cls, collection=None, fields=None):
+        if collection is None:
+            collection = cls.q()
+        return [i.to_simple_object() for i in collection]
+
+    @classmethod
+    def to_json_collection(cls, collection=None, fields=None):
+        simple_obj = cls.to_simple_collection(collection, fields=fields)
+        return json.dumps(simple_obj)
 
     def __setattr__(self, name, value):
         # TODO: Apparently, objects aren't ``__init__'d`` when they're pulled
@@ -132,6 +152,32 @@ class Entity(object):
             return object.__repr__(self)
         else:
             return str(self.to_simple_object())
+
+    @property
+    def public_names(self):
+        """We want all public DB columns and `property`s by default."""
+        try:
+            self._public_names
+        except AttributeError:
+            names = []
+            class_attrs = self.__class__.__dict__
+            for name in class_attrs:
+                if name.startswith('_'):
+                    continue
+                attr = class_attrs[name]
+                if isinstance(attr, property):
+                    names.append(name)
+                else:
+                    try:
+                        clause_el = attr.__clause_element__()
+                    except AttributeError:
+                        pass
+                    else:
+                        if issubclass(clause_el.__class__, Column):
+                            names.append(name)
+            names = set(names)
+            self._public_names = names
+        return self._public_names
 
 
 DeclarativeBase = declarative_base(metadata=metadata, cls=Entity)
