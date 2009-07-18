@@ -47,5 +47,6 @@ setup(
         'Dijkstar>=1.0',
         'nose>=0.11.1',
         'simplejson>=2.0.9',
-        ),
+        'Restler==dev,>=0.3dev-r92',
+    ),
 )
