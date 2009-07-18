@@ -16,7 +16,7 @@ from sqlalchemy import Column
 from sqlalchemy.types import Integer, String, Integer, Float, Numeric
 
 from bycycle.core.model import db
-from bycycle.core.model.entities import DeclarativeBase
+from bycycle.core.model.entities import Base
 from bycycle.core.model.data.sqltypes import MULTILINESTRING
 
 from cities import cities_atof
@@ -60,7 +60,7 @@ bikemodes = {
 }
 
 
-class Raw(DeclarativeBase):
+class Raw(Base):
     __tablename__ = slug
     __table_args__ = dict(schema='raw')
 

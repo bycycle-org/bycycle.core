@@ -24,7 +24,7 @@ import pyproj
 from bycycle.core import model_path
 from bycycle.core.util import gis, joinAttrs
 from bycycle.core.model import db
-from bycycle.core.model.entities import DeclarativeBase
+from bycycle.core.model.entities import Base
 from bycycle.core.model.entities.util import cascade_arg, encodeFloat
 from bycycle.core.model.data.sqltypes import POINT
 
@@ -38,7 +38,7 @@ __all__ = [
 matrix_registry = {}
 
 
-class Region(DeclarativeBase):
+class Region(Base):
     __tablename__ = 'regions'
 
     member_name = 'region'
@@ -264,7 +264,7 @@ class Region(DeclarativeBase):
         return '%s: %s' % (self.slug, self.title)
 
 
-class EdgeAttr(DeclarativeBase):
+class EdgeAttr(Base):
     __tablename__ = 'edge_attrs'
     id = Column(Integer, primary_key=True)
     region_id = Column(Integer, ForeignKey('regions.id'))
@@ -273,7 +273,7 @@ class EdgeAttr(DeclarativeBase):
         return str(self.name)
 
 
-class Service(DeclarativeBase):
+class Service(Base):
     __tablename__ = 'services'
 
     member_name = 'service'
@@ -285,7 +285,7 @@ class Service(DeclarativeBase):
     region_id = Column(Integer, ForeignKey('regions.id'))
 
 
-class Geocode(DeclarativeBase):
+class Geocode(Base):
     __tablename__ = 'geocodes'
 
     member_name = 'geocode'
@@ -297,7 +297,7 @@ class Geocode(DeclarativeBase):
     region_id = Column(Integer, ForeignKey('regions.id'))
 
 
-class Route(DeclarativeBase):
+class Route(Base):
     __tablename__ = 'routes'
 
     member_name = 'route'
@@ -309,7 +309,7 @@ class Route(DeclarativeBase):
     region_id = Column(Integer, ForeignKey('regions.id'))
 
 
-class StreetName(DeclarativeBase):
+class StreetName(Base):
     __tablename__ = 'street_names'
 
     id = Column(Integer, primary_key=True)
@@ -377,7 +377,7 @@ class StreetName(DeclarativeBase):
         return (self_attrs == other_attrs)
 
 
-class City(DeclarativeBase):
+class City(Base):
     __tablename__ = 'cities'
 
     id = Column(Integer, primary_key=True)
@@ -399,7 +399,7 @@ class City(DeclarativeBase):
         return bool(self.city)
 
 
-class State(DeclarativeBase):
+class State(Base):
     __tablename__ = 'states'
 
     id = Column(Integer, primary_key=True)
@@ -424,7 +424,7 @@ class State(DeclarativeBase):
 
 
 
-class Place(DeclarativeBase):
+class Place(Base):
     __tablename__ = 'places'
 
     id = Column(Integer, primary_key=True)
