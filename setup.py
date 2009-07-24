@@ -15,7 +15,7 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='byCycleCore',
+    name='bycycle.core',
     version='0.5',
     description='byCycle Core Services',
     long_description='byCycle model, routing, and GIS related services.',
