@@ -47,6 +47,7 @@ bikemodes = {
     'mm': 'p',
     'bl': 'b',
     'lt': 'l',
+    'bb': 'l',  # bike blvd?
     'mt': 'm',
     'ht': 'h',
     'ca': 'c',
@@ -74,7 +75,7 @@ class Raw(Entity):
     has_field('leftadd2', Integer, key='addr_t_l')
     has_field('rgtadd1', Integer, key='addr_f_r')
     has_field('rgtadd2', Integer, key='addr_t_r')
-    has_field('localid', Numeric(11, 2), key='permanent_id')
+    has_field('locid', Numeric(11, 2), key='permanent_id')
     has_field('type', Integer, key='code')
     has_field('one_way', String(2))
     has_field('bikemode', String(2))
