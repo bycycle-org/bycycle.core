@@ -156,7 +156,7 @@ class Service(services.Service):
         # Fetch the adjacency matrix
         G = self.region.matrix
         if not G:
-            raise EmptyGraphError('Graph is empty')
+            raise EmptyGraphError()
         nodes, edges = G['nodes'], G['edges']
 
         # Get paths between adjacent waypoints
