@@ -1,190 +1,105 @@
-byCycle Trip Planner - Installation
-+++++++++++++++++++++++++++++++++++
+byCycle Core Installation
++++++++++++++++++++++++++
 
-Created 2006-01-23
+This document provides details on how to install byCycle Core, especially
+for purposes of development.
 
+Dev Stack
+=========
 
-Packages
-========
+byCycle is developed mainly on Ubuntu 12.10. The following sections list the
+required packages, their versions, and their Ubuntu package names.
 
-byCycle is developed on Ubuntu 9.04  and deployed to Fedora Core 9. This
-section includes the packages needed for both. 
+Mercurial 2.2
+-------------
+mercurial
 
-Dev Tools
----------
-All: subversion
-
-PostgreSQL 8.x
+PostgreSQL 9.1
 --------------
-All: postgresql
-Ubuntu: libpq-dev postgresql-server-dev-8.3
-FC9: postgresql-server postgresql-devel
+postgresql libpq-dev
 
 GEOS 3
 ------
-Ubuntu: libgeos-3.0.0 libgeos-dev
-FC9: geos geos-devel
+libgeos-3.3.3 libgeos-dev
 
-Proj 4.5.0
+Proj 4.7
+--------
+proj-bin proj-data (?)
+
+PostGIS 1.5
+-----------
+postgis postgresql-9.1-postgis
+
+Python 2.7
 ----------
-All: proj
-FC9: proj-devel proj-epsg
-
-PostGIS
--------
-All: postgis
-Ubuntu: postgresql-8.3-postgis
-
-Python 2.6 <http://www.python.org/>
--------------------------------------
-Python development package is needed by psycopg2
-Ubuntu: python2.6-dev
-FC9: python-devel
-
+python python-dev
 
 Python Packages
-===============
+~~~~~~~~~~~~~~~
 
-# The current preferred way to install byCycle for development is to use
-# virtualenv <http://pypi.python.org/pypi/virtualenv>.
-sudo easy_install virtualenv
-cd <some project directory>
-virtualenv byCycle
-cd byCycle
-mkdir src
-source bin/activate
+First, install the latest version of Distribute by following the
+instructions here: http://pypi.python.org/pypi/distribute.
 
-# Most of the python packages required by byCycle are automatically installed
-# when byCycle is easy_installed, but PCL must be installed "manually" because
-# it isn't eggified or uploaded to PyPI. 
+Then easy_install virtualenv.
 
-# Python Cartographic Library (PCL) - Core 0.11.0
-# Depends on Proj and GEOS for some operations
-# Depends on libgeos-dev
-# Depends on zope.interface
-# On FC9, depends on proj-epsg (will segfault without it)
-cd src
-wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz
-tar xvzf PCL-0.11.0.tar.gz
-cd PCL-0.11.0/PCL-Core
-python setup.py install
+PostgreSQL Configuration
+========================
 
+# Create and configure the byCycle database. The following commands should
+# be run as the postgres user. $USER is whatever OS user you'll be using to
+# run the integrate script and tests (tip: run these commands under your
+# user using `sudo -u postgres`).
+
+DB_NAME=bycycle  # Required to be bycycle for now
+createuser --no-superuser --no-createrole --no-createdb --pwprompt $USER
+createdb --owner $USER $DB_NAME
+createlang plpgsql $DB_NAME
+
+# Install PostGIS stuff into the bycycle database
+cd /usr/share/postgresql/9.1/contrib/postgis-1.5
+psql -d $DB_NAME -f postgis.sql
+psql -d $DB_NAME -f spatial_ref_sys.sql
+
+# Fix ownership
+psql -d $DB_NAME -c "ALTER SCHEMA public OWNER TO $USER"
+psql -d $DB_NAME -c "ALTER TABLE geometry_columns OWNER TO $USER"
+psql -d $DB_NAME -c "ALTER TABLE spatial_ref_sys OWNER TO $USER"
 
 Installation of byCycle Core
 ============================
 
-# Check out the code in virtualenv code directory. Use guest:guest credentials
-# unless you've got an SVN login.
-svn co http://guest:guest@code.bycycle.org/byCycle/Core/trunk src/byCycle/Core
+Set Up a Project Environment
+----------------------------
 
-Installation
-------------
-You'll need to create the file src/byCycle/Core/trunk/bycycle/core/model/.pw
-containing a single line with your PostgreSQL password. See Configuration
-section below for more info on setting up Postgres.
+cd $PROJECT_DIRECTORY
+mkdir src
 
-Development
-~~~~~~~~~~~
-In src/byCycle/Core/trunk, run `python setup.py develop`
+# Clone or fork the code from Bitbucket:
+hg clone https://bitbucket.org/wyatt/bycycle.core src
 
-Production
-~~~~~~~~~~
-See Development
+# You'll need to create the file src/bycycle.core/bycycle/core/model/.pw
+# containing a single line with your PostgreSQL password. See Configuration
+# section below for more info on setting up Postgres.
 
-Testing
--------
-In trunk, run `nosetests`
+virtualenv $ENV_NAME
+source $ENV_NAME/bin/activate
 
+Install bycycle.core into the virtualenv
+----------------------------------------
 
-Installation of Trip Planner Web App
-====================================
+cd src/bycycle.core
+python setup.py develop
 
-TODO: This probably belongs in a different document--i.e., with the Pylons 
-app. That doc should start out by saying, "First, install the byCycle core and
-its dependencies using the instructions at..."
+Insert Some Data
+----------------
 
-# Check out the trip planner Web app (in virtualenv repo directory).
-# Use guest:guest credentials unless you've got an SVN login.
-svn co http://code.bycycle.org/byCycle/TripPlanner/trunk src/byCycle/TripPlanner
+# Run bycycle/core/scripts/integrate.py for each region. The following is an
+# example for Portland, OR. Shapefiles are assumed to be in
+# ~/byCycleData/$REGION/$DATA_SOURCE.
 
-Installation
-------------
+bycycle/core/scripts/integrate.py -r portlandor -d pirate -l str06oct
 
-Development
-~~~~~~~~~~
-In src/byCycle/TripPlanner/trunk, run `python setup.py develop`
+Test
+----
 
-Production
-~~~~~~~~~
-See Development
-
-Testing
--------
-# More unit tests needed
-cd src/byCycle/TripPlanner/trunk
-paster serve --reload development.ini
-firefox http://localhost:5000/
-
-Google Map
-----------
-If you want to view the Google Map, you will need a Google Maps API key.
-<http://www.google.com/apis/maps/>.
-
-
-Configuration
-=============
-
-PostgreSQL
-----------
-
-* Edit pg_hba.conf. On Ubuntu, this is at /etc/postgresql/8.3/main/pg_hba.conf.
-  On FC9, this in the Postgres data directory.
-
-  * Set local auth to trust (not the Database administrative login by UNIX 
-    sockets; the one below that)
-
-  * Make sure IPv4 host auth is set to md5
-
-* Switch to postgres user ($USER refers to the OS username of the user you
-  will be running byCycle under)
-  * `createdb $USER`
-
-  * `createuser $USER` (n, n, n in response to prompts)
-
-  * `createlang plpgsql $USER`
-
-  * `psql -d $USER` then `ALTER ROLE $USER password 'sekret';`
-
-  * Insert lwpostgis.sql and spatial_ref_sys.sql into bycycle DB. These files
-    are in /usr/share/postgresql-8.3-postgis on Ubuntu.
-    * `psql -d $USER < lwpostgis.sql`
-    * `psql -d $USER < spatial_ref_sys.sql`
-
-  * Change owner of public schema and all tables to $USER
-    * `psql -d $USER`
-    * `ALTER DATABASE $USER OWNER TO $USER;`
-    * `ALTER SCHEMA public OWNER TO $USER;`
-    * `ALTER TABLE geometry_columns OWNER TO $USER;`
-    * `ALTER TABLE spatial_ref_sys OWNER TO $USER;`
-
-* Exit from postgres user
-
-* Run Core/trunk/bycycle/core/scripts/integrate.py for each region. The
-  following is an example for Portland, OR.
-  * `cd src/byCycle/Core/trunk/bycycle/core/scripts`
-  * `./integrate.py -r portlandor -d pirate -l str`
-
-Deployment
-==========
-
-Apache 2 <http://httpd.apache.org/>
-Paste server behind mod_proxy
-
-
-Issues
-======
-
-If you have any problems with any of this, please feel free to contact us.
-
-Email: wyatt@bycycle.org
-
+nosetests
