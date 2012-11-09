@@ -24,6 +24,7 @@ import os
 import psycopg2
 import sqlalchemy
 from sqlalchemy import MetaData, orm, create_engine
+from sqlalchemy.exc import SQLAlchemyError
 
 from bycycle.core import model_path
 
@@ -120,7 +121,7 @@ def dropTable(table, cascade=False):
             execute('DROP TABLE %s.%s CASCADE' % ((table.schema or 'public'),
                                                    table.name))
             commit()
-    except (psycopg2.ProgrammingError, sqlalchemy.exceptions.SQLError), e:
+    except (psycopg2.ProgrammingError, SQLAlchemyError), e:
         if 'does not exist' in str(e):
             rollback()
         else:
@@ -135,7 +136,7 @@ def deleteAllFromTable(table):
     """Delete all records from ``table``."""
     try:
         table.delete().execute()
-    except (psycopg2.ProgrammingError, sqlalchemy.exceptions.SQLError), e:
+    except (psycopg2.ProgrammingError, SQLAlchemyError), e:
         if 'does not exist' in str(e):
             rollback()
         else:
