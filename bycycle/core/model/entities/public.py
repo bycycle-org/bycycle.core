@@ -119,7 +119,7 @@ class Region(Base):
 
     @property
     def matrix_path(self):
-        return os.path.join(self.data_path, 'matrix.pyc')
+        return os.path.join(self.data_path, 'matrix')
 
     @property
     def edge_attrs_index(self):
