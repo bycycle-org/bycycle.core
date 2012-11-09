@@ -47,7 +47,7 @@ def getConnectionUri(db_type='postgres', user=user, password=None,
         pw_path = os.path.join(model_path, '.pw')
         with file(pw_path) as pw_file:
             password = pw_file.read().strip()
-    dburi = '%s://%s:%s@%s/%s' % (db_type, user, password, host, '%s_beta' % database)
+    dburi = '%s://%s:%s@%s/%s' % (db_type, user, password, host, 'bycycle')
     return dburi
 
 def connectMetadata(md=None):
