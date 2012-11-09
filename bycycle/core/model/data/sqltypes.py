@@ -1,9 +1,9 @@
-import sqlalchemy
+from sqlalchemy.types import UserDefinedType
 
 from shapely import geometry, wkb
 
 
-class Geometry(sqlalchemy.types.TypeEngine):
+class Geometry(UserDefinedType):
     """PostGIS Geometry Type."""
 
     def __init__(self, SRID, type_, dimension):
@@ -25,7 +25,7 @@ class Geometry(sqlalchemy.types.TypeEngine):
                 return 'SRID=%s;%s' % (self.SRID, value)
         return process
 
-    def result_processor(self, dialect):
+    def result_processor(self, dialect, coltype):
         """Convert from database type to Python type."""
         def process(value):
             """``value`` is a hex-encoded WKB string."""
