@@ -59,7 +59,7 @@ db.connectMetadata()
 class Integrator(object):
 
     user = os.environ['USER']
-    db_name = '%s_beta' % user
+    db_name = 'bycycle'
     base_data_path = os.path.join('/home/%s' % user, 'byCycleData')
     overall_timer = meter.Timer(start_now=True)
     timer = meter.Timer(start_now=False)
