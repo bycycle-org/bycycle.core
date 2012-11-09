@@ -228,7 +228,7 @@ class Region(Base):
 
             meter.update(meter_i)
             meter_i += 1
-        db.Session.clear()
+        db.Session.close()
         print
         took()
 
