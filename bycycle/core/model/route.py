@@ -33,7 +33,7 @@ class Route(object):
         self.distance = distance
         self.linestring = linestring
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         coords = self.linestring.coords
         points = []
         for i in range(len(coords)):

@@ -114,7 +114,7 @@ class PostalAddress(Address):
         result = joinAttrs([result, self.place], '\n')
         return result
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         return {
             'type': self.__class__.__name__,
             'number': self.number,
@@ -259,7 +259,7 @@ class IntersectionAddress(Address):
     def __str__(self):
         return joinAttrs((self.street_name, self.place), '\n')
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         return {
             'type': self.__class__.__name__,
             'street_name1': self.street_name1,

@@ -60,7 +60,7 @@ class Geocode(object):
         s = ';'.join((s_addr, id_addr))
         return quote_plus(s)
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         return {
             'type': self.__class__.__name__,
             'street_name': self.address.street_name.to_simple_object(),
@@ -100,7 +100,7 @@ class PostalGeocode(Geocode):
         self.location = location
         self.edge = edge
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         return {
             'type': self.__class__.__name__,
             'number': self.address.number,
@@ -144,7 +144,7 @@ class IntersectionGeocode(Geocode):
         Geocode.__init__(self, region, address, node.id, xy)
         self.node = node
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         x = self.xy.x
         y = self.xy.y
         return {
