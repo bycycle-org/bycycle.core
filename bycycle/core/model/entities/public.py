@@ -327,7 +327,7 @@ class StreetName(Base):
         )
         return joinAttrs(attrs)
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         return {
             'prefix': (self.prefix or '').upper(),
             'name': self._name_for_str(),
@@ -389,7 +389,7 @@ class City(Base):
         else:
             return '[No City]'
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         return {
             'id': self.id,
             'city': str(self)
@@ -412,7 +412,7 @@ class State(Base):
         else:
             return '[No State]'
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         return {
             'id': self.id,
             'code': str(self),
@@ -463,7 +463,7 @@ class Place(Base):
         city_state = joinAttrs([self.city, self.state], ', ')
         return joinAttrs([city_state, str(self.zip_code or '')])
 
-    def to_simple_object(self):
+    def to_simple_object(self, fields=None):
         return {
             'city': (self.city.to_simple_object() if self.city is not None else None),
             'state': (self.state.to_simple_object() if self.state is not None else None),
