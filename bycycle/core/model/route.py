@@ -37,18 +37,19 @@ class Route(object):
         coords = self.linestring.coords
         points = []
         for i in range(len(coords)):
-            points.append(coords(i))
+            points.append(coords[i])
         linestring = [{'x': p[0], 'y': p[1]} for p in points]
         pairs = [(p[0], p[1]) for p in points]
-        bounds = self.linestring.envelope()
-        centroid = bounds.centroid()
+        envelope = self.linestring.envelope  # smallest polygon containing line
+        centroid = envelope.centroid
+        minx, miny, maxx, maxy = envelope.bounds
         route = {
             'start': dict(self.start),
             'end': dict(self.end),
             'linestring': linestring,
             'bounds': {
-                'sw': {'x': bounds.minx, 'y': bounds.miny},
-                'ne': {'x': bounds.maxx, 'y': bounds.maxy}
+                'sw': {'x': minx, 'y': miny},
+                'ne': {'x': maxx, 'y': maxy}
             },
             'center': {'x': centroid.x, 'y': centroid.y},
             'directions': self.directions,
