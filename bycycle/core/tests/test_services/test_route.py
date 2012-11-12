@@ -66,27 +66,3 @@ class Test_A_Route(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-
-"""
-        Qs = {'milwaukeewi':
-              (('Puetz Rd & 51st St', '841 N Broadway St'),
-               ('27th and lisbon', '35th and w north'),
-               ('S 84th Street & Greenfield Ave',
-                'S 84th street & Lincoln Ave'),
-               ('3150 lisbon', 'walnut & n 16th '),
-               ('124th and county line, franklin', '3150 lisbon'),
-               ('124th and county line, franklin',
-                'x=-87.940407, y=43.05321'),
-               ('x=-87.973645, y=43.039615',
-                'x=-87.978623, y=43.036086'),
-               ),
-              'portlandor':
-               (('x=-122.668104, y=45.523127', '4807 se kelly'),
-                ('x=-122.67334,y=45.621662', '8220 N Denver Ave'),
-                ('633 n alberta', '4807 se kelly'),
-                ('sw hall & denney', '44th and se stark'),
-                ('-122.645488, 45.509475', 'sw hall & denney'),
-               ),
-              }
-"""
