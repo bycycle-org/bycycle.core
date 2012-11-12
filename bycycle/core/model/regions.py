@@ -11,28 +11,18 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-"""Info on regions.
-
-TODO: This should stored in the database.
-
-"""
 from bycycle.core.model.entities import Region
 
 
 unknown_region = None
 portlandor = 'portlandor'
-milwaukeewi = 'milwaukeewi'
-pittsburghpa = 'pittsburghpa'
-seattlewa = 'seattlewa'
 
-region_keys = (portlandor, milwaukeewi, pittsburghpa, seattlewa)
+region_keys = (portlandor,)
 regions = dict([(r, 1) for r in region_keys])
 
-states = ('or', 'pa', 'wa', 'wi')
+states = ('or', 'wa')
 states_cities = dict([(s, {}) for s in states])
-states_cities['pa']['pittsburgh'] = pittsburghpa
 states_cities['wa']['vancouver'] = portlandor
-states_cities['wa']['seattle'] = seattlewa
 
 portlandor_cities = (
     'columbia', 'washington', 'multnomah', 'portland', 'banks',
@@ -45,14 +35,6 @@ portlandor_cities = (
     'marion'
     )
 states_cities['or'].update(dict([(c, portlandor) for c in portlandor_cities]))
-
-milwaukeewi_cities = (
-    'bayside', 'brown deer', 'cudahy', 'fox point', 'franklin', 'glendale',
-    'greendale', 'greenfield', 'hales corners', 'milwaukee', 'oak creek',
-    'river hills', 'saint francis', 'shorewood', 'south milwaukee',
-    'wauwatosa', 'west allis', 'west milwaukee', 'whitefish bay'
-)
-states_cities['wi'].update(dict([(c, milwaukeewi) for c in milwaukeewi_cities]))
 
 
 # city => list of regions with city
@@ -89,14 +71,8 @@ zip_codes.update(dict([(zc, portlandor) for zc in portlandor_zip_codes]))
 aliases = ('all',)
 region_aliases = dict([(a, 'all') for a in aliases])
 
-aliases = (milwaukeewi, 'mil', 'milwaukee')
-region_aliases.update(dict([(a, milwaukeewi) for a in aliases]))
-
 aliases = (portlandor, 'metro', 'pdx', 'portland')
 region_aliases.update(dict([(a, portlandor) for a in aliases]))
-
-aliases = (pittsburghpa, 'pgh')
-region_aliases.update(dict([(a, pittsburghpa) for a in aliases]))
 
 
 def getRegionKey(region):
