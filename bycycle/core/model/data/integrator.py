@@ -41,15 +41,13 @@ Notes:
 """
 import os, sys
 
-import psycopg2
-
 import sqlalchemy
-from sqlalchemy import func, select, text, and_, or_
+from sqlalchemy import func, select, text
 
 from bycycle.core.util import meter
 from bycycle.core import model_path
 from bycycle.core.model import db
-from bycycle.core.model.entities import base, public
+from bycycle.core.model.entities import public
 from bycycle.core.model.sttypes import street_types_ftoa
 
 
@@ -201,14 +199,6 @@ class Integrator(object):
         db.dropTable(self.region_module.Edge.__table__, cascade=True)
         self.echo('Dropping node table for region...')
         db.dropTable(self.region_module.Node.__table__, cascade=True)
-        Q = "DELETE FROM %s WHERE type = '%s_%s'"
-        args = ('edges', self.region_key, 'edge')
-        self.echo(Q % args)
-        db.execute(Q % args)
-        args = ('nodes', self.region_key, 'node')
-        self.echo(Q % args)
-        db.execute(Q % args)
-        db.commit()
         self.echo('Dropping schema for region...')
         db.dropSchema(self.region_key, cascade=True)
 
@@ -349,27 +339,20 @@ class Integrator(object):
         raw_records_t = self.get_records(
             [c.node_t_id, func.endPoint(c.geom)], distinct=False)
 
-        base_records, records = [], []
+        records = []
         seen_nodes = set()
-        id_query = select([func.nextval('nodes_id_seq')], bind=db.engine)
-        type = '%s_node' % self.region_key
-        region_id = region.id
         def collect_records(raw_records):
             for r in raw_records:
-                id = id_query.scalar()
                 permanent_id = r[0]
                 if permanent_id in seen_nodes:
                     continue
                 seen_nodes.add(permanent_id)
                 geom = r[1]
-                base_records.append(dict(id=id, type=type, region_id=region_id))
-                records.append(
-                    dict(id=id, permanent_id=permanent_id, geom=geom))
+                records.append(dict(permanent_id=permanent_id, geom=geom))
         collect_records(raw_records_f)
         collect_records(raw_records_t)
 
         self.echo('Inserting %i records into node table...' % len(seen_nodes))
-        self.insert_records(base.Node.__table__, base_records, 'nodes')
         self.insert_records(Node.__table__, records, '%s.nodes' % self.region_key)
 
         self.vacuum_entity(Node)
@@ -422,10 +405,9 @@ class Integrator(object):
         places[(None, None, None)] = None
 
         i = 1
-        id_query = select([func.nextval('edges_id_seq')], bind=db.engine)
         step = 2500
         num_records = raw_records.rowcount
-        base_records, records = [], []
+        records = []
         self.echo('Getting ID and permanent ID of base nodes...')
         slug = self.region_key
         Q = 'SELECT %s.nodes.id, %s.nodes.permanent_id FROM %s.nodes'
@@ -433,10 +415,8 @@ class Integrator(object):
         node_records = db.engine.connect().execute(s)
         self.echo('Mapping base node permanent IDs to their IDs...')
         node_map = dict([(nr.permanent_id, nr.id) for nr in node_records])
-        region_id = region.id
         self.echo('Transferring edges...')
         for r in raw_records:
-            id = id_query.scalar()
             even_side = self.getEvenSide(
                 r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r)
             node_f_id = node_map[r.node_f_id]
@@ -451,10 +431,7 @@ class Integrator(object):
             zr = int(r.zip_code_r) if r.zip_code_r is not None else None
             place_l_id = places[(city_l, state_l, zl)]
             place_r_id = places[(city_r, state_r, zr)]
-            base_record = dict(
-                id=id,
-                type='%s_edge' % self.region_key,
-                region_id=region_id,
+            record = dict(
                 addr_f_l=r.addr_f_l or None,
                 addr_f_r=r.addr_f_r or None,
                 addr_t_l=r.addr_t_l or None,
@@ -466,10 +443,6 @@ class Integrator(object):
                 street_name_id=st_name_id,
                 place_l_id=place_l_id,
                 place_r_id=place_r_id,
-            )
-            base_records.append(base_record)
-            record = dict(
-                id=id,
                 geom=(r.geom.geoms[0] if r.geom is not None else None),
                 permanent_id=r.permanent_id,
                 bikemode=bikemodes[r.bikemode],
@@ -481,14 +454,12 @@ class Integrator(object):
             records.append(record)
             if (i % step) == 0:
                 self.echo('Inserting %s records into edge table...' % step)
-                self.insert_records(base.Edge.__table__, base_records, 'edges')
                 self.insert_records(Edge.__table__, records, '%s.edges' % self.region_key)
                 self.echo('%i down, %i to go' % (i, num_records - i))
-                base_records, records = [], []
+                records = []
             i += 1
         if records:
             self.echo('Inserting remaining records into edge table...')
-            self.insert_records(base.Edge.__table__, base_records, 'edges')
             self.insert_records(Edge.__table__, records, '%s.edges' % self.region_key)
             self.vacuum_entity(Edge)
 
