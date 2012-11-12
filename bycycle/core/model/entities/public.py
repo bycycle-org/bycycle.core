@@ -52,7 +52,6 @@ class Region(Base):
     earth_circumference = Column(Float)
     block_length = Column(Float)
     jog_length = Column(Float)
-    map_type = Column(String)
 
     edge_attrs = relation(
         'EdgeAttr', backref='region', order_by='EdgeAttr.id',
