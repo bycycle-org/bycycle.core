@@ -28,9 +28,7 @@ from bycycle.core.model.entities import Base
 from bycycle.core.model.entities.util import cascade_arg, encodeFloat
 from bycycle.core.model.data.sqltypes import POINT
 
-__all__ = [
-    'Region', 'EdgeAttr', 'Service', 'Geocode', 'Route', 'StreetName',
-    'City', 'State', 'Place']
+__all__ = ['Region', 'EdgeAttr', 'StreetName', 'City', 'State', 'Place']
 
 
 # A place to keep references to adjacency matrices so they don't need to be
@@ -271,42 +269,6 @@ class EdgeAttr(Base):
     name = Column(String)
     def __repr__(self):
         return str(self.name)
-
-
-class Service(Base):
-    __tablename__ = 'services'
-
-    member_name = 'service'
-    collection_name = 'services'
-    member_title = 'Service'
-    collection_title = 'Services'
-
-    id = Column(Integer, primary_key=True)
-    region_id = Column(Integer, ForeignKey('regions.id'))
-
-
-class Geocode(Base):
-    __tablename__ = 'geocodes'
-
-    member_name = 'geocode'
-    collection_name = 'geocodes'
-    member_title = 'Geocode'
-    collection_title = 'Geocodes'
-
-    id = Column(Integer, primary_key=True)
-    region_id = Column(Integer, ForeignKey('regions.id'))
-
-
-class Route(Base):
-    __tablename__ = 'routes'
-
-    member_name = 'route'
-    collection_name = 'routes'
-    member_title = 'Route'
-    collection_title = 'Routes'
-
-    id = Column(Integer, primary_key=True)
-    region_id = Column(Integer, ForeignKey('regions.id'))
 
 
 class StreetName(Base):
