@@ -14,10 +14,13 @@
 """Geocode classes."""
 from urllib import quote_plus
 
+from bycycle.core.model.entities.base import Entity
+
+
 __all__ = ['Geocode', 'PostalGeocode', 'IntersectionGeocode']
 
 
-class Geocode(object):
+class Geocode(Entity):
     """Geocode base class.
 
     Attributes
@@ -28,6 +31,11 @@ class Geocode(object):
     ``xy`` `Point` -- Geographic location
 
     """
+
+    member_name = 'geocode'
+    collection_name = 'geocodes'
+    member_title = 'Geocode'
+    collection_title = 'Geocodes'
 
     def __init__(self, region, address, network_id, xy):
         """

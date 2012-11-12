@@ -15,12 +15,19 @@
 from shapely.geometry import LineString
 
 from bycycle.core.model import glineenc
+from bycycle.core.model.entities.base import Entity
+
 
 __all__ = ['Route']
 
 
-class Route(object):
+class Route(Entity):
     """Represents a route between two addresses."""
+
+    member_name = 'route'
+    collection_name = 'routes'
+    member_title = 'Route'
+    collection_title = 'Routes'
 
     def __init__(self,
                  region,
