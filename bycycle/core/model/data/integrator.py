@@ -178,7 +178,6 @@ class Integrator(object):
                 earth_circumference=data.earth_circumference,
                 block_length=data.block_length,
                 jog_length=data.jog_length,
-                map_type=data.map_type,
             )
             db.Session.flush()
 

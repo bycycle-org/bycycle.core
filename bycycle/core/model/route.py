@@ -55,10 +55,9 @@ class Route(object):
             'directions': self.directions,
             'distance': self.distance,
         }
-        if self.region.map_type == 'google':
-            google_points, google_levels = glineenc.encode_pairs(pairs)
-            route['google_points'] = google_points
-            route['google_levels'] = google_levels
+        google_points, google_levels = glineenc.encode_pairs(pairs)
+        route['google_points'] = google_points
+        route['google_levels'] = google_levels
         route['start']['geocode'] = route['start']['geocode'].to_simple_object()
         route['end']['geocode'] = route['end']['geocode'].to_simple_object()
         return route
