@@ -11,26 +11,17 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-"""Abstract database entity classes.
-
-They are "abstract" in the sense that they are not intended to be used
-directly. Instead they are overridden by inheriting with ``inheritance=None``
-and calling ``base_statements`` first in the subclass definition.
-
-"""
-import sys
-
 from sqlalchemy import func, select, Column, ForeignKey
-from sqlalchemy.orm import relation
-from sqlalchemy.types import Integer, String, CHAR, Integer
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from sqlalchemy.types import CHAR, Integer
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
 from shapely import geometry, wkt
 from shapely.geometry.base import BaseGeometry
 
 from restler.entity import Entity as BaseEntitiy
 
-from bycycle.core.util import gis, joinAttrs
+from bycycle.core.util import joinAttrs
 from bycycle.core.model.db import engine, metadata, Session
 from bycycle.core.model.entities.util import cascade_arg
 
@@ -91,32 +82,22 @@ class Entity(BaseEntitiy):
 Base = declarative_base(metadata=metadata, cls=Entity)
 
 
-class Node(Base):
+class Node(object):
+
     __tablename__ = 'nodes'
-    __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
-    type = Column('type', String(50))
-
-    __mapper_args__ = {'polymorphic_on': type}
-
-    region_id = Column(Integer, ForeignKey('regions.id'))
-
-    region = relation('Region', cascade='all')
-    edges_f = relation('Edge', primaryjoin='Node.id == Edge.node_f_id')
-    edges_t = relation('Edge', primaryjoin='Node.id == Edge.node_t_id')
 
     @property
     def edges(self):
         return list(self.edges_f) + list(self.edges_t)
 
 
-class Edge(Base):
+class Edge(object):
+
     __tablename__ = 'edges'
-    __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
-    type = Column('type', String(50))
     addr_f_l = Column(Integer)
     addr_f_r = Column(Integer)
     addr_t_l = Column(Integer)
@@ -124,25 +105,31 @@ class Edge(Base):
     even_side = Column(CHAR(1))
     one_way = Column(Integer)
 
-    __mapper_args__ = {'polymorphic_on': type}
+    @declared_attr
+    def street_name_id(self):
+        return Column(Integer, ForeignKey('street_names.id'))
 
-    region_id = Column(Integer, ForeignKey('regions.id'))
-    node_f_id = Column(Integer, ForeignKey('public.nodes.id'))
-    node_t_id = Column(Integer, ForeignKey('public.nodes.id'))
-    street_name_id = Column(Integer, ForeignKey('street_names.id'))
-    place_l_id = Column(Integer, ForeignKey('places.id'))
-    place_r_id = Column(Integer, ForeignKey('places.id'))
+    @declared_attr
+    def place_l_id(self):
+        return Column(Integer, ForeignKey('places.id'))
 
-    region = relation('Region', cascade='all')
-    node_f = relation(
-        'Node', primaryjoin='Edge.node_f_id == Node.id', cascade=cascade_arg)
-    node_t = relation(
-        'Node', primaryjoin='Edge.node_t_id == Node.id', cascade=cascade_arg)
-    street_name = relation('StreetName', cascade=cascade_arg)
-    place_l = relation(
-        'Place', primaryjoin='Edge.place_l_id == Place.id', cascade=cascade_arg)
-    place_r = relation(
-        'Place', primaryjoin='Edge.place_r_id == Place.id', cascade=cascade_arg)
+    @declared_attr
+    def place_r_id(self):
+        return Column(Integer, ForeignKey('places.id'))
+
+    @declared_attr
+    def street_name(self): 
+        return relationship('StreetName', cascade=cascade_arg)
+
+    @declared_attr
+    def place_l(self): 
+        return relationship(
+            'Place', primaryjoin='Edge.place_l_id == Place.id', cascade=cascade_arg)
+
+    @declared_attr
+    def place_r(self): 
+        return relationship(
+            'Place', primaryjoin='Edge.place_r_id == Place.id', cascade=cascade_arg)
 
     def to_feet(self):
         return self.geom.length
@@ -212,10 +199,8 @@ class Edge(Base):
                 dist_from_min_addr = num - min_addr
                 location = float(dist_from_min_addr) / edge_len
 
-        _Edge = self.region.module.Edge
-
         # Function to get interpolated point
-        c = _Edge.__table__.c
+        c = self.__table__.c
         f = func.line_interpolate_point(c.geom, location)
         # Function to get WKT version of lat/long
         f = func.astext(f)

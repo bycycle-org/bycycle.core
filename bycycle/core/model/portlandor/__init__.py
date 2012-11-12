@@ -12,45 +12,33 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 from sqlalchemy import Column, ForeignKey
-from sqlalchemy.types import Unicode, Integer, String, CHAR, Integer, Numeric, Float
+from sqlalchemy.orm import relationship
+from sqlalchemy.types import CHAR, Integer, Numeric, Float
 
 from bycycle.core.model import db
 from bycycle.core.model.entities import base
-from bycycle.core.model.entities.util import encodeFloat
+from bycycle.core.model.entities.util import cascade_arg, encodeFloat
 from bycycle.core.model.data.sqltypes import POINT, LINESTRING
 from bycycle.core.model.portlandor.data import SRID, slug
 
 from dijkstar import infinity
 
 
-__all__ = ['PortlandORNode', 'PortlandOREdge']
-
-
 table_args = dict(schema='portlandor')
 
 
-class PortlandORNode(base.Node):
-    __tablename__ = 'nodes'
-    __table_args__ = table_args
-    __mapper_args__ = dict(polymorphic_identity='portlandor_node')
+class Node(base.Base, base.Node):
 
-    id = Column(Integer, ForeignKey('public.nodes.id'), primary_key=True)
+    __table_args__ = table_args
+
     permanent_id = Column(Integer)
     geom = Column(POINT(SRID))
 
-    @property
-    def edges(self):
-        return super(Node, self).edges
 
-Node = PortlandORNode
+class Edge(base.Base, base.Edge):
 
-
-class PortlandOREdge(base.Edge):
-    __tablename__ = 'edges'
     __table_args__ = table_args
-    __mapper_args__ = dict(polymorphic_identity='portlandor_edge')
 
-    id = Column('id', Integer, ForeignKey('public.edges.id'), primary_key=True)
     geom = Column(LINESTRING(SRID))
     permanent_id = Column(Numeric(11, 2))
     code = Column(Integer)
@@ -59,6 +47,12 @@ class PortlandOREdge(base.Edge):
     abs_slope = Column(Float)
     cpd = Column(Integer)
     sscode = Column(Integer)
+
+    node_f_id = Column(Integer, ForeignKey(Node.id))
+    node_t_id = Column(Integer, ForeignKey(Node.id))
+
+    node_f = relationship(Node, primaryjoin=(node_f_id == Node.id), cascade=cascade_arg)
+    node_t = relationship(Node, primaryjoin=(node_t_id == Node.id), cascade=cascade_arg)
 
     def to_feet(self):
         return self.geom.length
@@ -81,4 +75,6 @@ class PortlandOREdge(base.Edge):
         }
         return adjustments
 
-Edge = PortlandOREdge
+
+Node.edges_f = relationship(Edge, primaryjoin=(Edge.node_f_id == Node.id))
+Node.edges_t = relationship(Edge, primaryjoin=(Edge.node_t_id == Node.id))
