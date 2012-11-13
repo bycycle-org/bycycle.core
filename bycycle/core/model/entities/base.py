@@ -73,6 +73,10 @@ class Entity(BaseEntitiy):
 
     @classmethod
     def simplify_object(cls, obj):
+        # XXX: I'm pretty sure this is never called. Either remove it or fix
+        #      to_simple_object() calls so that it is;
+        #      restler.Entity.to_simple_object() would call it, but that's
+        #      overridden by our classes, which don't make a super call. 
         obj = super(cls, cls).simplify_object(obj)
         if isinstance(obj, BaseGeometry):
             obj = obj.__geo_interface__
