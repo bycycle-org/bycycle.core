@@ -14,6 +14,8 @@
 """Geocode classes."""
 from urllib import quote_plus
 
+from shapely.geometry import Point
+
 from bycycle.core.model.entities.base import Entity
 
 
@@ -50,10 +52,10 @@ class Geocode(Entity):
         self.network_id = network_id
         self.xy = xy
         if xy is not None:
-            xy_ll = region.proj(xy.x, xy.y, inverse=True)
+            lon, lat = region.proj(xy.x, xy.y, inverse=True)
+            self.lat_long = Point(lon, lat)
         else:
-            xy_ll = None
-        self.xy_ll = xy_ll
+            self.lat_long = None
 
     def __str__(self):
         return '\n'.join((str(self.address), str(self.xy)))
