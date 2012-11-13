@@ -71,11 +71,10 @@ class Geocode(Entity):
     def to_simple_object(self, fields=None):
         return {
             'type': self.__class__.__name__,
-            'street_name': self.address.street_name.to_simple_object(),
             'place': self.address.place.to_simple_object(),
             'address': str(self.address),
-            'point': self.xy,
-            'network_id': self.network_id
+            'point': {'x': self.xy.x, 'y': self.xy.y},
+            'network_id': self.network_id,
         }
 
     def __repr__(self):
@@ -109,15 +108,12 @@ class PostalGeocode(Geocode):
         self.edge = edge
 
     def to_simple_object(self, fields=None):
-        return {
-            'type': self.__class__.__name__,
+        obj = super(PostalGeocode, self).to_simple_object(fields)
+        obj.update({
             'number': self.address.number,
             'street_name': self.address.street_name.to_simple_object(),
-            'place': self.address.place.to_simple_object(),
-            'address': str(self.address),
-            'point': {'x': self.xy.x, 'y': self.xy.y},
-            'network_id': self.network_id
-        }
+        })
+        return obj
 
     def __repr__(self):
         return repr(self.to_simple_object())
@@ -153,18 +149,15 @@ class IntersectionGeocode(Geocode):
         self.node = node
 
     def to_simple_object(self, fields=None):
-        x = self.xy.x
-        y = self.xy.y
-        return {
-            'type': self.__class__.__name__,
+        obj = super(IntersectionGeocode, self).to_simple_object(fields)
+        obj.update({
+            'street_name': self.address.street_name,
             'street_name1': self.address.street_name1.to_simple_object(),
             'street_name2': self.address.street_name2.to_simple_object(),
             'place1': self.address.place1.to_simple_object(),
             'place2': self.address.place2.to_simple_object(),
-            'address': str(self.address),
-            'point': {'x': x, 'y': y},
-            'network_id': self.network_id
-        }
+        })
+        return obj
 
     def __repr__(self):
         return repr(self.to_simple_object())
