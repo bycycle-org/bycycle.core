@@ -70,7 +70,8 @@ class Region(Base):
         try:
             self._proj
         except AttributeError:
-            self._proj = pyproj.Proj(init='epsg:%i' % self.srid)
+            epsg = 'epsg:{0.srid}'.format(self)
+            self._proj = pyproj.Proj(init=epsg, preserve_units=True)
         return self._proj
 
     def bounds(self, srid=None):
