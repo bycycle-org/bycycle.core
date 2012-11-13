@@ -41,13 +41,17 @@ class Route(Entity):
         self.linestring = linestring
 
     def to_simple_object(self, fields=None):
-        coords = self.linestring.coords
+        proj = self.region.proj
+        xs, ys = zip(*self.linestring.coords)
+        xs, ys = proj(xs, ys, inverse=True)
+        linestring = LineString(zip(xs, ys))
+        coords = linestring.coords
         points = []
         for i in range(len(coords)):
             points.append(coords[i])
         linestring = [{'x': p[0], 'y': p[1]} for p in points]
         pairs = [(p[0], p[1]) for p in points]
-        envelope = self.linestring.envelope  # smallest polygon containing line
+        envelope = linestring.envelope  # smallest polygon containing line
         centroid = envelope.centroid
         minx, miny, maxx, maxy = envelope.bounds
         route = {
