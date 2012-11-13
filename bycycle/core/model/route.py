@@ -12,7 +12,7 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Route entity."""
-from shapely.geometry import LineString
+from shapely.geometry import LineString, mapping
 
 from bycycle.core.model import glineenc
 from bycycle.core.model.entities.base import Entity
@@ -45,19 +45,13 @@ class Route(Entity):
         xs, ys = zip(*self.linestring.coords)
         xs, ys = proj(xs, ys, inverse=True)
         linestring = LineString(zip(xs, ys))
-        coords = linestring.coords
-        points = []
-        for i in range(len(coords)):
-            points.append(coords[i])
-        linestring = [{'x': p[0], 'y': p[1]} for p in points]
-        pairs = [(p[0], p[1]) for p in points]
-        envelope = linestring.envelope  # smallest polygon containing line
+        envelope = linestring.envelope
         centroid = envelope.centroid
         minx, miny, maxx, maxy = envelope.bounds
         route = {
             'start': self.start.to_simple_object(),
             'end': self.end.to_simple_object(),
-            'linestring': linestring,
+            'linestring': mapping(linestring),
             'bounds': {
                 'sw': {'x': minx, 'y': miny},
                 'ne': {'x': maxx, 'y': maxy}
@@ -66,9 +60,11 @@ class Route(Entity):
             'directions': self.directions,
             'distance': self.distance,
         }
-        google_points, google_levels = glineenc.encode_pairs(pairs)
-        route['google_points'] = google_points
-        route['google_levels'] = google_levels
+        # Encode line for Google Map
+        pairs = [(y, x) for (x, y) in linestring.coords]
+        points, levels = glineenc.encode_pairs(pairs)
+        route['google_points'] = points
+        route['google_levels'] = levels
         return route
 
     def __repr__(self):
