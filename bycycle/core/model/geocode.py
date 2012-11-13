@@ -14,7 +14,7 @@
 """Geocode classes."""
 from urllib import quote_plus
 
-from shapely.geometry import Point
+from shapely.geometry import Point, mapping
 
 from bycycle.core.model.entities.base import Entity
 
@@ -71,12 +71,18 @@ class Geocode(Entity):
         return quote_plus(s)
 
     def to_simple_object(self, fields=None):
+        xy = self.xy
+        lat_long = self.lat_long
+        if xy is not None:
+            xy = mapping(xy)
+        if lat_long is not None:
+            lat_long = mapping(lat_long)
         return {
             'type': self.__class__.__name__,
-            'place': self.address.place.to_simple_object(),
             'address': str(self.address),
-            'point': {'x': self.xy.x, 'y': self.xy.y},
-            'network_id': self.network_id,
+            'point': xy,
+            'lat_long': lat_long,
+            'network_id': self.network_id
         }
 
     def __repr__(self):
