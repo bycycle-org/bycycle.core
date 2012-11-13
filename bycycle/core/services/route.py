@@ -170,11 +170,8 @@ class Service(services.Service):
 
         # Convert paths to `Route`s
         routes = []
-        def makeWaypoints(slice_):
-            W = zip(waypoints[slice_], geocodes[slice_])
-            return [{'original': o, 'geocode': g} for o, g in W]
-        starts = makeWaypoints(slice(None, -1))
-        ends = makeWaypoints(slice(1, None))
+        starts = geocodes[:-1]
+        ends = geocodes[1:]
         # for start/end original, start/end geocode, path...
         for start, end, path_info in zip(starts, ends, paths_info):
             # route_data: nodes, edges, directions, linestring, distance
