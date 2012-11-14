@@ -132,8 +132,8 @@ class Integrator(object):
         """Drop existing raw table and insert raw SQL into database."""
         # Command to import raw SQL into database
         # Ex: psql --quiet -d ${USER} -f /path/to/portlandor_raw.sql
-        sql2db_cmd = 'psql --quiet -d %s -f %s'  # % (database, SQL file)
-        sql2db_cmd = sql2db_cmd % (self.db_name, self.get_sql_file_path())
+        sql2db_cmd = 'psql --quiet --username {0.user} -d {0.db_name} -f {file}'
+        sql2db_cmd = sql2db_cmd.format(self, file=self.get_sql_file_path())
         db.createSchema('raw')   # if it doesn't exist
         db.dropTable(self.raw_table)  # if it exists
         self.system(sql2db_cmd)
