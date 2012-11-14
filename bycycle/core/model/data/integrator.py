@@ -58,7 +58,7 @@ class Integrator(object):
 
     user = os.environ['USER']
     db_name = 'bycycle'
-    base_data_path = os.path.join('/home/%s' % user, 'byCycleData')
+    base_data_path = os.path.join(os.environ['HOME'], 'byCycleData')
     overall_timer = meter.Timer(start_now=True)
     timer = meter.Timer(start_now=False)
 
