@@ -70,6 +70,7 @@ class Integrator(object):
         self.no_prompt = no_prompt
 
     def run(self, start=0, end=None, no_prompt=False, only=None):
+        end = (len(self.actions) - 1) if end is None else end
         if only is not None:
             start = only
             end = only
