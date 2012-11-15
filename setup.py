@@ -31,4 +31,8 @@ setup(
         'simplejson>=2.6.2',
         'Restler>=0.7.1',
     ),
+    entry_points="""
+    [console_scripts]
+    bycycle-integrate = bycycle.core.scripts.integrate:main
+    """,
 )
