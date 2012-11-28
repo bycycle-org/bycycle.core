@@ -19,8 +19,6 @@ from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from shapely import geometry, wkt
 from shapely.geometry.base import BaseGeometry
 
-from restler.entity import Entity as BaseEntitiy
-
 from bycycle.core.util import joinAttrs
 from bycycle.core.model.db import engine, metadata, Session
 from bycycle.core.model.entities.util import cascade_arg
@@ -29,7 +27,7 @@ from bycycle.core.model.entities.util import cascade_arg
 __all__ = ['Base', 'Node', 'Edge']
 
 
-class Entity(BaseEntitiy):
+class Entity(object):
 
     @classmethod
     def q(cls):
