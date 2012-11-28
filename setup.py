@@ -29,7 +29,6 @@ setup(
         'Dijkstar>=1.0',
         'nose>=1.2.1',
         'simplejson>=2.6.2',
-        'Restler>=0.7.1',
     ),
     entry_points="""
     [console_scripts]
