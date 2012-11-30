@@ -400,7 +400,10 @@ class Service(services.Service):
     def append_street_name_where_clause(self, append_to, street_name):
         if street_name:
             st_name_ids = self.get_street_name_ids(street_name)
-            clause = Edge.street_name_id.in_(st_name_ids)
+            if st_name_ids:
+                clause = Edge.street_name_id.in_(st_name_ids)
+            else:
+                clause = 'NULL'
             if isinstance(append_to, (list, tuple)):
                 append_to.append(clause)
             else:
@@ -431,10 +434,13 @@ class Service(services.Service):
     def append_place_where_clause(self, append_to, place):
         if place:
             place_ids = self.get_place_ids(place)
-            clause = or_(
-                Edge.place_l_id.in_(place_ids),
-                Edge.place_r_id.in_(place_ids)
-            )
+            if place_ids:
+                clause = or_(
+                    Edge.place_l_id.in_(place_ids),
+                    Edge.place_r_id.in_(place_ids)
+                )
+            else:
+                clause = 'NULL'
             if isinstance(append_to, (list, tuple)):
                 append_to.append(clause)
             else:
