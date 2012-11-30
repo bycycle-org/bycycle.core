@@ -12,13 +12,14 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Entities that are shared by all regions; they live in the public SCHEMA."""
-import os, marshal, datetime
+import os
+import marshal
 
 from sqlalchemy import Column, ForeignKey, func, select
-from sqlalchemy.orm import relation
-from sqlalchemy.types import Integer, String, CHAR, Float, Date
+from sqlalchemy.orm import relationship
+from sqlalchemy.types import Integer, String, CHAR, Float
 
-from shapely import geometry, wkt
+from shapely import wkt
 import pyproj
 
 from bycycle.core import model_path
@@ -26,7 +27,7 @@ from bycycle.core.util import gis, joinAttrs
 from bycycle.core.model import db
 from bycycle.core.model.entities import Base
 from bycycle.core.model.entities.util import cascade_arg, encodeFloat
-from bycycle.core.model.data.sqltypes import POINT
+
 
 __all__ = ['Region', 'EdgeAttr', 'StreetName', 'City', 'State', 'Place']
 
@@ -53,7 +54,7 @@ class Region(Base):
     block_length = Column(Float)
     jog_length = Column(Float)
 
-    edge_attrs = relation(
+    edge_attrs = relationship(
         'EdgeAttr', backref='region', order_by='EdgeAttr.id',
         cascade=cascade_arg)
 
@@ -105,7 +106,7 @@ class Region(Base):
         srid = '4326'
         bounds = self.bounds(srid)
         set_geom(obj['geometry'][srid], bounds)
-        
+
         obj.pop('module', None)
         obj.pop('proj', None)
 
@@ -394,8 +395,8 @@ class Place(Base):
     city_id = Column(Integer, ForeignKey('cities.id'))
     state_id = Column(Integer, ForeignKey('states.id'))
 
-    city = relation('City', cascade=cascade_arg)
-    state = relation('State', cascade=cascade_arg)
+    city = relationship('City', cascade=cascade_arg)
+    state = relationship('State', cascade=cascade_arg)
 
     def _get_city_name(self):
         return (self.city.city if self.city is not None else None)
