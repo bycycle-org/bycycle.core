@@ -35,8 +35,6 @@ class Test_A_Route(unittest.TestCase):
         # KLUDGE: First turn should be EAST
         expected_turns = ['east', 'left', 'left', 'right']
         d_turns = [d[i]['turn'] for i in range(len(d))]
-        print expected_turns
-        print d_turns
         assert d_turns == expected_turns
 
     def test_with_coordinate_addresses_should_pass(self):
