@@ -21,7 +21,6 @@ from shapely.geometry.base import BaseGeometry
 
 from bycycle.core.util import joinAttrs
 from bycycle.core.model.db import engine, metadata, Session
-from bycycle.core.model.entities.util import cascade_arg
 
 
 __all__ = ['Base', 'Node', 'Edge']
@@ -120,18 +119,18 @@ class Edge(object):
         return Column(Integer, ForeignKey('places.id'))
 
     @declared_attr
-    def street_name(self): 
-        return relationship('StreetName', cascade=cascade_arg)
+    def street_name(self):
+        return relationship('StreetName', cascade='all')
 
     @declared_attr
-    def place_l(self): 
+    def place_l(self):
         return relationship(
-            'Place', primaryjoin='Edge.place_l_id == Place.id', cascade=cascade_arg)
+            'Place', primaryjoin='Edge.place_l_id == Place.id', cascade='all')
 
     @declared_attr
-    def place_r(self): 
+    def place_r(self):
         return relationship(
-            'Place', primaryjoin='Edge.place_r_id == Place.id', cascade=cascade_arg)
+            'Place', primaryjoin='Edge.place_r_id == Place.id', cascade='all')
 
     def to_feet(self):
         return self.geom.length

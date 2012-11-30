@@ -26,7 +26,7 @@ from bycycle.core import model_path
 from bycycle.core.util import gis, joinAttrs
 from bycycle.core.model import db
 from bycycle.core.model.entities import Base
-from bycycle.core.model.entities.util import cascade_arg, encodeFloat
+from bycycle.core.model.entities.util import encodeFloat
 
 
 __all__ = ['Region', 'EdgeAttr', 'StreetName', 'City', 'State', 'Place']
@@ -56,7 +56,7 @@ class Region(Base):
 
     edge_attrs = relationship(
         'EdgeAttr', backref='region', order_by='EdgeAttr.id',
-        cascade=cascade_arg)
+        cascade='all')
 
     required_edge_attrs = [
         'length',
@@ -395,8 +395,8 @@ class Place(Base):
     city_id = Column(Integer, ForeignKey('cities.id'))
     state_id = Column(Integer, ForeignKey('states.id'))
 
-    city = relationship('City', cascade=cascade_arg)
-    state = relationship('State', cascade=cascade_arg)
+    city = relationship('City', cascade='all')
+    state = relationship('State', cascade='all')
 
     def _get_city_name(self):
         return (self.city.city if self.city is not None else None)

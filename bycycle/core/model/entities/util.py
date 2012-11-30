@@ -1,6 +1,3 @@
-cascade_arg = 'all, delete-orphan'
-
-
 # These "constants" are used when creating the adjacency matrix for a region
 # The number of digits to save when encoding a float as an int
 float_exp = 6
