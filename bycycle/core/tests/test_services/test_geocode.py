@@ -202,7 +202,6 @@ class Test_An_Existing_Address(unittest.TestCase):
     def test_should_have_specific_coordinates(self):
         q = '1806 SE 52nd Ave, Portland'
         geocode = Service(region='portlandor').query(q)
-        print 'x, y: %s, %s' % (geocode.xy.x, geocode.xy.y)
         self.assert_(int(geocode.xy.x) == 7661523)
         self.assert_(int(geocode.xy.y) == 679077)
 
