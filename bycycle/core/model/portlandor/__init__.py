@@ -17,7 +17,7 @@ from sqlalchemy.types import CHAR, Integer, Numeric, Float
 
 from bycycle.core.model import db
 from bycycle.core.model.entities import base
-from bycycle.core.model.entities.util import cascade_arg, encodeFloat
+from bycycle.core.model.entities.util import encodeFloat
 from bycycle.core.model.data.sqltypes import POINT, LINESTRING
 from bycycle.core.model.portlandor.data import SRID, slug
 
@@ -51,8 +51,8 @@ class Edge(base.Base, base.Edge):
     node_f_id = Column(Integer, ForeignKey(Node.id))
     node_t_id = Column(Integer, ForeignKey(Node.id))
 
-    node_f = relationship(Node, primaryjoin=(node_f_id == Node.id), cascade=cascade_arg)
-    node_t = relationship(Node, primaryjoin=(node_t_id == Node.id), cascade=cascade_arg)
+    node_f = relationship(Node, primaryjoin=(node_f_id == Node.id), cascade='all')
+    node_t = relationship(Node, primaryjoin=(node_t_id == Node.id), cascade='all')
 
     def to_feet(self):
         return self.geom.length
