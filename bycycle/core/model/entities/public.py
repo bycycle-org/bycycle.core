@@ -169,6 +169,7 @@ class Region(Base):
 
         """
         from bycycle.core.util.meter import Meter, Timer
+        Edge = self.module.Edge
 
         timer = Timer()
 
@@ -176,48 +177,60 @@ class Region(Base):
             print 'Took %s seconds.' % timer.stop()
 
         timer.start()
-        print 'Fetching edge attributes...'
-        q = db.Session.query(self.module.Edge)
-        rows = q.all()
-        num_edges = len(rows)
+        print 'Getting edge IDs...'
+        q = db.Session.query(Edge.id)
+        ids = [i for (i,) in q.values(Edge.id)]
+        num_edges = len(ids)
         took()
 
         timer.start()
         print 'Total number of edges in region: %s' % num_edges
         print 'Creating adjacency matrix...'
+        q = db.Session.query(Edge)
         matrix = {'nodes': {}, 'edges': {}}
         nodes = matrix['nodes']
         edges = matrix['edges']
         meter = Meter(num_items=num_edges, start_now=True)
         meter_i = 1
-        for row in rows:
-            adjustments = self._adjustEdgeRowForMatrix(row)
 
-            ix = row.id
-            node_f_id = row.node_f_id
-            node_t_id = row.node_t_id
-            one_way = row.one_way
+        def get_rows(offset=0, limit=1000):
+            while offset < num_edges:
+                rows = q.filter(Edge.id.in_(ids[offset:(offset + limit)]))
+                yield rows
+                offset += limit
 
-            entry = [encodeFloat(row.geom.length)]
-            entry += [getattr(row, attr) for attr in self.required_edge_attrs[1:]]
-            entry += [getattr(row, a.name) for a in self.edge_attrs]
-            for k in adjustments:
-                entry[self.edge_attrs_index[k]] = adjustments[k]
-            edges[ix] = tuple(entry)
+        for rows in get_rows():
+            for row in rows:
+                adjustments = self._adjustEdgeRowForMatrix(row)
 
-            # One way values:
-            # 0: no travel in either direction
-            # 1: travel from => to only
-            # 2: travel to => from only
-            # 3: travel in both directions
+                ix = row.id
+                node_f_id = row.node_f_id
+                node_t_id = row.node_t_id
+                one_way = row.one_way
 
-            if one_way & 1:
-                nodes.setdefault(node_f_id, {})[node_t_id] = ix
-            if one_way & 2:
-                nodes.setdefault(node_t_id, {})[node_f_id] = ix
+                entry = [encodeFloat(row.geom.length)]
+                entry += [
+                    getattr(row, attr)
+                    for attr in self.required_edge_attrs[1:]]
+                entry += [getattr(row, a.name) for a in self.edge_attrs]
+                for k in adjustments:
+                    entry[self.edge_attrs_index[k]] = adjustments[k]
+                edges[ix] = tuple(entry)
 
-            meter.update(meter_i)
-            meter_i += 1
+                # One way values:
+                # 0: no travel in either direction
+                # 1: travel from => to only
+                # 2: travel to => from only
+                # 3: travel in both directions
+
+                if one_way & 1:
+                    nodes.setdefault(node_f_id, {})[node_t_id] = ix
+                if one_way & 2:
+                    nodes.setdefault(node_t_id, {})[node_f_id] = ix
+
+                meter.update(meter_i)
+                meter_i += 1
+
         db.Session.close()
         print
         took()
