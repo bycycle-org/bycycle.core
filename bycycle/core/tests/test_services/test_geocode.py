@@ -32,7 +32,7 @@ class TestPortlandOR(unittest.TestCase):
             print '\n*****', q
             timer.start()
         _geocode = self.service.query(q, **kwargs)
-        self.assert_(isinstance(_geocode, Geocode))
+        self.assertIsInstance(_geocode, Geocode)
         if not quiet:
             print timer.stop(), 'seconds\n'
         return _geocode
