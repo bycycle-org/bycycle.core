@@ -143,17 +143,9 @@ class Region(Base):
         """Return matrix. Prefer 1) existing 2) disk 3) newly created."""
         matrix = matrix_registry.get(self.slug, None)
         if matrix is None:
-            try:
-                loadfile = open(self.matrix_path, 'rb')
-            except IOError:
-                matrix = self.createAdjacencyMatrix()
-            else:
-                try:
-                    matrix = marshal.load(loadfile)
-                except (EOFError, ValueError, TypeError):
-                    matrix = self.createAdjacencyMatrix()
-                loadfile.close()
-            matrix_registry[self.slug] = matrix
+            with open(self.matrix_path, 'rb') as loadfile:
+                matrix = marshal.load(loadfile)
+                matrix_registry[self.slug] = matrix
         return matrix
 
     def _set_adjacency_matrix(self, matrix):
