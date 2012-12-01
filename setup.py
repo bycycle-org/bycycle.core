@@ -23,12 +23,9 @@ setup(
     install_requires=(
         'Shapely>=1.2.16',
         'pyproj>=1.9.2',
-        'GeoJSON>=1.0.1',
         'psycopg2>=2.4.5',
         'SQLAlchemy>=0.7.9',
         'Dijkstar>=1.0',
-        'nose>=1.2.1',
-        'simplejson>=2.6.2',
     ),
     entry_points="""
     [console_scripts]
