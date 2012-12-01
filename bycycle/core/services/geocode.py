@@ -75,7 +75,6 @@ A few other reasons are...
 
 * The street type, (for example, "Street" or "Road"), is incorrect. If in doubt, leave off the street type.
 
-If you try all of these things and the address still isn't found, you can try the "find address at center" link at the top left of the map. Zoom in on the location you're interested in and center the red dot over it, then click the link. This will find the closest intersection, which is usually close enough.
 """
 
     def __init__(self, address, region=None):
