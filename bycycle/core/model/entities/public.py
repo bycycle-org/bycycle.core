@@ -150,9 +150,8 @@ class Region(Base):
 
     def _set_adjacency_matrix(self, matrix):
         matrix_registry[self.slug] = matrix
-        dumpfile = open(self.matrix_path, 'wb')
-        marshal.dump(matrix, dumpfile)
-        dumpfile.close()
+        with open(self.matrix_path, 'wb') as dumpfile:
+            marshal.dump(matrix, dumpfile)
 
     matrix = G = property(_get_adjacency_matrix, _set_adjacency_matrix)
 
