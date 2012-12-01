@@ -39,12 +39,15 @@ class Route(Entity):
         self.directions = directions
         self.distance = distance
         self.linestring = linestring
+        if linestring is not None:
+            xs, ys = zip(*self.linestring.coords)
+            xs, ys = region.proj(xs, ys, inverse=True)
+            self.linestring_lat_long = LineString(zip(xs, ys))
+        else:
+            self.linestring_lat_long = None
 
     def to_simple_object(self, fields=None):
-        proj = self.region.proj
-        xs, ys = zip(*self.linestring.coords)
-        xs, ys = proj(xs, ys, inverse=True)
-        linestring = LineString(zip(xs, ys))
+        linestring = self.linestring_lat_long
         envelope = linestring.envelope
         centroid = envelope.centroid
         minx, miny, maxx, maxy = envelope.bounds
