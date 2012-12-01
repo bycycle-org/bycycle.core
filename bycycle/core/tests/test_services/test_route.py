@@ -30,12 +30,12 @@ class Test_A_Route(unittest.TestCase):
     def test_should_have_specific_turns(self):
         q = ('4807 se kelly, portland, or', '45th and division, portland, or')
         route = self._query(q)
-        assert isinstance(route, Route)
+        self.assertIsInstance(route, Route)
         d = route.directions
         # KLUDGE: First turn should be EAST
         expected_turns = ['east', 'left', 'left', 'right']
         d_turns = [d[i]['turn'] for i in range(len(d))]
-        assert d_turns == expected_turns
+        self.assertEqual(d_turns, expected_turns)
 
     def test_with_coordinate_addresses_should_pass(self):
         q = ('x=-122.668104, y=45.523127', '4807 se kelly')
@@ -58,8 +58,8 @@ class Test_A_Route(unittest.TestCase):
     def test_with_three_addresses_should_return_a_list_with_2_routes(self):
         q = ('4807 se kelly, portland, or', '633 n alberta', '1500 ne alberta')
         routes = self._query(q)
-        assert isinstance(routes, list)
-        assert len(routes) == 2
+        self.assertIsInstance(routes, list)
+        self.assertEqual(len(routes), 2)
 
 
 if __name__ == '__main__':

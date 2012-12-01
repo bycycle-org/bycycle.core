@@ -126,8 +126,8 @@ class TestPortlandOR(unittest.TestCase):
 
         q = '%s-%s' % (num, edge.id)
         oAddr = self._query(q, region='portlandor')
-        self.assert_(isinstance(oAddr, address.EdgeAddress))
-        self.assert_(isinstance(oAddr, address.PostalAddress))
+        self.assertIsInstance(oAddr, address.EdgeAddress)
+        self.assertIsInstance(oAddr, address.PostalAddress)
         self.assertEqual(oAddr.number, num)
         self.assertEqual(oAddr.network_id, edge.id)
 
@@ -138,7 +138,7 @@ class TestPortlandOR(unittest.TestCase):
     def test_PortlandOR_IntersectionAddress_CityStateZip_Both(self):
         q = 'SE Kelly St, Portland, OR 97206 & SE 49th Ave, Portland, OR 97206'
         oAddr = self._query(q)
-        self.assert_(isinstance(oAddr, address.IntersectionAddress))
+        self.assertIsInstance(oAddr, address.IntersectionAddress)
         self.assertEqual(oAddr.prefix1, 'se')
         self.assertEqual(oAddr.name1, 'kelly')
         self.assertEqual(oAddr.sttype1, 'st')
@@ -155,7 +155,7 @@ class TestPortlandOR(unittest.TestCase):
     def test_PortlandOR_IntersectionAddress_CityStateZip_1(self):
         q = 'SE Kelly St, Portland, OR 97206 & SE 49th Ave'
         oAddr = self._query(q)
-        self.assert_(isinstance(oAddr, address.IntersectionAddress))
+        self.assertIsInstance(oAddr, address.IntersectionAddress)
         self.assertEqual(oAddr.prefix1, 'se')
         self.assertEqual(oAddr.name1, 'kelly')
         self.assertEqual(oAddr.sttype1, 'st')
@@ -172,7 +172,7 @@ class TestPortlandOR(unittest.TestCase):
     def test_PortlandOR_IntersectionAddress_CityStateZip_2(self):
         q = 'SE Kelly St & SE 49th Ave, Portland, OR 97206'
         oAddr = self._query(q)
-        self.assert_(isinstance(oAddr, address.IntersectionAddress))
+        self.assertIsInstance(oAddr, address.IntersectionAddress)
         self.assertEqual(oAddr.prefix1, 'se')
         self.assertEqual(oAddr.name1, 'kelly')
         self.assertEqual(oAddr.sttype1, 'st')
@@ -192,7 +192,7 @@ class TestPortlandOR(unittest.TestCase):
         iAddr = 4
         q = str(iAddr)
         oAddr = self._query(q, region='portlandor')
-        self.assert_(isinstance(oAddr, address.IntersectionAddress))
+        self.assertIsInstance(oAddr, address.IntersectionAddress)
         self.assertEqual(oAddr.network_id, iAddr)
 
     ### Point
@@ -214,16 +214,16 @@ class TestPortlandOR(unittest.TestCase):
         )
         for q in qs:
             oAddr = self._query(q, region='portlandor')
-            self.assert_(isinstance(oAddr, address.PointAddress))
-            self.assert_(isinstance(oAddr, address.IntersectionAddress))
+            self.assertIsInstance(oAddr, address.PointAddress)
+            self.assertIsInstance(oAddr, address.IntersectionAddress)
             self.assertAlmostEqual(oAddr.x, -122.67334)
             self.assertAlmostEqual(oAddr.y, 45.523307)
 
     def test_PortlandOR_PointAddress_StringTuple_Region(self):
         q = '(-122.67334, 45.523307)'
         oAddr = self._query(q, region='portlandor')
-        self.assert_(isinstance(oAddr, address.PointAddress))
-        self.assert_(isinstance(oAddr, address.IntersectionAddress))
+        self.assertIsInstance(oAddr, address.PointAddress)
+        self.assertIsInstance(oAddr, address.IntersectionAddress)
         self.assertAlmostEqual(oAddr.x, -122.67334)
         self.assertAlmostEqual(oAddr.y, 45.523307)
 
@@ -232,7 +232,7 @@ class TestPortlandOR(unittest.TestCase):
     def test_PortlandOR_PostalAddress_NoRegion_CityStateZip(self):
         q = '4807 SE Kelly St, Portland, OR 97206'
         oAddr = self._query(q)
-        self.assert_(isinstance(oAddr, address.PostalAddress))
+        self.assertIsInstance(oAddr, address.PostalAddress)
         self.assertEqual(oAddr.number, 4807)
         self.assertEqual(oAddr.prefix, 'se')
         self.assertEqual(oAddr.name, 'kelly')
@@ -244,7 +244,7 @@ class TestPortlandOR(unittest.TestCase):
     def test_PortlandOR_PostalAddress_MultiWordCity_Region(self):
         q = '4807 SE Kelly St, Oregon City, OR 97206'
         oAddr = self._query(q, region='portlandor')
-        self.assert_(isinstance(oAddr, address.PostalAddress))
+        self.assertIsInstance(oAddr, address.PostalAddress)
         self.assertEqual(oAddr.number, 4807)
         self.assertEqual(oAddr.prefix, 'se')
         self.assertEqual(oAddr.name, 'kelly')
@@ -256,7 +256,7 @@ class TestPortlandOR(unittest.TestCase):
     def test_PortlandOR_PostalAddress_MultiWordName_Region(self):
         q = '4807 SE Martin Luther King Jr Boulevard, oregon city or 97206'
         oAddr = self._query(q, region='portland, OR')
-        self.assert_(isinstance(oAddr, address.PostalAddress))
+        self.assertIsInstance(oAddr, address.PostalAddress)
         self.assertEqual(oAddr.number, 4807)
         self.assertEqual(oAddr.prefix, 'se')
         self.assertEqual(oAddr.name, 'martin luther king jr')
@@ -268,7 +268,7 @@ class TestPortlandOR(unittest.TestCase):
     def test_PortlandOR_PostalAddress_MultiWordState_Region(self):
         q = '4807 SE Kelly Pants St, Oregon City, South Dakota 97206'
         oAddr = self._query(q, region='portlandor')
-        self.assert_(isinstance(oAddr, address.PostalAddress))
+        self.assertIsInstance(oAddr, address.PostalAddress)
         self.assertEqual(oAddr.number, 4807)
         self.assertEqual(oAddr.prefix, 'se')
         self.assertEqual(oAddr.name, 'kelly pants')
@@ -280,7 +280,7 @@ class TestPortlandOR(unittest.TestCase):
     def test_PortlandOR_PostalAddress_NameEndsWithStreetType_Region(self):
         q = '4807 SE Johnson Creek, Oregon City, Oregon 97206'
         oAddr = self._query(q, region='portlandor')
-        self.assert_(isinstance(oAddr, address.PostalAddress))
+        self.assertIsInstance(oAddr, address.PostalAddress)
         self.assertEqual(oAddr.number, 4807)
         self.assertEqual(oAddr.prefix, 'se')
         self.assertEqual(oAddr.name, 'johnson creek')
