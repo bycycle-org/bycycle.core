@@ -186,7 +186,6 @@ class Region(Base):
         timer.start()
         print 'Total number of edges in region: %s' % num_edges
         print 'Creating adjacency matrix...'
-        q = db.Session.query(Edge)
         matrix = {'nodes': {}, 'edges': {}}
         nodes = matrix['nodes']
         edges = matrix['edges']
@@ -194,42 +193,43 @@ class Region(Base):
         meter_i = 1
 
         def get_rows(offset=0, limit=1000):
+            q = db.Session.query(Edge)
             while offset < num_edges:
                 rows = q.filter(Edge.id.in_(ids[offset:(offset + limit)]))
-                yield rows
+                for row in rows:
+                    yield row
                 offset += limit
 
-        for rows in get_rows():
-            for row in rows:
-                adjustments = self._adjustEdgeRowForMatrix(row)
+        for row in get_rows():
+            adjustments = self._adjustEdgeRowForMatrix(row)
 
-                ix = row.id
-                node_f_id = row.node_f_id
-                node_t_id = row.node_t_id
-                one_way = row.one_way
+            ix = row.id
+            node_f_id = row.node_f_id
+            node_t_id = row.node_t_id
+            one_way = row.one_way
 
-                entry = [encodeFloat(row.geom.length)]
-                entry += [
-                    getattr(row, attr)
-                    for attr in self.required_edge_attrs[1:]]
-                entry += [getattr(row, a.name) for a in self.edge_attrs]
-                for k in adjustments:
-                    entry[self.edge_attrs_index[k]] = adjustments[k]
-                edges[ix] = tuple(entry)
+            entry = [encodeFloat(row.geom.length)]
+            entry += [
+                getattr(row, attr)
+                for attr in self.required_edge_attrs[1:]]
+            entry += [getattr(row, a.name) for a in self.edge_attrs]
+            for k in adjustments:
+                entry[self.edge_attrs_index[k]] = adjustments[k]
+            edges[ix] = tuple(entry)
 
-                # One way values:
-                # 0: no travel in either direction
-                # 1: travel from => to only
-                # 2: travel to => from only
-                # 3: travel in both directions
+            # One way values:
+            # 0: no travel in either direction
+            # 1: travel from => to only
+            # 2: travel to => from only
+            # 3: travel in both directions
 
-                if one_way & 1:
-                    nodes.setdefault(node_f_id, {})[node_t_id] = ix
-                if one_way & 2:
-                    nodes.setdefault(node_t_id, {})[node_f_id] = ix
+            if one_way & 1:
+                nodes.setdefault(node_f_id, {})[node_t_id] = ix
+            if one_way & 2:
+                nodes.setdefault(node_t_id, {})[node_f_id] = ix
 
-                meter.update(meter_i)
-                meter_i += 1
+            meter.update(meter_i)
+            meter_i += 1
 
         db.Session.close()
         print
