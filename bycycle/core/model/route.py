@@ -14,7 +14,8 @@
 """Route entity."""
 from shapely.geometry import LineString, mapping
 
-from bycycle.core.model import glineenc
+import glineenc
+
 from bycycle.core.model.entities.base import Entity
 
 

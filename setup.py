@@ -21,6 +21,7 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     install_requires=(
+        'glineenc>=1.0',
         'Shapely>=1.2.16',
         'pyproj>=1.9.2',
         'psycopg2>=2.4.5',
