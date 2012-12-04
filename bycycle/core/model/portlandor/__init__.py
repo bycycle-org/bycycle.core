@@ -21,8 +21,6 @@ from bycycle.core.model.entities.util import encodeFloat
 from bycycle.core.model.data.sqltypes import POINT, LINESTRING
 from bycycle.core.model.portlandor.data import SRID, slug
 
-from dijkstar import infinity
-
 
 table_args = dict(schema='portlandor')
 
