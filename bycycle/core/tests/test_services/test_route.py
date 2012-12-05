@@ -61,6 +61,11 @@ class Test_A_Route(unittest.TestCase):
         self.assertIsInstance(routes, list)
         self.assertEqual(len(routes), 2)
 
+    def test_intersection_addresses(self):
+        q = ('NW 17th and Couch', 'SE 21st and Clinton')
+        route = self._query(q, region='portlandor')
+        self.assertIsInstance(route, Route)
+
 
 if __name__ == '__main__':
     unittest.main()
