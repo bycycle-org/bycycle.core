@@ -1,3 +1,47 @@
+0.5 (unreleased)
+----------------
+
+Made changes necessary to get things back up and running. Made a few other
+changes to clean things up a bit.
+
+- Using str06oct from the Pirate network, because that's the only data set
+  I could find in backups. I have no idea how up-to-date/out-of-date it is.
+
+- Upgraded all dependencies to latest versions; removed unused. Almost no
+  changes were required by these upgrades; there was one tiny change to
+  a method signature in our user-defined SQLAlchemy geometry type, and I think
+  that was it... oh, and SQLError was renamed to SQLAlchemyError.
+
+- Added glineenc dependency; removed local copy.
+
+- Upgraded to Dijkstar 2 and simplified graph-related code. Creation of
+  regional adjacency matrix is simpler; splitting of edges in Route service is
+  much simpler.
+
+- Updated INSTALL doc to reflect latest Ubuntu packages. Also cleaned it up
+  some.
+
+- Improved memory usage during matrix creation (process batches of edges
+  instead of all at once).
+
+- Converted integrate and matrix scripts to proper console scripts (using
+  argparse and console_scripts entry point).
+
+- Renamed Geocode.xy_ll to lat_long; added Route.linestring_lat_long.
+
+- Removed Milwaukee, Wisconsin, region.
+
+- Cleaned up tests; added more.
+
+- Cleaned up some cruft (unused files and whatnot).
+
+- Various other small improvements and cleanup; see `hg diff -r
+  bycycle-is-back:tip` for more details.
+
+
+Ancient History (<= 0.4)
+------------------------
+
 SVN
 * 2007-04-24:
     * Made changes necessary to get normaddr service tests to pass
