@@ -19,6 +19,7 @@ from sqlalchemy import Column, ForeignKey, func, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import Integer, String, CHAR, Float
 
+from dijkstar import Graph
 from shapely import wkt
 import pyproj
 
@@ -59,6 +60,7 @@ class Region(Base):
         cascade='all')
 
     required_edge_attrs = [
+        'id',
         'length',
         'street_name_id',
         'node_f_id',
@@ -127,7 +129,7 @@ class Region(Base):
         In the ``matrix``, there is an (ordered) of edge attributes for each
         edge. ``edge_attrs_index`` gives us a way to access those attributes
         by name while keeping the size of the matrix smaller. We require that
-        edges for all regions have at least a length, street name ID,
+        edges for all regions have at least an ID, length, street name ID,
         from-node ID, street classification (AKA code), and bike mode.
 
         """
@@ -143,15 +145,13 @@ class Region(Base):
         """Return matrix. Prefer 1) existing 2) disk 3) newly created."""
         matrix = matrix_registry.get(self.slug, None)
         if matrix is None:
-            with open(self.matrix_path, 'rb') as loadfile:
-                matrix = marshal.load(loadfile)
-                matrix_registry[self.slug] = matrix
+            matrix = Graph.unmarshal(self.matrix_path)
+            matrix_registry[self.slug] = matrix
         return matrix
 
     def _set_adjacency_matrix(self, matrix):
         matrix_registry[self.slug] = matrix
-        with open(self.matrix_path, 'wb') as dumpfile:
-            marshal.dump(matrix, dumpfile)
+        matrix.marshal(self.matrix_path)
 
     matrix = G = property(_get_adjacency_matrix, _set_adjacency_matrix)
 
@@ -160,12 +160,6 @@ class Region(Base):
 
         Build a matrix suitable for use with the route service. The structure
         of the matrix is defined by/in the Dijkstar package.
-
-        return
-            Adjacency matrix for this region:
-                {nodes: {}, edges: {}}
-                    nodes: {v: {v: e, v: e, ...}, v: {v: e, v: e, ...}, ...}
-                    edges: {e: (attrs), e: (attrs), ...}
 
         """
         from bycycle.core.util.meter import Meter, Timer
@@ -186,9 +180,7 @@ class Region(Base):
         timer.start()
         print 'Total number of edges in region: %s' % num_edges
         print 'Creating adjacency matrix...'
-        matrix = {'nodes': {}, 'edges': {}}
-        nodes = matrix['nodes']
-        edges = matrix['edges']
+        matrix = Graph()
         meter = Meter(num_items=num_edges, start_now=True)
         meter_i = 1
 
@@ -201,32 +193,22 @@ class Region(Base):
                 offset += limit
 
         for row in get_rows():
-            adjustments = self._adjustEdgeRowForMatrix(row)
-
-            ix = row.id
             node_f_id = row.node_f_id
             node_t_id = row.node_t_id
-            one_way = row.one_way
 
-            entry = [encodeFloat(row.geom.length)]
-            entry += [
-                getattr(row, attr)
-                for attr in self.required_edge_attrs[1:]]
-            entry += [getattr(row, a.name) for a in self.edge_attrs]
-            for k in adjustments:
-                entry[self.edge_attrs_index[k]] = adjustments[k]
-            edges[ix] = tuple(entry)
+            edge = self.convert_edge_for_matrix(row)
 
             # One way values:
             # 0: no travel in either direction
             # 1: travel from => to only
             # 2: travel to => from only
             # 3: travel in both directions
+            one_way = row.one_way
 
             if one_way & 1:
-                nodes.setdefault(node_f_id, {})[node_t_id] = ix
+                matrix.add_edge(node_f_id, node_t_id, edge)
             if one_way & 2:
-                nodes.setdefault(node_t_id, {})[node_f_id] = ix
+                matrix.add_edge(node_t_id, node_f_id, edge)
 
             meter.update(meter_i)
             meter_i += 1
@@ -260,8 +242,13 @@ class Region(Base):
             setattr(self, '_%s_entity' % name, entity)
         return entity
 
-    def _adjustEdgeRowForMatrix(self, row):
-        return self.module.Edge._adjustRowForMatrix(row)
+    def convert_edge_for_matrix(self, edge):
+        attrs = [getattr(edge, attr) for attr in self.required_edge_attrs]
+        attrs += [getattr(edge, a.name) for a in self.edge_attrs]
+        adjustments = self.module.Edge._adjustRowForMatrix(edge)
+        for k in adjustments:
+            attrs[self.edge_attrs_index[k]] = adjustments[k]
+        return tuple(attrs)
 
     def __str__(self):
         return '%s: %s' % (self.slug, self.title)

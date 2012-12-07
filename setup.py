@@ -26,7 +26,7 @@ setup(
         'pyproj>=1.9.2',
         'psycopg2>=2.4.5',
         'SQLAlchemy>=0.8.0b1',
-        'Dijkstar>=1.0',
+        'Dijkstar>=2.0b3',
     ),
     entry_points="""
     [console_scripts]
