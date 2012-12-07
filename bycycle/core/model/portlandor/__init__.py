@@ -70,6 +70,7 @@ class Edge(base.Base, base.Edge):
             'length': encodeFloat(row.geom.length / 5280.0),
             'abs_slope': encodeFloat(row.abs_slope),
             'up_frac': encodeFloat(row.up_frac),
+            'bikemode': row.bikemode.encode('ascii'),
         }
         return adjustments
 
