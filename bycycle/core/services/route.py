@@ -157,14 +157,13 @@ class Service(services.Service):
         G = self.region.matrix
         if not G:
             raise EmptyGraphError()
-        nodes, edges = G['nodes'], G['edges']
 
         # Get paths between adjacent waypoints
         paths_info = []
         for s, e in zip(geocodes[:-1], geocodes[1:]):
-            # path_info: node_ids, edge_ids, split_edges
+            # path_info: node_ids, edge_attrs, split_edges
             path_info = self._getPathBetweenGeocodes(
-                s, e, G, nodes, edges, getEdgeWeight, getHeuristicWeight
+                s, e, G, getEdgeWeight, getHeuristicWeight
             )
             paths_info.append(path_info)
 
@@ -248,8 +247,7 @@ class Service(services.Service):
         return geocodes
 
     def _getPathBetweenGeocodes(self,
-                                start_geocode, end_geocode,
-                                G, nodes, edges,
+                                start_geocode, end_geocode, G,
                                 getEdgeWeight, getHeuristicWeight):
         """Try to find a path between the start and end geocodes.
 
@@ -264,16 +262,11 @@ class Service(services.Service):
         ``G`` `dict` -- The adjacency matrix to send to the path-finding
         algorithm.
 
-        ``nodes`` `dict` -- Technically, this is the adjacency matrix, and
-        it's really an adjacency list.
-
-        ``edges`` `dict` -- Edge ID => edge attributes.
-
         ``getEdgeWeight``
 
         ``getHeuristicWeight``
 
-        return `tuple` -- Node IDs, Edge IDs, Split Edges
+        return `tuple` -- Node IDs, Edge attributes, Split Edges
 
         """
         if start_geocode == end_geocode:
@@ -284,53 +277,43 @@ class Service(services.Service):
         # A place to save the new edges formed from splitting an edge when a
         # geocode is within an edge. This saving happens as a side effect in
         # _getNodeForGeocode.
-        split_edges = {}
-        self.H = {'nodes': {}, 'edges': {}}
+        split_edges = []
+        H = dijkstar.Graph()
 
         # Get start node
         node_id, edge_f_id, edge_t_id = -1, -1, -2
-        start_node = self._getNodeForGeocode(start_geocode, nodes, edges,
+        start_node = self._getNodeForGeocode(start_geocode, G, H,
                                              node_id, edge_f_id, edge_t_id,
                                              split_edges)
         # Get end node
         node_id, edge_f_id, edge_t_id = -2, -3, -4
-        end_node = self._getNodeForGeocode(end_geocode, nodes, edges,
+        end_node = self._getNodeForGeocode(end_geocode, G, H,
                                            node_id, edge_f_id, edge_t_id,
                                            split_edges)
 
         ### All set up--try to find a path in G between the start and end nodes
         try:
-            node_ids, edge_ids, weights, total_weight = dijkstar.find_path(
-                G, self.H,
+            nodes, edge_attrs, costs, total_weight = dijkstar.find_path(
+                G,
                 start_node.id, end_node.id,
-                weight_func=getEdgeWeight,
+                H,
+                cost_func=getEdgeWeight,
                 heuristic_func=getHeuristicWeight
             )
         except dijkstar.NoPathError:
             raise NoRouteError(start_geocode, end_geocode, self.region)
 
-        return node_ids, edge_ids, split_edges
+        return nodes, edge_attrs, split_edges
 
     def _getNodeForGeocode(self,
                            geocode_,
-                           nodes, edges,
-                           node_id,
-                           edge_f_id, edge_t_id,
+                           G, H,
+                           node_id, edge_f_id, edge_t_id,  # synthetic
                            split_edges):
         """Get or synthesize `Node` for ``geocode``.
 
         If the geocode is at an intersection, just return its `node`;
         otherwise, synthesize and return a mid-block `Node`.
-
-        ``geocode`` `Geocode`
-
-        Parameters used when synthesizing a node:
-
-        ``node_id`` `int` -- Shared node ID at split
-        ``edge_f_id`` `int` -- Edge id for node-->id edge
-        ``edge_t_id`` `int` -- Edge id for id-->other_node edge
-
-        return `Node`
 
         """
         if isinstance(geocode_, IntersectionGeocode):
@@ -338,91 +321,58 @@ class Service(services.Service):
             node = geocode_.node
         else:
             # Geocode is on an edge--hard case
-            # We have to generate a node in the middle of the edge and update G.
-            # Split the geocode's edge
-            edge_f, edge_t = geocode_.edge.splitAtGeocode(
+            edge = geocode_.edge
+            node_f, node_t = edge.node_f, edge.node_t
+            node_f_id, node_t_id = node_f.id, node_t.id
+
+            # edge_f goes from node_f to split
+            # edge_t goes from split to node_t
+            edge_f, edge_t = edge.splitAtGeocode(
                 geocode_, node_id, edge_f_id, edge_t_id
             )
-            # Create a node at the split
+            split_edges += [edge_f, edge_t]
+
             Node = self.region.module.Node
             node = Node(id=node_id, geom=geocode_.xy)
             node.edges_f.append(edge_f)
             node.edges_t.append(edge_t)
-            # Update after split
-            split_edges[edge_f_id], split_edges[edge_t_id] = edge_f, edge_t
-            self._updateMatrixAfterSplit(
-                nodes, edges, node, geocode_.edge, edge_f, edge_t, split_edges
-            )
+
+            # Graft node_f and node_t onto H
+            H.add_node(node_f_id, G[node_f_id])
+            H.add_node(node_t_id, G[node_t_id])
+
+            edge_f_attrs = self.region.convert_edge_for_matrix(edge_f)
+            edge_t_attrs = self.region.convert_edge_for_matrix(edge_t)
+
+            # If node_f connects to node_t
+            if node_t_id in G[node_f_id]:
+                # Add edge from node_f to split node and from split node
+                # to node_t
+                H.add_edge(node_f_id, node_id, edge_f_attrs)
+                H.add_edge(node_id, node_t_id, edge_t_attrs)
+                # Disallow traversal directly from node_f to node_t
+                del H[node_f_id][node_t_id]
+
+            # If node_t connects to node_f
+            if node_f_id in G[node_t_id]:
+                # Add edge from node_t to split node and from split node
+                # to node_f
+                H.add_edge(node_t_id, node_id, edge_t_attrs)
+                H.add_edge(node_id, node_f_id, edge_f_attrs)
+                # Disallow traversal directly from node_t to node_f
+                del H[node_t_id][node_f_id]
+
         return node
 
-    def _updateMatrixAfterSplit(self,
-                                nodes, edges,
-                                node_at_split,
-                                edge_that_was_split,
-                                edge_f, edge_t,
-                                split_edges):
-        # Update adjacency of nodes affected by split
-        self._updateNodesAfterSplit(nodes, node_at_split, edge_f, edge_t)
-        # Insert attributes for edges created by split
-        # TODO: Distribute attributes proportionally on either side of split.
-        # This could be done by more-sophisticated edge-splitting. Loop over
-        # edge_attrs/index and at the attrs from the split edges to the
-        # adj. mat. edge attrs list
-        edge_id = edge_that_was_split.id
-        self.H['edges'][edge_f.id] = [len(edge_f)] + list(edges[edge_id][1:])
-        self.H['edges'][edge_t.id] = [len(edge_t)] + list(edges[edge_id][1:])
-
-    def _updateNodesAfterSplit(self, nodes, node, edge_1, edge_2):
-        """
-
-        ``node`` -- Node at split
-        ``edge_1`` -- Edge on one side of split
-        ``edge_2`` -- Edge on other side of split
-
-        """
-        split_id = node.id
-        self.H['nodes'][split_id] = {}
-
-        def updateOneNode(node_1_id, node_2_id, edge_1_id, edge_2_id):
-            try:
-                nodes[node_1_id][node_2_id]
-            except KeyError:
-                # node_1_id does NOT go to node_2_id--nothing to do
-                pass
-            else:
-                # node_1_id DOES go to node_2_id
-                # Copy original adjacency list
-                self.H['nodes'][node_1_id] = {}
-                for n in nodes[node_1_id]:
-                    self.H['nodes'][node_1_id][n] = nodes[node_1_id][n]
-                # Remove original connection
-                del self.H['nodes'][node_1_id][node_2_id]
-                # Add connections across split edges
-                self.H['nodes'][node_1_id][split_id] = edge_1_id
-                self.H['nodes'][split_id][node_2_id] = edge_2_id
-
-        # Get node IDs NOT at split
-        node_t_id = edge_1.node_t_id
-        node_1_id = edge_1.node_f_id if node_t_id == split_id else node_t_id
-        node_t_id = edge_2.node_t_id
-        node_2_id = edge_2.node_f_id if node_t_id == split_id else node_t_id
-        # Get edge IDs for one arc direction
-        edge_1_id, edge_2_id = edge_1.id, edge_2.id
-        # Update for one direction
-        updateOneNode(node_1_id, node_2_id, edge_1_id, edge_2_id)
-        # Swap the IDs and update for the other direction
-        node_1_id, node_2_id = node_2_id, node_1_id
-        edge_1_id, edge_2_id = edge_2_id, edge_1_id
-        updateOneNode(node_1_id, node_2_id, edge_1_id, edge_2_id)
-
-    def _makeDirectionsForPath(self, node_ids, edge_ids, split_edges):
+    def _makeDirectionsForPath(self, node_ids, edge_attrs, split_edges):
         """Process the shortest path into a nice list of directions.
 
         ``node_ids``
             The IDs of the nodes on the route
 
-        ``edge_ids``
-            The IDs of the edges on the route
+        ``edges_attrs``
+            The attributes of the edges on the route as a list or tuple.
+            The first item in each list must be the edge ID.
 
         ``split_edges``
             Temporary edges formed by splitting an existing edge when the
@@ -466,26 +416,15 @@ class Service(services.Service):
         directions = []
         linestring = None
         distance = {}
+        edge_ids = [attrs[0] for attrs in edge_attrs]
 
         # Get edges along path
         Edge = self.region.module.Edge
         unordered_edges = Edge.get_by('id', edge_ids)
+        unordered_edges += split_edges
         # Make sure they're in path order
         edge_map = dict([(e.id, e) for e in unordered_edges])
-        edges = []
-        for i in edge_ids:
-            if i > 0:
-                edges.append(edge_map[i])
-
-        # Check if start and end are in edges
-        edge_f_id = edge_ids[0]
-        if edge_f_id in split_edges:
-            # Start is in an edge
-            edges = [split_edges[edge_f_id]] + edges
-        edge_t_id = edge_ids[-1]
-        if edge_t_id in split_edges:
-            # End is in an edge
-            edges.append(split_edges[edge_t_id])
+        edges = [edge_map[i] for i in edge_ids]
 
         # Get the actual edge lengths since modified weights might have been
         # used to find the path

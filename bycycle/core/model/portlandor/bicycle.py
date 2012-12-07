@@ -111,7 +111,7 @@ class TravelMode(tmode.TravelMode):
             no_bm_cca = bcca * mult
             no_bm_ccca = bccca * mult
 
-    def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
+    def getEdgeWeight(self, u, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
         length = edge_attrs[length_index] * float_decode
         code = edge_attrs[code_index]
