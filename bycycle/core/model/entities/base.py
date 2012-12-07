@@ -280,24 +280,39 @@ class Edge(object):
         edge_f_geom = geometry.LineString(edge_f_points)
         edge_t_geom = geometry.LineString(edge_t_points)
 
-        RegionEdge = self.__class__
-        edge_f = RegionEdge(id=edge_f_id,
-                            node_f_id=self.node_f_id, node_t_id=node_id,
-                            street_name=self.street_name,
-                            geom=edge_f_geom)
-        edge_t = RegionEdge(id=edge_t_id,
-                            node_f_id=node_id, node_t_id=self.node_t_id,
-                            street_name=self.street_name,
-                            geom=edge_t_geom)
-
         RegionNode = self.node_f.__class__
         shared_node = RegionNode(id=node_id, geom=Point(points[N]))
-        edge_f.node_f = RegionNode(id=self.node_f_id, geom=Point(points[0]))
-        edge_f.node_t = shared_node
-        edge_t.node_f = shared_node
-        edge_t.node_t = RegionNode(id=self.node_t_id, geom=Point(points[-1]))
+
+        edge_f = self.clone(
+            id=edge_f_id,
+            addr_f_l=self.addr_f_l,
+            addr_f_r=self.addr_f_r,
+            node_f_id=self.node_f_id,
+            node_f=RegionNode(id=self.node_f_id, geom=Point(points[0])),
+            node_t_id=node_id,
+            node_t=shared_node,
+            geom=edge_f_geom,
+        )
+
+        edge_t = self.clone(
+            id=edge_t_id,
+            addr_t_l=self.addr_t_l,
+            addr_t_r=self.addr_t_r,
+            node_f_id=node_id,
+            node_f=shared_node,
+            node_t_id=self.node_t_id,
+            node_t=RegionNode(id=self.node_t_id, geom=Point(points[-1])),
+            geom=edge_t_geom,
+        )
 
         return edge_f, edge_t
+
+    def clone(self, **override_attrs):
+        keys = [c.key for c in self.__mapper__.columns]
+        keys += [r.key for r in self.__mapper__.relationships]
+        attrs = {k: getattr(self, k) for k in keys}
+        attrs.update(override_attrs)
+        return self.__class__(**attrs)
 
     def __str__(self):
         stuff = [
