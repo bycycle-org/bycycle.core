@@ -46,6 +46,8 @@ import dijkstar
 
 from shapely.geometry import Point, LineString
 
+from sqlalchemy.orm import joinedload
+
 from bycycle.core.util import gis
 
 from bycycle.core.model.address import *
@@ -420,7 +422,11 @@ class Service(services.Service):
 
         # Get edges along path
         Edge = self.region.module.Edge
-        unordered_edges = Edge.get_by('id', edge_ids)
+        q = Edge.q().filter(Edge.id.in_(edge_ids))
+        q = q.options(joinedload(Edge.node_f))
+        q = q.options(joinedload(Edge.node_t))
+        q = q.options(joinedload(Edge.street_name))
+        unordered_edges = q.all()
         unordered_edges += split_edges
         # Make sure they're in path order
         edge_map = dict([(e.id, e) for e in unordered_edges])
@@ -552,6 +558,11 @@ class Service(services.Service):
                 # Get a street name for the intersection we're headed toward
                 # (one different from the name of the current street)
                 _f = self._getDifferentStreetNameFromNode
+
+                # XXX: _getDifferentStreetNameFromNode makes DB queries
+                # to get the node's edges. Would it improve performance
+                # significantly if these edges were loaded up front or
+                # all at once?
                 toward = _f(street_name, node_t)
 
                 direction.update(dict(turn=turn, street=street, toward=toward))
@@ -576,7 +587,6 @@ class Service(services.Service):
 
             edge_count += 1
             linestring_index += len(e.geom.coords) - 1
-
         return directions, linestring, distance
 
     def _getNameAndType(self, street_name):
