@@ -414,13 +414,15 @@ class Service(services.Service):
               }
 
         """
+        Edge = self.region.module.Edge
+        Node = self.region.module.Node
+
         directions = []
         linestring = None
         distance = {}
         edge_ids = [attrs[0] for attrs in edge_attrs]
 
         # Get edges along path
-        Edge = self.region.module.Edge
         q = Edge.q().filter(Edge.id.in_(edge_ids))
         q = q.options(joinedload(Edge.node_f))
         q = q.options(joinedload(Edge.node_t))
@@ -516,6 +518,7 @@ class Service(services.Service):
         edge_count = 0
         directions_count = 0
         linestring_index = 0
+        toward_args = []
         first = True
         for node_t_id, e, length in zip(node_ids[1:], edges, edge_lengths):
             node_t = e.node_t if node_t_id == e.node_t.id else e.node_f
@@ -553,17 +556,12 @@ class Service(services.Service):
                         # Turn onto next street
                         street = str_street_name
 
-                # Get a street name for the intersection we're headed toward
-                # (one different from the name of the current street)
-                _f = self._getDifferentStreetNameFromNode
+                # This will be used below to get a street name from one
+                # of the cross streets at the intersection we're headed
+                # toward at the start of this stretch.
+                toward_args.append((street_name, node_t_id))
 
-                # XXX: _getDifferentStreetNameFromNode makes DB queries
-                # to get the node's edges. Would it improve performance
-                # significantly if these edges were loaded up front or
-                # all at once?
-                toward = _f(street_name, node_t)
-
-                direction.update(dict(turn=turn, street=street, toward=toward))
+                direction.update(dict(turn=turn, street=street))
                 directions.append(direction)
                 directions_count += 1
 
@@ -585,6 +583,23 @@ class Service(services.Service):
 
             edge_count += 1
             linestring_index += len(e.geom.coords) - 1
+
+        # Get the toward street at the start of each stretch found in
+        # the loop just above. This is deferred to here so that we can
+        # fetch all the toward nodes up front with their associated
+        # edges in a single query.  This is much faster than processing
+        # each node individually inside the loop--that causes up to 2*N
+        # additional queries being issued to the database (fetching of
+        # the inbound and outbound edges for the node).
+        #q = Node.q()
+        #q = q.filter(Node.id.in_(i[1] for i in toward_args))
+        #q = q.options(joinedload(Node.edges_f))
+        #q = q.options(joinedload(Node.edges_t))
+        #node_map = {n.id: n for n in q}
+        #for d, (st_name, node_id) in zip(directions, toward_args):
+            #node = node_map[node_id]
+            #d['toward'] = self._getDifferentStreetNameFromNode(st_name, node)
+
         return directions, linestring, distance
 
     def _getNameAndType(self, street_name):
