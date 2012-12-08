@@ -393,7 +393,7 @@ class Service(services.Service):
                      'kilometers': .08,
                      'blocks': 1
                  },
-                 ###'bikemode': 'bl',
+                 'bikemodes': ['l', ...],
                  'jogs': [{'turn': 'left', 'street': 'ne 7th ave'}, ...]
                }
 
@@ -528,7 +528,7 @@ class Service(services.Service):
                 bearing = bearings[edge_count]
                 # TODO: Create a Direction class???
                 direction = {
-                    'turn': '', 'street': '', 'toward': '', 'bikemode': [],
+                    'turn': '', 'street': '', 'toward': '', 'bikemodes': [],
                     'linestring_index': linestring_index,
                     'jogs': jogs[directions_count],
                     'distance': {
@@ -571,13 +571,13 @@ class Service(services.Service):
             except IndexError:
                 pass
 
-            # Add edge's bikemode to list of bikemodes for current stretch
-            #bm = e.bikemode
-            #if bm is not None:
-                ## Only record changes in bikemode
-                #dbm = direction['bikemode']
-                #if (dbm == [] or bm != dbm[-1]):
-                    #dbm.append(bm)
+            # Add edge's bikemode to list of bikemodes for current
+            # stretch if it's different from the bikemode of the
+            # previous edge.
+            if e.bikemode:
+                bikemodes = direction['bikemodes']
+                if not bikemodes or bikemodes[-1] != e.bikemode:
+                    bikemodes.append(e.bikemode)
 
             edge_count += 1
             linestring_index += len(e.geom.coords) - 1
