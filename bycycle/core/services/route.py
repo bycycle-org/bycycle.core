@@ -50,9 +50,8 @@ from sqlalchemy.orm import joinedload
 
 from bycycle.core.util import gis
 
-from bycycle.core.model.address import *
-from bycycle.core.model.geocode import *
-from bycycle.core.model.route import *
+from bycycle.core.model.geocode import IntersectionGeocode
+from bycycle.core.model.route import Route
 
 from bycycle.core import services
 from bycycle.core.services import geocode
