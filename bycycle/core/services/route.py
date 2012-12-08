@@ -454,7 +454,6 @@ class Service(services.Service):
         linestring_points = []
         for node_t_id, e in zip(node_ids[1:], edges):
             geom = e.geom  # Current edge's linestring
-            num_points = len(geom.coords)
             points = list(geom.coords)
             if e.node_f_id == node_t_id:
                 # Moving to => from on arc; reverse geometry
@@ -492,7 +491,6 @@ class Service(services.Service):
                 next_street_name = None
             else:
                 next_street_name = next_e.street_name
-            edge_length = edge_lengths[i]
             if street_name and street_name.almostEqual(prev_street_name):
                 edge_lengths[stretch_start_i] += edge_lengths[i]
                 edge_lengths[i] = None
