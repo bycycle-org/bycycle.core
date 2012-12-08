@@ -425,10 +425,9 @@ class Service(services.Service):
         q = q.options(joinedload(Edge.node_f))
         q = q.options(joinedload(Edge.node_t))
         q = q.options(joinedload(Edge.street_name))
-        unordered_edges = q.all()
-        unordered_edges += split_edges
         # Make sure they're in path order
-        edge_map = dict([(e.id, e) for e in unordered_edges])
+        edge_map = {e.id: e for e in q}
+        edge_map.update({e.id: e for e in split_edges})
         edges = [edge_map[i] for i in edge_ids]
 
         # Get the actual edge lengths since modified weights might have been
