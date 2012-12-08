@@ -591,14 +591,14 @@ class Service(services.Service):
         # each node individually inside the loop--that causes up to 2*N
         # additional queries being issued to the database (fetching of
         # the inbound and outbound edges for the node).
-        #q = Node.q()
-        #q = q.filter(Node.id.in_(i[1] for i in toward_args))
-        #q = q.options(joinedload(Node.edges_f))
-        #q = q.options(joinedload(Node.edges_t))
-        #node_map = {n.id: n for n in q}
-        #for d, (st_name, node_id) in zip(directions, toward_args):
-            #node = node_map[node_id]
-            #d['toward'] = self._getDifferentStreetNameFromNode(st_name, node)
+        q = Node.q()
+        q = q.filter(Node.id.in_(i[1] for i in toward_args))
+        q = q.options(joinedload(Node.edges_f))
+        q = q.options(joinedload(Node.edges_t))
+        node_map = {n.id: n for n in q}
+        for d, (st_name, node_id) in zip(directions, toward_args):
+            node = node_map[node_id]
+            d['toward'] = self._getDifferentStreetNameFromNode(st_name, node)
 
         return directions, linestring, distance
 
