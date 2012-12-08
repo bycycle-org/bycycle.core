@@ -520,7 +520,7 @@ class Service(services.Service):
         linestring_index = 0
         first = True
         for node_t_id, e, length in zip(node_ids[1:], edges, edge_lengths):
-            node_t = [e.node_f, e.node_t][node_t_id == e.node_t.id]
+            node_t = e.node_t if node_t_id == e.node_t.id else e.node_f
 
             street_name = street_names[edge_count]
             str_street_name = str(street_name)
