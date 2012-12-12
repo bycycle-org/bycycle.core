@@ -595,8 +595,20 @@ class Service(services.Service):
         q = q.options(joinedload(Node.edges_t))
         node_map = {n.id: n for n in q}
         for d, (st_name, node_id) in zip(directions, toward_args):
-            node = node_map[node_id]
-            d['toward'] = self._getDifferentStreetNameFromNode(st_name, node)
+            if node_id < 0:
+                # This is a special case where the destination is within
+                # an edge (i.e., it's a street address) AND there are no
+                # intersections between the last turn and the
+                # (synthetic) destination node. In this case, since the
+                # destination node doesn't have any intersecting edges,
+                # a toward street can't be determined. Also, the
+                # destination node won't have been fetched in the query
+                # above because it doesn't really exist.
+                toward = None
+            else:
+                node = node_map[node_id]
+                toward = self._getDifferentStreetNameFromNode(st_name, node)
+            d['toward'] = toward
 
         return directions, linestring, distance
 
