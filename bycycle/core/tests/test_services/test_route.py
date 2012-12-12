@@ -66,6 +66,34 @@ class Test_A_Route(unittest.TestCase):
         route = self._query(q, region='portlandor')
         self.assertIsInstance(route, Route)
 
+    def test_synthetic_destination_node_directly_after_last_turn(self):
+        """
+        Test the special case where there are no intersections between
+        the last turn in a route and a synthetic destination node. This
+        situation is depicted below where "O" is the start location, "X"
+        is the end, and "*"s are intersections.
+
+                                *---X---*
+                                |
+                                |
+                                |
+                                *
+                                |
+                                |
+                                |
+                *-------*-------*
+                |
+                |
+                |
+        *--O----*
+
+        """
+        q = ('1815 nw couch', '633 n alberta')
+        route = self._query(q, region='portlandor')
+        self.assertIsInstance(route, Route)
+        d = route.directions
+        self.assertIs(d[-1]['toward'], None)
+
 
 if __name__ == '__main__':
     unittest.main()
