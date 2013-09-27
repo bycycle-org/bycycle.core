@@ -22,11 +22,11 @@ setup(
     zip_safe=False,
     install_requires=(
         'glineenc>=1.0',
-        'Shapely>=1.2.16',
-        'pyproj>=1.9.2',
-        'psycopg2>=2.4.5',
-        'SQLAlchemy>=0.8.0b1',
-        'Dijkstar>=2.0b3',
+        'Shapely>=1.2.18',
+        'pyproj>=1.9.3',
+        'psycopg2>=2.5.1',
+        'SQLAlchemy>=0.8.2',
+        'Dijkstar>=2.0',
     ),
     entry_points="""
     [console_scripts]
