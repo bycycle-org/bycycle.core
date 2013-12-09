@@ -2,27 +2,23 @@
 
 Example::
 
-    bycycle-integrate \
-        --region portlandor \
-        --source pirate \
-        --layer str06oct \
-        --no-prompt
+    bycycle-integrate -r portlandor -d pirate -l str06oct -n
 
-    --region is the region key matching the region's Python module name and
+    -r is the region key matching the region's Python module name and
     slug in the public.regions database table.
 
-    --source is the name of a directory in ${HOME}/byCycleData/portlandor.
+    -d is the name of a directory in ${HOME}/byCycleData/portlandor.
 
-    For now, ${HOME}/byCycleData can't be changed from the command line. It
-    can be changed by creating a `model.data.Integrator` subclass and
+    For now, ${HOME}/byCycleData can't be changed from the command line.
+    It can be changed by creating a `model.data.Integrator` subclass and
     setting its `base_data_path` attribute.
 
-    --layer is the base name of a shapefile and its associated DBF and other
+    -l is the base name of a shapefile and its associated DBF and other
     files. In this example, the pirate directory contains the files
     str06oct.shp, str06oct.dbf, etc.
 
-    --no-prompt indicates that we want to run all of the data integration
-    actions without being prompted. In normal use, this will probably be the
+    -n indicates that we want to run all of the data integration actions
+    without being prompted. In normal use, this will probably be the
     default.
 
 Options::
@@ -32,45 +28,43 @@ Options::
         module name. REQUIRED.
 
     --source | -d SOURCE
-        The data source. This is a directory containing shapefiles. For now,
-        it is always relative to ${HOME}/byCycleData. REQUIRED.
+        The data source. This is a directory containing shapefiles. For
+        now, it is always relative to ${HOME}/byCycleData. REQUIRED.
 
     --layer | -l LAYER
         The data layer. This is the base name for a shapefile and its
-        related files. For example, if the layer name is "str06oct", there
-        will be corresponding files named str06oct.shp, str06oct.dbf, etc.
-        REQUIRED.
+        related files. For example, if the layer name is "str06oct",
+        there will be corresponding files named str06oct.shp,
+        str06oct.dbf, etc. REQUIRED.
 
     --start | -s START
-        The index (0-based) of the action to start from. Yes, this is clunky
-        in that we need to know the index number for an action--a menu
-        system should be created. Defaults to 0.
+        The index (0-based) of the action to start from. Yes, this is
+        clunky in that we need to know the index number for an action--a
+        menu system should be created. Defaults to 0.
 
     --end | -e END
-        Like --start but for the last action that should be run. Defaults to
-        one less than the number of actions.
+        Like --start but for the last action that should be run.
+        Defaults to one less than the number of actions.
 
     --only | -o INDEX
-        Do just the action indicated by INDEX, without prompting. --start
-        and --end should not be specified if this is. Implies --no-prompt.
+        Do just the action indicated by INDEX, without prompting.
+        --start and --end should not be specified if this is. Implies
+        --no-prompt.
 
     --no-prompt | -n
-        Run the actions from --start to --end without prompting. The default
-        is to prompt for every action.
+        Run the actions from --start to --end without prompting. The
+        default is to prompt for every action.
 
-    If none of --start, --end, or --only are specified, the default is to
-    prompt for all actions.
+    If none of --start, --end, or --only are specified, the default is
+    to prompt for all actions.
 
 """
 import argparse
 
 
-help_text = __doc__
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description=help_text,
+        description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('-r', '--region', required=True)
