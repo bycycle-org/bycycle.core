@@ -25,7 +25,7 @@ setup(
         'Shapely>=1.2.18',
         'pyproj>=1.9.3',
         'psycopg2>=2.5.1',
-        'SQLAlchemy>=0.8.2',
+        'SQLAlchemy>=0.8.4',
         'Dijkstar>=2.0',
     ),
     entry_points="""
