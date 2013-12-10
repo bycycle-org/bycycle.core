@@ -1,15 +1,3 @@
-################################################################################# $Id$
-# Created Many-Moons-Ago (approximately 2005-10)
-#
-# Portland, OR, shapefile import.
-#
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-################################################################################
 cities_atof = {
     'bank': 'banks',
     'bar': 'barlow',

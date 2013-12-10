@@ -1,16 +1,3 @@
-###############################################################################
-# $Id: identify.py 335 2006-11-16 01:39:00Z bycycle $
-# Created 2006-11-16.
-#
-# Identify service.
-#
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-################################################################################
 """In a region and layer within that region, find feature nearest point.
 
 Given a region (i.e., data source), a layer within that region, and a point, find the feature nearest the point and return an object representing that feature.

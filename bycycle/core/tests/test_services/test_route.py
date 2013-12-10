@@ -1,16 +1,3 @@
-################################################################################
-# $Id: testgeocode.py 208 2006-09-11 03:41:35Z bycycle $
-# Created 2006-09-25.
-#
-# Unit tests for route service.
-#
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-################################################################################
 import unittest
 
 from bycycle.core.services.route import *

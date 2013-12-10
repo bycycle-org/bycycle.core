@@ -1,16 +1,3 @@
-###############################################################################
-# $Id: __init__.py 497 2007-02-18 02:04:51Z bycycle $
-# Created 2005-11-07
-#
-# Portland, OR, data
-#
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
 """This package contains everything to do with this region's data and DB."""
 from sqlalchemy import Column
 from sqlalchemy.types import Integer, String, Integer, Float, Numeric

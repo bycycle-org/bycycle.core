@@ -1,16 +1,3 @@
-###############################################################################
-# $Id: geocode.py 212 2006-09-11 04:16:40Z bycycle $
-# Created 2006-09-25.
-#
-# Route entity.
-#
-# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
 """Route entity."""
 from shapely.geometry import LineString, mapping
 

@@ -1,16 +1,3 @@
-###############################################################################
-# $Id$
-# Created ???.
-#
-# Street types.
-#
-# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
 """
 Provides a map of full street types to USPS abbreviations,
 ``street_types_ftoa``, and a map of abbreviations to full types,
