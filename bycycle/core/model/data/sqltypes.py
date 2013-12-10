@@ -1,6 +1,6 @@
 from sqlalchemy.types import UserDefinedType
 
-from shapely import geometry, wkb
+from shapely import wkb
 
 
 class Geometry(UserDefinedType):

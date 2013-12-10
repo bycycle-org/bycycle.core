@@ -42,7 +42,8 @@ from bycycle.core.model.route import Route
 
 from bycycle.core import services
 from bycycle.core.services import geocode
-from bycycle.core.services.exceptions import ByCycleError, InputError, NotFoundError
+from bycycle.core.services.exceptions import (
+    ByCycleError, InputError, NotFoundError)
 
 
 class RouteError(ByCycleError):
@@ -489,7 +490,8 @@ class Service(services.Service):
                   prev_street_name.almostEqual(next_street_name)):
                 edge_lengths[stretch_start_i] += edge_lengths[i]
                 edge_lengths[i] = None
-                turn = self._calculateWayToTurn(end_bearings[i-1], bearings[i])
+                turn = self._calculateWayToTurn(
+                    end_bearings[i - 1], bearings[i])
                 jogs[-1].append({'turn': turn, 'street': str(street_name)})
             else:
                 # Start of a new stretch (i.e., a new direction)
@@ -532,7 +534,8 @@ class Service(services.Service):
                     turn = self._getDirectionFromBearing(bearing)
                     street = str_street_name
                 else:
-                    turn = self._calculateWayToTurn(stretch_end_bearing, bearing)
+                    turn = self._calculateWayToTurn(
+                        stretch_end_bearing, bearing)
                     if turn == 'straight':
                         # Go straight onto next street
                         # ('street a becomes street b')
@@ -617,13 +620,14 @@ class Service(services.Service):
         return ''
 
     def _calculateWayToTurn(self, old_bearing, new_bearing):
-        """Given two bearings in [0, 360], gives the turn to go from old to new.
+        """Given two bearings in [0, 360] gives the turn to go from old to new.
 
         ``new_bearing`` -- The bearing of the new direction of travel.
         ``old_bearing`` -- The bearing of the old direction of travel.
 
-        return `string` -- The way to turn to get from going in the old direction
-        to get going in the new direction ('right', 'left', etc.).
+        return `string` -- The way to turn to get from going in the old
+        direction to get going in the new direction ('right', 'left',
+        etc.).
 
         """
         diff = new_bearing - old_bearing
@@ -631,11 +635,16 @@ class Service(services.Service):
             diff += 360
         while diff > 360:
             diff -= 360
-        if     0 <= diff <   10: way = 'straight'
-        elif  10 <= diff <= 170: way = 'right'
-        elif 170 <  diff <  190: way = 'back'
-        elif 190 <= diff <= 350: way = 'left'
-        elif 350 <  diff <= 360: way = 'straight'
+        if 0 <= diff < 10:
+            way = 'straight'
+        elif 10 <= diff <= 170:
+            way = 'right'
+        elif 170 < diff < 190:
+            way = 'back'
+        elif 190 <= diff <= 350:
+            way = 'left'
+        elif 350 < diff <= 360:
+            way = 'straight'
         else:
             raise ValueError(
                 'Could not calculate way to turn from %s and %s' %
@@ -647,20 +656,29 @@ class Service(services.Service):
         """Translate ``bearing`` to a cardinal direction."""
         arc = 45
         half_arc = arc * .5
-        n =  (360 - half_arc, half_arc)
-        ne = ( n[1],  n[1] + arc)
-        e =  (ne[1], ne[1] + arc)
-        se = ( e[1],  e[1] + arc)
-        s =  (se[1], se[1] + arc)
-        sw = ( s[1],  s[1] + arc)
-        w =  (sw[1], sw[1] + arc)
-        nw = ( w[1],  w[1] + arc)
-        if       0 <= bearing <   n[1]: return 'north'
-        elif  n[0] <  bearing <=   360: return 'north'
-        elif ne[0] <  bearing <= ne[1]: return 'northeast'
-        elif  e[0] <  bearing <=  e[1]: return 'east'
-        elif se[0] <  bearing <= se[1]: return 'southeast'
-        elif  s[0] <  bearing <=  s[1]: return 'south'
-        elif sw[0] <  bearing <= sw[1]: return 'southwest'
-        elif  w[0] <  bearing <=  w[1]: return 'west'
-        elif nw[0] <  bearing <= nw[1]: return 'northwest'
+        n = (360 - half_arc, half_arc)
+        ne = (n[1], n[1] + arc)
+        e = (ne[1], ne[1] + arc)
+        se = (e[1], e[1] + arc)
+        s = (se[1], se[1] + arc)
+        sw = (s[1], s[1] + arc)
+        w = (sw[1], sw[1] + arc)
+        nw = (w[1], w[1] + arc)
+        if 0 <= bearing < n[1]:
+            return 'north'
+        elif n[0] < bearing <= 360:
+            return 'north'
+        elif ne[0] < bearing <= ne[1]:
+            return 'northeast'
+        elif e[0] < bearing <= e[1]:
+            return 'east'
+        elif se[0] < bearing <= se[1]:
+            return 'southeast'
+        elif s[0] < bearing <= s[1]:
+            return 'south'
+        elif sw[0] < bearing <= sw[1]:
+            return 'southwest'
+        elif w[0] < bearing <= w[1]:
+            return 'west'
+        elif nw[0] < bearing <= nw[1]:
+            return 'northwest'

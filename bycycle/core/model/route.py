@@ -75,7 +75,7 @@ class Route(Entity):
                 bm,
             ))
         directions = '\n'.join([
-            '%s%s. %s' % (['', ' '][i<10], i, d)
+            '%s%s. %s' % (['', ' '][i < 10], i, d)
             for i, d
             in enumerate(directions)
         ])

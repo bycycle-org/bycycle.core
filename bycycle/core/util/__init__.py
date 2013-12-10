@@ -3,7 +3,7 @@ def getMostFrequentInList(the_list):
     cnt = {}
     the_list = [i for i in the_list if i]
     for i in the_list:
-        cnt[i]=cnt.get(i, 0) + 1
+        cnt[i] = cnt.get(i, 0) + 1
     C = [None] + sorted(cnt.keys(), key=cnt.get)
     return C[-1]
 

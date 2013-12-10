@@ -26,7 +26,8 @@ Notes:
     - Expects all data to be lower case
 
 """
-import os, sys
+import os
+import sys
 
 import sqlalchemy
 from sqlalchemy import func, select, text
@@ -285,12 +286,14 @@ class Integrator(object):
         cols = (func.lower(c.city_r), c.zip_code_r)
         raw_records_r = self.get_records(cols)
         raw_records = raw_records_l.union(raw_records_r)
+
         def get_city_state_and_zip(r):
             city, zip_code = r[0], r[1]
             city = cities_atof[city] if city is not None else None
             state = self.get_state_code_for_city(city)
             zip_code = int(zip_code) if zip_code is not None else zip_code
             return city, state, zip_code
+
         raw_records = set([get_city_state_and_zip(r) for r in raw_records])
 
         places = db.Session.query(Place).all()
@@ -328,6 +331,7 @@ class Integrator(object):
 
         records = []
         seen_nodes = set()
+
         def collect_records(raw_records):
             for r in raw_records:
                 permanent_id = r[0]
@@ -336,6 +340,7 @@ class Integrator(object):
                 seen_nodes.add(permanent_id)
                 geom = r[1]
                 records.append(dict(permanent_id=permanent_id, geom=geom))
+
         collect_records(raw_records_f)
         collect_records(raw_records_t)
 
@@ -510,7 +515,8 @@ class Integrator(object):
             default_is_yes = True
         default_is_no = not default_is_yes
         # Print prompt and wait for response
-        resp = raw_input('%s%s? %s '% (p, msg.rstrip('.'), choices)).strip().lower()
+        resp = raw_input(
+            '%s%s? %s ' % (p, msg.rstrip('.'), choices)).strip().lower()
         # Interpret and return response
         if not resp:
             if default_is_yes:
@@ -529,7 +535,7 @@ class Integrator(object):
     def getEvenSide(self, addr_f_l, addr_f_r, addr_t_l, addr_t_r):
         """Figure out which side of the edge even addresses are on."""
         if ((addr_f_l and addr_f_l % 2 == 0) or
-            (addr_t_l and addr_t_l % 2 == 0)):
+                (addr_t_l and addr_t_l % 2 == 0)):
             # Left?
             even_side = 'l'
         elif ((addr_f_r and addr_f_r % 2 == 0) or
@@ -550,7 +556,7 @@ class Integrator(object):
             time = seconds
             units = 'second'
         if time != 1.0:
-            units +=  's'
+            units += 's'
         return '%.2f %s' % (time, units)
 
     def any_not_none(self, sequence):

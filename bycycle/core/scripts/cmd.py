@@ -12,7 +12,7 @@ services = {
     'n': 'normaddr',
     'g': 'geocode',
     'r': 'route'
-    }
+}
 
 errors = []
 
@@ -83,4 +83,3 @@ def usage(msgs=[]):
 
 if __name__ == '__main__':
     main(sys.argv)
-

@@ -1,3 +1,4 @@
+
 """Import regional data into database.
 
 Example::
@@ -70,7 +71,8 @@ def main(argv=None):
     parser.add_argument('-r', '--region', required=True)
     parser.add_argument('-d', '--source', required=True)
     parser.add_argument('-l', '--layer', required=True)
-    parser.add_argument('-n', '--no-prompt', action='store_true', default=False)
+    parser.add_argument(
+        '-n', '--no-prompt', action='store_true', default=False)
     parser.add_argument('-s', '--start', type=int, default=None)
     parser.add_argument('-e', '--end', type=int, default=None)
     parser.add_argument('-o', '--only', type=int, default=None)

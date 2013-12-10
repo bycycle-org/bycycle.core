@@ -16,9 +16,7 @@ the Address Normalization service (normaddr):
 - Edge (i.e., number + edge ID).
 
 """
-from sqlalchemy import orm
 from sqlalchemy.sql import select, func, and_, or_
-from sqlalchemy.orm.exc import NoResultFound
 
 from bycycle.core.model import db
 from bycycle.core.model import StreetName, City, State, Place
@@ -164,7 +162,7 @@ class Service(services.Service):
                     street_name = oAddr.street_name2
 
                 try:
-                    postal_addr = PostalAddress(number=num*100,
+                    postal_addr = PostalAddress(number=num * 100,
                                                 street_name=street_name,
                                                 place=oAddr.place)
                     geocodes = self.getPostalGeocodes(postal_addr)

@@ -1,8 +1,7 @@
 """This package contains everything to do with this region's data and DB."""
 from sqlalchemy import Column
-from sqlalchemy.types import Integer, String, Integer, Float, Numeric
+from sqlalchemy.types import String, Integer, Float, Numeric
 
-from bycycle.core.model import db
 from bycycle.core.model.entities import Base
 from bycycle.core.model.data.sqltypes import MULTILINESTRING
 
@@ -27,7 +26,7 @@ edge_attrs = ['up_frac', 'abs_slope', 'cpd', 'sscode']
 states = {'or': 'oregon', 'wa': 'washington'}
 
 # dbf value => database value
-one_ways = {'n': 0, 'f': 1, 't': 2, '':  3, None: 3}
+one_ways = {'n': 0, 'f': 1, 't': 2, '': 3, None: 3}
 
 # dbf value => database value
 bikemodes = {
