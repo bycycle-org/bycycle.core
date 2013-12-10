@@ -1,6 +1,4 @@
-"""Unit tests for `Address` classes.
-
-"""
+"""Unit tests for `Address` classes."""
 import unittest
 from bycycle.core.model.address import *
 from bycycle.core.model.entities import *
@@ -24,7 +22,7 @@ class TestPostalAddress(unittest.TestCase):
             )
         )
         self.assertEqual(str(oAddr), '4807 SE Kelly St\nPortland, OR 97206')
-        oAddr.prefix = 'N';
+        oAddr.prefix = 'N'
         self.assertEqual(oAddr.prefix, 'N')
         self.assertEqual(oAddr.street_name.prefix, 'N')
         oAddr.name = 'Alberta'

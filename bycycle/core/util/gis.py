@@ -4,13 +4,13 @@ from math import sin, cos, acos, atan2, radians, degrees
 
 earth_radius = 3959
 equator_circumference = 24902
-miles_per_degree_at_equator = equator_circumference/360
+miles_per_degree_at_equator = equator_circumference / 360
 
 
 def getCenterOfBounds(bounds):
-    sw = bounds['sw'];
-    ne = bounds['ne'];
-    return {'x': (sw['x'] + ne['x']) / 2.0, 'y': (sw['y'] + ne['y']) / 2.0};
+    sw = bounds['sw']
+    ne = bounds['ne']
+    return {'x': (sw['x'] + ne['x']) / 2.0, 'y': (sw['y'] + ne['y']) / 2.0}
 
 
 def getDistanceBetweenTwoPointsOnEarth(xy_a=None, xy_b=None,
@@ -23,19 +23,20 @@ def getDistanceBetweenTwoPointsOnEarth(xy_a=None, xy_b=None,
         y_b = xy_b.y
     if x_a == x_b and y_a == y_b:
         return 0
-    return earth_radius * \
-           acos(cos(radians(y_a)) * \
-                cos(radians(y_b)) * \
-                cos(radians(x_b-x_a)) + \
-                sin(radians(y_a)) * \
-                sin(radians(y_b)))
+    return (
+        earth_radius *
+        acos(
+            cos(radians(y_a)) * cos(radians(y_b)) * cos(radians(x_b - x_a)) +
+            sin(radians(y_a)) * sin(radians(y_b))
+        )
+    )
 
 
 def getLengthOfLineString(linestring,
                           distanceFunc=getDistanceBetweenTwoPointsOnEarth):
     length = 0
     for i, p in enumerate(linestring[:-1]):
-        length += distanceFunc(p, linestring[i+1])
+        length += distanceFunc(p, linestring[i + 1])
     return length
 
 
@@ -76,7 +77,8 @@ def getInterpolatedXY(linestring, length, distance_from_start):
 
     """
     ls_len = len(linestring)
-    if type(linestring) != type([]) or ls_len < 2: return None
+    if not isinstance(linestring, list) or ls_len < 2:
+        return None
     length = length or .000000000000001
     pct_from_start = distance_from_start / length
     pct_from_end = 1.0 - pct_from_start
@@ -90,11 +92,12 @@ def getInterpolatedXY(linestring, length, distance_from_start):
         pieces = ls_len - 1 * 1.0
         pct_per_piece = (length / pieces) / length
 
-        try: p = pct_from_start / pct_per_piece
+        try:
+            p = pct_from_start / pct_per_piece
         except ZeroDivisionError:
             fxy, txy = linestring[0], linestring[-1]
-            x = fxy.x*pct_from_end + txy.x*pct_from_start
-            y = fxy.y*pct_from_end + txy.y*pct_from_start
+            x = fxy.x * pct_from_end + txy.x * pct_from_start
+            y = fxy.y * pct_from_end + txy.y * pct_from_start
         else:
             import math
             floor_p = int(math.floor(p))
@@ -126,10 +129,10 @@ def importWktGeometry(geom):
     """
     geom_type, wkt_data = geom.split('(', 1)
     geom_type = geom_type.strip().upper()
-    wkt_data = wkt_data[:-1] # strip trailing )
+    wkt_data = wkt_data[:-1]  # strip trailing )
     if geom_type == 'LINESTRING':
-        wkt_data = wkt_data.split(',')   # list of 'X Y'
-        wkt_data = [d.split() for d in wkt_data] # list of [X, Y]
+        wkt_data = wkt_data.split(',')  # list of 'X Y'
+        wkt_data = [d.split() for d in wkt_data]  # list of [X, Y]
         linestring = [Point(x=d[0], y=d[1]) for d in wkt_data]
         return linestring
     elif geom_type == 'POINT':
@@ -159,10 +162,10 @@ def importWktGeometries(geoms, geom_type):
         raise TypeError('Unsupported WKT geometry type: "%s"' % geom_type)
 
 
-
-
 class Point(object):
+
     """A very simple Point class."""
+
     def __init__(self, x_y=None, x=None, y=None):
         """Create a new Point from the supplied 2-tuple or string.
 
@@ -230,7 +233,6 @@ class Point(object):
             self.x = None
             self.y = None
 
-
     def _importKwargsPoint(self, x_y):
         """A kwargs point is a str with x & y specified like keyword args.
 
@@ -280,11 +282,8 @@ class Point(object):
         except NameError:
             raise ValueError(err)
 
-
     def __str__(self):
         return 'POINT(%.6f %.6f)' % (self.x, self.y)
 
-
     def __repr__(self):
         return "{'x': %f, 'y': %f}" % (self.x, self.y)
-

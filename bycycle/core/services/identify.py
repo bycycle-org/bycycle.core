@@ -3,8 +3,7 @@
 Given a region (i.e., data source), a layer within that region, and a point, find the feature nearest the point and return an object representing that feature.
 
 """
-from sqlalchemy.sql import select, func
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql import func
 
 from bycycle.core.model import db
 from bycycle.core.model.point import Point

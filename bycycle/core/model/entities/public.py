@@ -1,6 +1,5 @@
 """Entities that are shared by all regions; they live in the public SCHEMA."""
 import os
-import marshal
 
 from sqlalchemy import Column, ForeignKey, func, select
 from sqlalchemy.orm import relationship
@@ -14,7 +13,6 @@ from bycycle.core import model_path
 from bycycle.core.util import gis, joinAttrs
 from bycycle.core.model import db
 from bycycle.core.model.entities import Base
-from bycycle.core.model.entities.util import encodeFloat
 
 
 __all__ = ['Region', 'EdgeAttr', 'StreetName', 'City', 'State', 'Place']
@@ -26,6 +24,7 @@ matrix_registry = {}
 
 
 class Region(Base):
+
     __tablename__ = 'regions'
 
     member_name = 'region'
@@ -76,13 +75,13 @@ class Region(Base):
 
     def to_simple_object(self, fields=None):
         # Append dynamically computed geometries to default simple object
-        obj = super(Region, self).to_simple_object(fields=fields);
+        obj = super(Region, self).to_simple_object(fields=fields)
         obj['geometry'] = {'4326': {}}
 
         def set_geom(geom, bounds):
             sw, ne = bounds['sw'], bounds['ne']
             nw = {'x': sw['x'], 'y': ne['y']}
-            se = {'x': ne['x'] , 'y': sw['y']}
+            se = {'x': ne['x'], 'y': sw['y']}
             geom['bounds'] = bounds
             geom['linestring'] = [nw, ne, se, sw, nw]
             geom['center'] = gis.getCenterOfBounds(bounds)
@@ -216,7 +215,10 @@ class Region(Base):
             path = 'bycycle.core.model.%s' % self.slug
             exec 'from %s import Node as _RegionNode' % path
             exec 'from %s import Edge as _RegionEdge' % path
-            class _Module(object): pass
+
+            class _Module(object):
+                pass
+
             module = _Module()
             module.Node, module.Edge = _RegionNode, _RegionEdge
             self._module = module
@@ -242,15 +244,19 @@ class Region(Base):
 
 
 class EdgeAttr(Base):
+
     __tablename__ = 'edge_attrs'
+
     id = Column(Integer, primary_key=True)
     region_id = Column(Integer, ForeignKey('regions.id'))
     name = Column(String)
+
     def __repr__(self):
         return str(self.name)
 
 
 class StreetName(Base):
+
     __tablename__ = 'street_names'
 
     id = Column(Integer, primary_key=True)
@@ -319,6 +325,7 @@ class StreetName(Base):
 
 
 class City(Base):
+
     __tablename__ = 'cities'
 
     id = Column(Integer, primary_key=True)
@@ -341,6 +348,7 @@ class City(Base):
 
 
 class State(Base):
+
     __tablename__ = 'states'
 
     id = Column(Integer, primary_key=True)
@@ -364,8 +372,8 @@ class State(Base):
         return bool(self.code or self.state)
 
 
-
 class Place(Base):
+
     __tablename__ = 'places'
 
     id = Column(Integer, primary_key=True)
@@ -378,26 +386,32 @@ class Place(Base):
 
     def _get_city_name(self):
         return (self.city.city if self.city is not None else None)
+
     def _set_city_name(self, name):
         if self.city is None:
             self.city = City()
         self.city.city = name
+
     city_name = property(_get_city_name, _set_city_name)
 
     def _get_state_code(self):
         return (self.state.code if self.state is not None else None)
+
     def _set_state_code(self, code):
         if self.state is None:
             self.state = State()
         self.state.code = code
+
     state_code = property(_get_state_code, _set_state_code)
 
     def _get_state_name(self):
         return (self.state.state if self.state is not None else None)
+
     def _set_state_name(self, name):
         if self.state is None:
             self.state = State()
         self.state.state = name
+
     state_name = property(_get_state_name, _set_state_name)
 
     def __str__(self):

@@ -20,7 +20,7 @@ portlandor_cities = (
     'tualitin', 'gladstone', 'west linn', 'rivergrove', 'oregon city',
     'sherwood', 'wilsonville', 'estacada', 'canby', 'barlow', 'molalla',
     'marion'
-    )
+)
 states_cities['or'].update(dict([(c, portlandor) for c in portlandor_cities]))
 
 

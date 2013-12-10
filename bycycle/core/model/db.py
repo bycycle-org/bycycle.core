@@ -4,10 +4,7 @@ Provides the ``DB`` class, which connects to the database and contains various
 generic (i.e., not region-specific) database functions.
 
 """
-from __future__ import with_statement
-
 import psycopg2
-import sqlalchemy
 from sqlalchemy import MetaData, orm, create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import SQLAlchemyError
@@ -24,31 +21,39 @@ def init(**connection_args):
     _Session = orm.sessionmaker(autoflush=True, autocommit=True, bind=engine)
     Session = orm.scoped_session(_Session)
 
+
 def make_url(drivername='postgresql', database='bycycle', **kwargs):
     return URL(drivername, database=database, **kwargs)
+
 
 def connectMetadata(md=None):
     """Connect metadata to ``engine``. Use ``md`` if specified."""
     (md or metadata).bind = engine
 
+
 def dropAllTables(md=None):
     md = md or metadata
     md.drop_all()
+
 
 def createAllTables(md=None):
     md = md or metadata
     md.create_all()
 
+
 def clearSession():
     del session_context.current
+
 
 def turnSQLEchoOff():
     """Turn off echoing of SQL statements."""
     engine.echo = False
 
+
 def turnSQLEchoOn():
     """Turn on echoing of SQL statements."""
     engine.echo = True
+
 
 def vacuum(*tables):
     """Vacuum ``tables`` or all tables if ``tables`` not given."""
@@ -60,14 +65,18 @@ def vacuum(*tables):
             cursor.execute('VACUUM FULL ANALYZE %s' % table)
     connection.set_isolation_level(2)
 
+
 def execute(query):
     cursor.execute(query)
+
 
 def commit():
     connection.commit()
 
+
 def rollback():
     connection.rollback()
+
 
 def dropSchema(schema, cascade=False):
     cascade_clause = ' CASCADE' if cascade else ''
@@ -79,6 +88,7 @@ def dropSchema(schema, cascade=False):
     else:
         commit()
 
+
 def createSchema(schema):
     Q = 'CREATE SCHEMA %s' % schema
     try:
@@ -88,6 +98,7 @@ def createSchema(schema):
     else:
         commit()
 
+
 def dropTable(table, cascade=False):
     # TODO: Try to make this work when the table has dependencies
     try:
@@ -95,8 +106,9 @@ def dropTable(table, cascade=False):
         if not cascade:
             table.drop(checkfirst=True)
         else:
-            execute('DROP TABLE %s.%s CASCADE' % ((table.schema or 'public'),
-                                                   table.name))
+            execute(
+                'DROP TABLE %s.%s CASCADE' %
+                ((table.schema or 'public'), table.name))
             commit()
     except (psycopg2.ProgrammingError, SQLAlchemyError), e:
         if 'does not exist' in str(e):
@@ -104,10 +116,12 @@ def dropTable(table, cascade=False):
         else:
             raise e
 
+
 def recreateTable(table):
     """Drop ``table`` from database and then create it."""
     dropTable(table)
     table.create()
+
 
 def deleteAllFromTable(table):
     """Delete all records from ``table``."""
@@ -119,15 +133,18 @@ def deleteAllFromTable(table):
         else:
             raise e
 
+
 def addColumn(table_name, column_name, column_type):
     try:
-        execute('ALTER TABLE %s ADD COLUMN %s %s' %
-                   (table_name, column_name, column_type))
+        execute(
+            'ALTER TABLE %s ADD COLUMN %s %s' %
+            (table_name, column_name, column_type))
     except psycopg2.ProgrammingError, e:
         if 'already exists' not in str(e):
             raise e
     else:
         commit()
+
 
 def dropColumn(table_name, column_name):
     try:
@@ -137,6 +154,7 @@ def dropColumn(table_name, column_name):
             raise e
     else:
         commit()
+
 
 def getById(class_or_mapper, session, *ids):
     """Get objects and order by ``ids``.
@@ -196,6 +214,7 @@ def addGeometryColumn(table, srid, geom_type, schema='public', name='geom'):
     execute(add_geom_col % (schema, table, name, srid, geom_type))
     execute(create_gist_index % (table, name, schema, table, name))
     commit()
+
 
 init()
 

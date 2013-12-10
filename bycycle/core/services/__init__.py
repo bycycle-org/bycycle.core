@@ -1,6 +1,5 @@
 """Provides a base class for the byCycle core services."""
 from bycycle.core.model import regions
-from bycycle.core.model import db
 
 
 class Service(object):
@@ -28,8 +27,10 @@ class Service(object):
             return self._region
         except AttributeError:
             return None
+
     def _set_region(self, region):
         self._region = regions.getRegion(region)
+
     region = property(_get_region, _set_region)
 
     def query(self, q, **kwargs):

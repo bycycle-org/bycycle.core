@@ -16,8 +16,7 @@ The service recognizes these types of addresses:
 """
 import re
 from bycycle.core import services
-from bycycle.core.services.exceptions import ByCycleError, InputError
-from bycycle.core.model import db
+from bycycle.core.services.exceptions import InputError
 from bycycle.core.model import address, regions, states, sttypes, compass
 from bycycle.core.model.entities import StreetName, Place
 
@@ -279,7 +278,7 @@ Another possible reason is that you entered a street name without a number. For 
             # suffix
             suffix = tokens[-1]
             if (suffix in directions_atof or suffix in suffixes_atof or
-                suffix in directions_ftoa or suffix in suffixes_ftoa):
+                    suffix in directions_ftoa or suffix in suffixes_ftoa):
                 if suffix in directions_ftoa:
                     suffix = directions_ftoa[suffix]
                 elif suffix in suffixes_ftoa:
@@ -401,8 +400,8 @@ Another possible reason is that you entered a street name without a number. For 
         oRe = re.compile(sRe, re.I)
         streets = re.split(oRe, sAddr)
         if (len(streets) > 1 and
-            re.match(re_word_plus, streets[0]) and
-            re.match(re_word_plus, streets[1])):
+                re.match(re_word_plus, streets[0]) and
+                re.match(re_word_plus, streets[1])):
             return streets
         err = '"%s" could not be parsed as an intersection address' % sAddr
         raise ValueError(err)

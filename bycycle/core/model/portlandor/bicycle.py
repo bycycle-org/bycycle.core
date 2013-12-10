@@ -28,10 +28,9 @@ class TravelMode(tmode.TravelMode):
         tmode.TravelMode.__init__(self)
 
         global pct_slopes, mph_up, mph_down
-        pct_slopes = [p*.01 for p in
-                      (0,    0.65, 1.8, 3.7, 7,  12, 21,  500)]
-        mph_up     =  (12.5, 11,   9.5, 7.5, 5,  3,  2.5, 2.5)
-        mph_down   =  (12.5, 14,   17,  21,  26, 31, 32,  32)
+        pct_slopes = [p * .01 for p in (0, 0.65, 1.8, 3.7, 7,  12, 21,  500)]
+        mph_up = (12.5, 11, 9.5, 7.5, 5, 3, 2.5, 2.5)
+        mph_down = (12.5, 14, 17, 21, 26, 31, 32, 32)
 
         global edge_attrs_index, length_index, code_index, bikemode_index
         global abs_slp_index, up_frac_index, node_f_id_index
