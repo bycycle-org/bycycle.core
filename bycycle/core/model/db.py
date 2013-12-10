@@ -19,36 +19,26 @@ generic (i.e., not region-specific) database functions.
 """
 from __future__ import with_statement
 
-import os
-
 import psycopg2
 import sqlalchemy
 from sqlalchemy import MetaData, orm, create_engine
+from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import SQLAlchemyError
 
-from bycycle.core import model_path
 
-
-user = os.environ['USER']
 metadata = MetaData()
+
 
 def init(**connection_args):
     global engine, connection, cursor, Session
-    engine = create_engine(getConnectionUri(**connection_args))
+    engine = create_engine(make_url(**connection_args))
     connection = engine.raw_connection()
     cursor = connection.cursor()
     _Session = orm.sessionmaker(autoflush=True, autocommit=True, bind=engine)
     Session = orm.scoped_session(_Session)
 
-def getConnectionUri(db_type='postgres', user=user, password=None,
-                     host='', database=user):
-    """Get database connection URI (DSN)."""
-    if password is None:
-        pw_path = os.path.join(model_path, '.pw')
-        with file(pw_path) as pw_file:
-            password = pw_file.read().strip()
-    dburi = '%s://%s:%s@%s/%s' % (db_type, user, password, host, 'bycycle')
-    return dburi
+def make_url(drivername='postgresql', database='bycycle', **kwargs):
+    return URL(drivername, database=database, **kwargs)
 
 def connectMetadata(md=None):
     """Connect metadata to ``engine``. Use ``md`` if specified."""
