@@ -1,16 +1,3 @@
-###############################################################################
-# $Id$
-# Created ???
-#
-# A few miscellaneous utility functions.
-#
-# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
 def getMostFrequentInList(the_list):
     """Get the list item that occurs most often."""
     cnt = {}

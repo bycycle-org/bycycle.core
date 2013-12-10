@@ -1,16 +1,3 @@
-###############################################################################
-# $Id$
-# Created 2007-05-07.
-#
-# Abstract database entity classes.
-#
-# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
 from sqlalchemy import func, select, Column, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import CHAR, Integer

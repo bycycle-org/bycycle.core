@@ -1,16 +1,3 @@
-################################################################################
-# $Id$
-# Created 2006-??-??.
-#
-# Unit tests for geocode service.
-#
-# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-################################################################################
 import unittest
 from bycycle.core.util import meter
 from bycycle.core.model import StreetName

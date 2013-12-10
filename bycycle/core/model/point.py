@@ -1,18 +1,3 @@
-###############################################################################
-# $Id: address.py 836 2007-05-03 00:50:39Z bycycle $
-# Created 2007-05-07.
-#
-# Address classes.
-#
-# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
-
-
 class InitCoordinatesException(Exception):
     def __init__(self, msg):
         self.msg = msg

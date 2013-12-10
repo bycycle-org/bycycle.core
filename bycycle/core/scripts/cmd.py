@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-# $Id$
-# Created: 2006-09-26
-
 """Command-line interface to the byCycle library."""
 import sys
 

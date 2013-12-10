@@ -1,16 +1,3 @@
-###############################################################################
-# $Id: shp2pgsql.py 187 2006-08-16 01:26:11Z bycycle $
-# Created 2007-05-08
-#
-# Base regional data integrator.
-#
-# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
 """Provides a base class for integrating regional data.
 
 Notes:

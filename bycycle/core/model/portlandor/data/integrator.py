@@ -1,16 +1,3 @@
-###############################################################################
-# $Id: shp2pgsql.py 187 2006-08-16 01:26:11Z bycycle $
-# Created 2006-09-07
-#
-# Portland, OR, data integrator.
-#
-# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
 from bycycle.core.model.data import integrator
 from bycycle.core.model import portlandor
 from bycycle.core.model.portlandor import data

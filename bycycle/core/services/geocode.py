@@ -1,16 +1,3 @@
-###############################################################################
-# $Id$
-# Created ???.
-#
-# Geocode service.
-#
-# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-###############################################################################
 """Provides geocoding via the `query` method of the `Service` class.
 
 Geocoding is the process of determining a location on earth associated with a

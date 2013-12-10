@@ -1,16 +1,3 @@
-################################################################################
-# $Id$
-# Created 2004-12-28.
-#
-# Route service.
-#
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
-# All rights reserved.
-#
-# For terms of use and warranty details, please see the LICENSE file included
-# in the top level of this distribution. This software is provided AS IS with
-# NO WARRANTY OF ANY KIND.
-################################################################################
 """Provides route finding via the `query` method of the `Service` class.
 
 Currently routing can only be done between two points. Some things have been
