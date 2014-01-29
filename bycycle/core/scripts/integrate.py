@@ -85,7 +85,7 @@ def main(argv=None):
     args.no_prompt = args.no_prompt or (args.only is not None)
 
     start, end, only = args.start, args.end, args.only
-    if None in (start, end) and only is not None:
+    if only is not None and (start is not None or end is not None):
         raise parser.error(
             '--only not allowed with --start or --end')
 
