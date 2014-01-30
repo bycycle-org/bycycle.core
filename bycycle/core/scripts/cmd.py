@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """Command-line interface to the byCycle library."""
+import importlib
 import sys
 
+import bycycle.core.services
 from bycycle.core.model import regions
 from bycycle.core.util import meter
 
-
-import_path = 'bycycle.core.services.%s'
 
 services = {
     'n': 'normaddr',
@@ -27,12 +27,9 @@ def main(argv):
     except IndexError:
         addError('No service specified')
     else:
-        service = services[service]
-        path = import_path % service
-        try:
-            service_module = __import__(path, globals(), locals(), [''])
-        except ImportError:
-            raise
+        service = services.get(service, service)
+        service_module = importlib.import_module(
+            '.' + service, 'bycycle.core.services')
 
     try:
         q = argv[2]
@@ -58,8 +55,8 @@ def main(argv):
     timer.start()
     service = service_module.Service(region=region)
     response = service.query(q)
-    print response
-    print '%.2f seconds' % timer.stop()
+    print(response)
+    print('%.2f seconds' % timer.stop())
 
 
 def addError(e):
@@ -73,12 +70,13 @@ def checkForErrors():
 
 
 def usage(msgs=[]):
-    print 'Usage: bycycle.py ' \
-          '<normaddr|n|geocode|g|route|r> ' \
-          '<query|address|intersection> ' \
-          '[<region>]'
+    print(
+        'Usage: bycycle.py '
+        '<normaddr|n|geocode|g|route|r> '
+        '<query|address|intersection> '
+        '[<region>]')
     for msg in msgs:
-        print '- %s' % msg
+        print('- %s' % msg)
 
 
 if __name__ == '__main__':

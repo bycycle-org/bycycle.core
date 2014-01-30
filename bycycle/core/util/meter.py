@@ -28,7 +28,7 @@ class Meter(object):
 
     def startTimer(self):
         if self.start_time:
-            print "Progress Meter timer already started."
+            print("Progress Meter timer already started.")
             return
         self.start_time = time.time()
 
@@ -91,7 +91,7 @@ class Meter(object):
         if self.warned:
             return
         self.warned = True
-        print "Progress Meter was not initialized."
+        print("Progress Meter was not initialized.")
 
 
 class Timer(object):

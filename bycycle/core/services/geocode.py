@@ -146,7 +146,7 @@ class Service(services.Service):
         elif isinstance(oAddr, IntersectionAddress):
             try:
                 geocodes = self.getIntersectionGeocodes(oAddr)
-            except AddressNotFoundError, _not_found_exc:
+            except AddressNotFoundError as _not_found_exc:
                 # Couldn't find something like "48th & Main" or "Main & 48th"
                 # Try "4800 Main" instead
                 try:
@@ -166,7 +166,7 @@ class Service(services.Service):
                                                 street_name=street_name,
                                                 place=oAddr.place)
                     geocodes = self.getPostalGeocodes(postal_addr)
-                except (NameError, UnboundLocalError, AddressNotFoundError), e:
+                except (NameError, UnboundLocalError, AddressNotFoundError) as e:
                     # Neither of the cross streets had a number street name OR
                     # the faked postal address couldn't be found.
                     raise _not_found_exc
@@ -201,25 +201,22 @@ class Service(services.Service):
         geocodes = []
         num = oAddr.number
         q = db.Session.query(Edge)
+        q = q.filter(Edge.addr_min != None, Edge.addr_max != None)
+        q = q.filter(Edge.addr_min <= num, num <= Edge.addr_max)
 
-        clause = [or_(
-            and_(num >= func.least(Edge.addr_f_l, Edge.addr_f_r),
-                 num <= func.greatest(Edge.addr_t_l, Edge.addr_t_r)),
-            and_(num >= func.least(Edge.addr_t_l, Edge.addr_t_r),
-                 num <= func.greatest(Edge.addr_f_l, Edge.addr_f_r))
-        )]
-
-        try:
+        if hasattr(oAddr, 'network_id'):
             # Try to look up edge by network ID first
-            network_id = oAddr.network_id
-        except AttributeError:
-            # No network ID, so look up address by street name and place
-            self.append_street_name_where_clause(clause, oAddr.street_name)
-            self.append_place_where_clause(clause, oAddr.place)
-            edges = q.filter(and_(*clause)).all()
+            q = q.filter_by(id=oAddr.network_id)
         else:
-            clause.append(Edge.id == network_id)
-            edges = q.filter(and_(*clause)).all()
+            # No network ID, so look up address by street name and place
+            filter = self.filter_by_street_name(oAddr.street_name)
+            if filter is not None:
+                q = q.filter(filter)
+            filter = self.filter_by_place(oAddr.place)
+            if filter is not None:
+                q = q.filter(filter)
+
+        edges = q.all()
 
         if not edges:
             raise AddressNotFoundError(address=oAddr, region=self.region)
@@ -242,29 +239,50 @@ class Service(services.Service):
         database.
 
         """
-        def get_node_ids(street_name, place):
-            """Get `set` of node IDs for ``street_name`` and ``place``."""
-            ids = set()
-            select_ = select([Edge.node_f_id, Edge.node_t_id], bind=db.engine)
-            self.append_street_name_where_clause(select_, street_name)
-            self.append_place_where_clause(select_, place)
-            result = select_.execute()
-            map(ids.update, ((r.node_f_id, r.node_t_id) for r in result))
-            return ids
+        def raise_not_found():
+            raise AddressNotFoundError(address=oAddr, region=self.region)
 
-        node_ids = get_node_ids(oAddr.street_name1, oAddr.place1)
-        if node_ids:
-            other_ids = get_node_ids(oAddr.street_name2, oAddr.place2)
-            node_ids = node_ids & other_ids
+        q = db.Session.query(Edge)
+        filter = self.filter_by_street_name(oAddr.street_name1)
+        if filter is not None:
+            q = q.filter(filter)
+        filter = self.filter_by_place(oAddr.place1)
+        if filter is not None:
+            q = q.filter(filter)
 
+        edges1 = q.all()
+        if not edges1:
+            raise_not_found()
+
+        node_ids1 = set()
+        for e in edges1:
+            node_ids1.add(e.node_f_id)
+            node_ids1.add(e.node_t_id)
+
+        q = db.Session.query(Edge)
+        filter = self.filter_by_street_name(oAddr.street_name2)
+        if filter is not None:
+            q = q.filter(filter)
+        filter = self.filter_by_place(oAddr.place2)
+        if filter is not None:
+            q = q.filter(filter)
+
+        edges2 = q.all()
+        if not edges2:
+            raise_not_found()
+
+        node_ids2 = set()
+        for e in edges2:
+            node_ids2.add(e.node_f_id)
+            node_ids2.add(e.node_t_id)
+
+        node_ids = node_ids1 & node_ids2
         if not node_ids:
-            raise AddressNotFoundError(address=oAddr, region=self.region)
+            raise_not_found()
 
-        # Get node rows matching common node IDs and map to `Node` objects
-        nodes = Node.get(node_ids)
-
+        nodes = db.Session.query(Node).filter(Node.id.in_(node_ids))
         if not nodes:
-            raise AddressNotFoundError(address=oAddr, region=self.region)
+            raise_not_found()
 
         # Create and return `IntersectionGeocode`s
         geocodes = []
@@ -368,64 +386,40 @@ class Service(services.Service):
 
     ### Utilities
 
-    def get_street_name_ids(self, street_name):
-        """Get a WHERE clause for ``street_name``."""
-        clause = []
-        for name in ('prefix', 'name', 'sttype', 'suffix'):
-            val = getattr(street_name, name)
-            if val:
-                clause.append(getattr(StreetName, name) == val)
-        if clause:
-            result = select(
-                [StreetName.id], and_(*clause), bind=db.engine).execute()
-            return [r.id for r in result]
-        return []
-
-    def append_street_name_where_clause(self, append_to, street_name):
+    def filter_by_street_name(self, street_name):
         if street_name:
-            st_name_ids = self.get_street_name_ids(street_name)
-            if st_name_ids:
-                clause = Edge.street_name_id.in_(st_name_ids)
-            else:
-                clause = 'NULL'
-            if isinstance(append_to, (list, tuple)):
-                append_to.append(clause)
-            else:
-                append_to.append_whereclause(clause)
+            clauses = []
 
-    def get_place_ids(self, place):
-        """Get ``Place`` ``place``."""
-        clause = []
-        if place.city_name:
-            r = select(
-                [City.id], (City.city == place.city_name),
-                bind=db.engine).execute()
-            city_id = r.fetchone().id if r.rowcount else None
-            clause.append(Place.city_id == city_id)
-        if place.state_code:
-            r = select(
-                [State.id], (State.code == place.state_code),
-                bind=db.engine).execute()
-            state_id = r.fetchone().id if r.rowcount else None
-            clause.append(Place.state_id == state_id)
-        if place.zip_code:
-            clause.append(Place.zip_code == place.zip_code)
-        if clause:
-            result = select([Place.id], and_(*clause), bind=db.engine).execute()
-            return [r.id for r in result]
-        return []
+            for name in ('prefix', 'name', 'sttype', 'suffix'):
+                val = getattr(street_name, name)
+                if val:
+                    clauses.append(getattr(StreetName, name) == val)
 
-    def append_place_where_clause(self, append_to, place):
+            if clauses:
+                clauses = [StreetName.id == Edge.street_name_id] + clauses
+                clause = exists([StreetName.id]).where(and_(*clauses))
+                return clause
+
+    def filter_by_place(self, place):
         if place:
-            place_ids = self.get_place_ids(place)
-            if place_ids:
-                clause = or_(
-                    Edge.place_l_id.in_(place_ids),
-                    Edge.place_r_id.in_(place_ids)
-                )
-            else:
-                clause = 'NULL'
-            if isinstance(append_to, (list, tuple)):
-                append_to.append(clause)
-            else:
-                append_to.append_whereclause(clause)
+            clauses = []
+
+            if place.city_name:
+                clauses.append(Place.city_id == City.id)
+                clauses.append(City.city == place.city_name)
+            if place.state_code:
+                clauses.append(Place.state_id == State.id)
+                clauses.append(State.code == place.state_code)
+            if place.zip_code:
+                clauses.append(Place.zip_code == place.zip_code)
+
+            if clauses:
+                clauses = [or_(
+                    Place.id == Edge.place_l_id,
+                    Place.id == Edge.place_r_id
+                )] + clauses
+                clause = exists([Place.id]).where(and_(*clauses))
+                return clause
+
+
+from sqlalchemy.sql import exists

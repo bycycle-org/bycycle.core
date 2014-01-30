@@ -101,7 +101,7 @@ class TestPortlandOR(unittest.TestCase):
         q = db.Session.query(StreetName)
         q = q.filter_by(prefix='n').filter_by(name='alberta')
         street_name = q.filter_by(sttype='st').first()
-        self.assert_(street_name is not None)
+        self.assertIsNotNone(street_name)
         street_name_id = street_name.id
 
         # Get edge matching 633 N Alberta St
@@ -109,7 +109,7 @@ class TestPortlandOR(unittest.TestCase):
         q = db.Session.query(Edge)
         q = q.filter(Edge.addr_f_l <= num).filter(Edge.addr_t_l >= num)
         edge = q.filter_by(street_name_id=street_name_id).first()
-        self.assert_(edge is not None)
+        self.assertIsNotNone(edge)
 
         q = '%s-%s' % (num, edge.id)
         oAddr = self._query(q, region='portlandor')

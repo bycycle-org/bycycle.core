@@ -218,9 +218,9 @@ class Service(services.Service):
         for w in waypoints:
             try:
                 geocode_ = geocode_service.query(w, **self.query_kwargs)
-            except geocode.AddressNotFoundError, e:
+            except geocode.AddressNotFoundError:
                 addresses_not_found.append(w)
-            except geocode.MultipleMatchingAddressesError, e:
+            except geocode.MultipleMatchingAddressesError as e:
                 multiple_match_found = True
                 choices.append(e.geocodes)
             else:

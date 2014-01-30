@@ -43,7 +43,7 @@ class InputError(ByCycleError):
             Either a single error description or a list of such descriptions.
 
         """
-        if isinstance(description, basestring):
+        if isinstance(description, str):
             description = [description]
         if description is not None:
             # save the original error list

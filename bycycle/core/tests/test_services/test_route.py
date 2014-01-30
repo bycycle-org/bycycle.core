@@ -20,7 +20,7 @@ class Test_A_Route(unittest.TestCase):
         self.assertIsInstance(route, Route)
         d = route.directions
         # KLUDGE: First turn should be EAST
-        expected_turns = ['east', 'left', 'left', 'right']
+        expected_turns = ['west', 'right']
         d_turns = [d[i]['turn'] for i in range(len(d))]
         self.assertEqual(d_turns, expected_turns)
 
