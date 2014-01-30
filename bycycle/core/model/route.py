@@ -64,15 +64,12 @@ class Route(Entity):
     def __str__(self):
         directions = []
         for d in self.directions:
-            dbm = d['bikemode']
-            bm = [', '.join([[b, '-'][b is 'n'] for b in dbm]), ''][not dbm]
-            directions.append('%s on %s toward %s -- %s %s [%s]' % (
+            directions.append('%s on %s toward %s -- %s %s' % (
                 d['turn'],
                 d['street'],
                 d['toward'],
                 '%.2f' % (d['distance']['miles']),
                 'miles',
-                bm,
             ))
         directions = '\n'.join([
             '%s%s. %s' % (['', ' '][i < 10], i, d)
@@ -80,8 +77,8 @@ class Route(Entity):
             in enumerate(directions)
         ])
         s = [
-            self.start['geocode'],
-            self.end['geocode'],
+            self.start,
+            self.end,
             'Distance: %.2f' % (self.distance['miles']),
             directions,
         ]
