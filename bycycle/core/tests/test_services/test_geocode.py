@@ -16,12 +16,12 @@ class TestPortlandOR(unittest.TestCase):
 
     def _query(self, q, **kwargs):
         if not quiet:
-            print '\n*****', q
+            print('\n*****', q)
             timer.start()
         _geocode = self.service.query(q, **kwargs)
         self.assertIsInstance(_geocode, Geocode)
         if not quiet:
-            print timer.stop(), 'seconds\n'
+            print(timer.stop(), 'seconds\n')
         return _geocode
 
     def _queryRaises(self, q, exc, **kwargs):
@@ -36,7 +36,7 @@ class TestPortlandOR(unittest.TestCase):
         q = db.Session.query(StreetName)
         q = q.filter_by(prefix='n').filter_by(name='alberta')
         street_name = q.filter_by(sttype='st').first()
-        self.assert_(street_name is not None)
+        self.assertIsNotNone(street_name)
         street_name_id = street_name.id
 
         # Get edge matching 633 N Alberta St
@@ -44,7 +44,7 @@ class TestPortlandOR(unittest.TestCase):
         q = db.Session.query(Edge)
         q = q.filter(Edge.addr_f_l <= num).filter(Edge.addr_t_l >= num)
         edge = q.filter_by(street_name_id=street_name_id).first()
-        self.assert_(edge is not None)
+        self.assertIsNotNone(edge)
 
         q = '%s-%s' % (num, edge.id)
         geocode = self._query(q)
@@ -73,8 +73,8 @@ class TestPortlandOR(unittest.TestCase):
         self._queryRaises(q, MultipleMatchingAddressesError)
         try:
             self._query(q)
-        except MultipleMatchingAddressesError, e:
-            self.assert_(len(e.geocodes) == 10)
+        except MultipleMatchingAddressesError as e:
+            self.assertEqual(len(e.geocodes), 10)
 
     def test_IntersectionAddress_NoPlace(self):
         q = '44th and stark'
@@ -147,14 +147,14 @@ class TestPortlandOR(unittest.TestCase):
         self._queryRaises(q, MultipleMatchingAddressesError)
         try:
             self._query(q)
-        except MultipleMatchingAddressesError, e:
-            self.assert_(len(e.geocodes) == 2)
+        except MultipleMatchingAddressesError as e:
+            self.assertEqual(len(e.geocodes), 2)
         q = '300 main'
         self._queryRaises(q, MultipleMatchingAddressesError)
         try:
             self._query(q)
-        except MultipleMatchingAddressesError, e:
-            self.assert_(len(e.geocodes) == 8)
+        except MultipleMatchingAddressesError as e:
+            self.assertEqual(len(e.geocodes), 8)
 
     def test_PostalAddress_NoCity(self):
         q = '4408 se stark, or'
@@ -189,8 +189,8 @@ class Test_An_Existing_Address(unittest.TestCase):
     def test_should_have_specific_coordinates(self):
         q = '1806 SE 52nd Ave, Portland'
         geocode = Service(region='portlandor').query(q)
-        self.assert_(int(geocode.xy.x) == 7661523)
-        self.assert_(int(geocode.xy.y) == 679077)
+        self.assertEqual(int(geocode.xy.x), 7661523)
+        self.assertEqual(int(geocode.xy.y), 679077)
 
 
 if __name__ == '__main__':

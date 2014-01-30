@@ -126,7 +126,7 @@ class Service(services.Service):
             self._adjustName(stname1, sttype1)
             self._adjustName(stname2, sttype2)
             return address.IntersectionAddress(
-                stname1, place1, stname2, place2
+                stname1, place1, stname2, place2 or place1
             )
 
         # Postal Address?

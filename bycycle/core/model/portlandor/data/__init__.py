@@ -5,7 +5,7 @@ from sqlalchemy.types import String, Integer, Float, Numeric
 from bycycle.core.model.entities import Base
 from bycycle.core.model.data.sqltypes import MULTILINESTRING
 
-from cities import cities_atof
+from .cities import cities_atof
 
 __all__ = [
     'title', 'slug', 'SRID', 'units', 'earth_circumference', 'block_length',
@@ -52,7 +52,7 @@ class Raw(Base):
     gid = Column(Integer, primary_key=True, key='id')
 
     # To edge table (core)
-    the_geom = Column(MULTILINESTRING(SRID), key='geom')
+    geom = Column(MULTILINESTRING(SRID))
     n0 = Column(Integer, key='node_f_id')
     n1 = Column(Integer, key='node_t_id')
     leftadd1 = Column(Integer, key='addr_f_l')

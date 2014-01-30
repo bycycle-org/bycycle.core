@@ -1,3 +1,5 @@
+from binascii import unhexlify
+
 from sqlalchemy.types import UserDefinedType
 
 from shapely import wkb
@@ -32,7 +34,8 @@ class Geometry(UserDefinedType):
             if value is None:
                 return None
             else:
-                return wkb.loads(value.decode('hex'))
+                value = unhexlify(value)
+                return wkb.loads(value)
         return process
 
 

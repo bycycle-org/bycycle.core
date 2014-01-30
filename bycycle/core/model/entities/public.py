@@ -5,6 +5,8 @@ from sqlalchemy import Column, ForeignKey, func, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import Integer, String, CHAR, Float
 
+from tangled.util import load_object
+
 from dijkstar import Graph
 from shapely import wkt
 import pyproj
@@ -154,18 +156,18 @@ class Region(Base):
         timer = Timer()
 
         def took():
-            print 'Took %s seconds.' % timer.stop()
+            print('Took %s seconds.' % timer.stop())
 
         timer.start()
-        print 'Getting edge IDs...'
+        print('Getting edge IDs...')
         q = db.Session.query(Edge.id)
         ids = [i for (i,) in q.values(Edge.id)]
         num_edges = len(ids)
         took()
 
         timer.start()
-        print 'Total number of edges in region: %s' % num_edges
-        print 'Creating adjacency matrix...'
+        print('Total number of edges in region: %s' % num_edges)
+        print('Creating adjacency matrix...')
         matrix = Graph()
         meter = Meter(num_items=num_edges, start_now=True)
         meter_i = 1
@@ -204,7 +206,7 @@ class Region(Base):
         took()
 
         timer.start()
-        print 'Saving adjacency matrix...'
+        print('Saving adjacency matrix...')
         self.matrix = matrix
         took()
 
@@ -212,14 +214,10 @@ class Region(Base):
     def module(self):
         module = getattr(self, '_module', None)
         if module is None:
-            path = 'bycycle.core.model.%s' % self.slug
-            exec 'from %s import Node as _RegionNode' % path
-            exec 'from %s import Edge as _RegionEdge' % path
-
-            class _Module(object):
-                pass
-
-            module = _Module()
+            module_name = 'bycycle.core.model.{0.slug}'.format(self)
+            _RegionNode = load_object(module_name, 'Node')
+            _RegionEdge = load_object(module_name, 'Edge')
+            module = type('_Module', (), {})
             module.Node, module.Edge = _RegionNode, _RegionEdge
             self._module = module
         return module
@@ -303,7 +301,7 @@ class StreetName(Base):
             name = name.lower()
         return name
 
-    def __nonzero__(self):
+    def __bool__(self):
         """A `StreetName` must have at least a `name`."""
         return bool(self.name)
 
@@ -343,7 +341,7 @@ class City(Base):
             'city': str(self)
         }
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.city)
 
 
@@ -368,7 +366,7 @@ class State(Base):
             'state': str(self.state or '[No State]').title()
         }
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.code or self.state)
 
 
@@ -425,5 +423,5 @@ class Place(Base):
             'zip_code': str(self.zip_code or None)
         }
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.city or self.state or (self.zip_code is not None))

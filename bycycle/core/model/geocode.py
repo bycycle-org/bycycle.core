@@ -1,5 +1,5 @@
 """Geocode classes."""
-from urllib import quote_plus
+from urllib.parse import quote_plus
 
 from shapely.geometry import Point, mapping
 

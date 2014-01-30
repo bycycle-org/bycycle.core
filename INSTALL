@@ -30,17 +30,9 @@ PostGIS 1.5
 -----------
 postgis postgresql-9.1-postgis
 
-Python 2.7
+Python 3.3
 ----------
-python python-dev
-
-Python Packages
-~~~~~~~~~~~~~~~
-
-First, install the latest version of Distribute by following the
-instructions here: http://pypi.python.org/pypi/distribute.
-
-Then easy_install virtualenv.
+python3
 
 PostgreSQL Configuration
 ========================

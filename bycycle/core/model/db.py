@@ -110,7 +110,7 @@ def dropTable(table, cascade=False):
                 'DROP TABLE %s.%s CASCADE' %
                 ((table.schema or 'public'), table.name))
             commit()
-    except (psycopg2.ProgrammingError, SQLAlchemyError), e:
+    except (psycopg2.ProgrammingError, SQLAlchemyError) as e:
         if 'does not exist' in str(e):
             rollback()
         else:
@@ -127,7 +127,7 @@ def deleteAllFromTable(table):
     """Delete all records from ``table``."""
     try:
         table.delete().execute()
-    except (psycopg2.ProgrammingError, SQLAlchemyError), e:
+    except (psycopg2.ProgrammingError, SQLAlchemyError) as e:
         if 'does not exist' in str(e):
             rollback()
         else:
@@ -139,7 +139,7 @@ def addColumn(table_name, column_name, column_type):
         execute(
             'ALTER TABLE %s ADD COLUMN %s %s' %
             (table_name, column_name, column_type))
-    except psycopg2.ProgrammingError, e:
+    except psycopg2.ProgrammingErroras as e:
         if 'already exists' not in str(e):
             raise e
     else:
@@ -149,7 +149,7 @@ def addColumn(table_name, column_name, column_type):
 def dropColumn(table_name, column_name):
     try:
         execute('ALTER TABLE %s DROP COLUMN %s' % (table_name, column_name))
-    except psycopg2.ProgrammingError, e:
+    except psycopg2.ProgrammingErroras as e:
         if 'already exists' not in str(e):
             raise e
     else:
@@ -205,7 +205,7 @@ def addGeometryColumn(table, srid, geom_type, schema='public', name='geom'):
     add_geom_col = "SELECT AddGeometryColumn('%s', '%s', '%s', %s, '%s', 2)"
     create_gist_index = ('CREATE INDEX "%s_%s_gist"'
                          'ON "%s"."%s"'
-                         'USING GIST ("%s" gist_geometry_ops)')
+                         'USING GIST ("%s")')
     geom_type = geom_type.upper()
     try:
         execute(drop_col % (schema, table, name))
@@ -225,9 +225,9 @@ if __name__ == '__main__':
     try:
         action = sys.argv[1]
     except IndexError:
-        print 'No action'
+        print('No action')
     else:
-        print 'Action: %s' % action
+        print('Action: %s' % action)
         try:
             args = sys.argv[2:]
         except IndexError:

@@ -86,6 +86,8 @@ class Edge(object):
     __tablename__ = 'edges'
 
     id = Column(Integer, primary_key=True)
+    addr_min = Column(Integer)
+    addr_max = Column(Integer)
     addr_f_l = Column(Integer)
     addr_f_r = Column(Integer)
     addr_t_l = Column(Integer)
@@ -174,24 +176,22 @@ class Edge(object):
 
         # Determine location in [0, 1] of num along edge
         # Note: addrs might be NULL/None
-        addrs = (self.addr_f_l, self.addr_f_r, self.addr_t_l, self.addr_t_r)
-        min_addr = min(addrs)
-        max_addr = max(addrs)
-        if not num or None in (min_addr, max_addr):
+        if (not num or None in (self.addr_min, self.addr_max) or
+                num < self.addr_min or num > self.addr_max):
             location = .5
         else:
-            if min_addr == max_addr:
+            if self.addr_min == self.addr_max:
                 location = .5
             else:
-                edge_len = max_addr - min_addr
-                dist_from_min_addr = num - min_addr
-                location = float(dist_from_min_addr) / edge_len
+                edge_len = self.addr_max - self.addr_min
+                dist_from_min_addr = num - self.addr_min
+                location = dist_from_min_addr / edge_len
 
         # Function to get interpolated point
         c = self.__table__.c
-        f = func.line_interpolate_point(c.geom, location)
+        f = func.st_line_interpolate_point(c.geom, location)
         # Function to get WKT version of lat/long
-        f = func.astext(f)
+        f = func.st_astext(f)
 
         # Query DB and get WKT POINT
         select_ = select([f.label('wkt_point')], c.id == self.id, bind=engine)

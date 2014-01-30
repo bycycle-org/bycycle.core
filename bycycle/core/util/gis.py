@@ -206,7 +206,7 @@ class Point(object):
                                              x_y[0])
                     except (ValueError, TypeError):
                         raise ValueError(err % (tmp_x_y.x, tmp_x_y.y))
-                elif isinstance(x_y, basestring):
+                elif isinstance(x_y, str):
                     try:
                         # See if x_y is string that will evaluate as 2-tuple
                         tmp_x_y = eval(x_y)

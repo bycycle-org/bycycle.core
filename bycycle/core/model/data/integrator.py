@@ -58,17 +58,18 @@ class Integrator(object):
         self.no_prompt = no_prompt
 
     def run(self, start=0, end=None, no_prompt=False, only=None):
+        start = start or 0
         end = (len(self.actions) - 1) if end is None else end
         if only is not None:
             start = only
             end = only
             no_prompt = True
         do_prompt = not no_prompt
-        print
+        print()
         for i, action in enumerate(self.actions):
             msg = action.__doc__
             if i < start or i > end:
-                print '%s: Skipping "%s"' % (i, msg)
+                print('%s: Skipping "%s"' % (i, msg))
             else:
                 if do_prompt:
                     # Ask user, "Do you want do this action?"
@@ -76,22 +77,22 @@ class Integrator(object):
                     response = self.prompt(msg=msg, prefix=i)
                     self.overall_timer.unpause()
                 else:
-                    print '%s: %s..' % (i, msg)
+                    print('%s: %s..' % (i, msg))
                 if no_prompt or response:
                     # Yes, do this action
                     self.timer.start()
                     try:
                         action(self)
-                    except Exception, e:
-                        print ('\n*** Errors encountered in action %s.' % i)
+                    except Exception as e:
+                        print('\n*** Errors encountered in action %s.' % i)
                         raise
-                    print 'Took %s' % self.getTimeWithUnits(self.timer.stop())
+                    print('Took %s' % self.getTimeWithUnits(self.timer.stop()))
                 else:
                     # No, don't do this action
-                    print 'Skipped'
-            print
+                    print('Skipped')
+            print()
         overall_time = self.overall_timer.stop()
-        print 'Total time: %s' % self.getTimeWithUnits(overall_time)
+        print('Total time: %s' % self.getTimeWithUnits(overall_time))
 
     # Actions the user may or may not want to take ----------------------------
 
@@ -140,7 +141,7 @@ class Integrator(object):
             region = public.Region.get_by_slug(self.region_key)
         except sqlalchemy.orm.exc.NoResultFound:
             pass
-        except sqlalchemy.exc.ProgrammingError, e:
+        except sqlalchemy.exc.ProgrammingError as e:
             if not 'does not exist' in str(e):
                 raise
         else:
@@ -152,7 +153,7 @@ class Integrator(object):
         public.Region.__table__.create(checkfirst=True)
         try:
             region = public.Region.get_by_slug(self.region_key)
-        except sqlalchemy.orm.exc.NoResultFound, e:
+        except sqlalchemy.orm.exc.NoResultFound as e:
             self.echo('Region %s not found.' % self.region_key)
             region = None
         if region is None:
@@ -324,10 +325,16 @@ class Integrator(object):
 
         self.echo('Getting columns from raw table...')
         c = self.region_data_module.Raw.__table__.c
-        raw_records_f = self.get_records(
-            [c.node_f_id, func.startPoint(c.geom)], distinct=False)
-        raw_records_t = self.get_records(
-            [c.node_t_id, func.endPoint(c.geom)], distinct=False)
+
+        raw_records_f = self.get_records([
+            c.node_f_id,
+            func.ST_StartPoint(func.ST_GeometryN(c.geom, 1))
+        ], distinct=False)
+
+        raw_records_t = self.get_records([
+            c.node_t_id,
+            func.ST_EndPoint(func.ST_GeometryN(c.geom, 1))
+        ], distinct=False)
 
         records = []
         seen_nodes = set()
@@ -409,8 +416,10 @@ class Integrator(object):
         node_map = dict([(nr.permanent_id, nr.id) for nr in node_records])
         self.echo('Transferring edges...')
         for r in raw_records:
-            even_side = self.getEvenSide(
-                r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r)
+            addrs = r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r
+            even_side = self.getEvenSide(*addrs)
+            addr_min = min(addrs)
+            addr_max = max(addrs)
             node_f_id = node_map[r.node_f_id]
             node_t_id = node_map[r.node_t_id]
             sttype = street_types_ftoa.get(r.sttype, r.sttype)
@@ -424,6 +433,8 @@ class Integrator(object):
             place_l_id = places[(city_l, state_l, zl)]
             place_r_id = places[(city_r, state_r, zr)]
             record = dict(
+                addr_min=addr_min or None,
+                addr_max=addr_max or None,
                 addr_f_l=r.addr_f_l or None,
                 addr_f_r=r.addr_f_r or None,
                 addr_t_l=r.addr_t_l or None,
@@ -466,7 +477,7 @@ class Integrator(object):
     #-- Utility methods --#
     def system(self, cmd):
         """Run the command specified by ``cmd``."""
-        print cmd
+        print(cmd)
         exit_code = os.system(cmd)
         if exit_code:
             sys.exit()
@@ -475,7 +486,7 @@ class Integrator(object):
         if self.no_prompt:
             return False
         self.timer.pause()
-        resp = raw_input(msg.strip() + ' ')
+        resp = input(msg.strip() + ' ')
         self.timer.unpause()
         return resp
 
@@ -515,7 +526,7 @@ class Integrator(object):
             default_is_yes = True
         default_is_no = not default_is_yes
         # Print prompt and wait for response
-        resp = raw_input(
+        resp = input(
             '%s%s? %s ' % (p, msg.rstrip('.'), choices)).strip().lower()
         # Interpret and return response
         if not resp:
@@ -527,7 +538,7 @@ class Integrator(object):
             if resp[0] == 'y':
                 return True
             elif resp[0] in ('q', 'x') or resp == 'exit':
-                print '\n***Aborted at action %s.***' % prefix
+                print('\n***Aborted at action %s.***' % prefix)
                 sys.exit(0)
             else:
                 return False
@@ -622,7 +633,7 @@ class Integrator(object):
 
     def echo(self, *args):
         for msg in args:
-            print '    - %s' % msg
+            print('    - %s' % msg)
 
     #-- Default actions and the order in which they will be run --#
     actions = [

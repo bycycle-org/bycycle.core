@@ -1,3 +1,6 @@
+import re
+
+
 class InitCoordinatesException(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -69,9 +72,9 @@ class Point(object):
                 self._initCoordinatesFromWKTString,
                 self._initCoordinatesFromSequence,
             )
-            for m in methods:
+            for meth in methods:
                 try:
-                    x, y = m(point)
+                    x, y = meth(point)
                 except InitCoordinatesException:
                     # Catch any "expected" exceptions--the _initCoordinates*
                     # methods catch various expected exceptions and raise
@@ -119,16 +122,17 @@ class Point(object):
             return x, y
 
     def _initCoordinatesFromWKTString(self, wkt):
-        try:
+        if isinstance(wkt, str):
             wkt = wkt.strip().upper()
-            wkt = wkt.lstrip('POINT').strip()
-            wkt = wkt.lstrip('(')
-            wkt = wkt.rstrip(')')
-            return wkt.split()
-        except AttributeError:
-            raise InitCoordinatesException(
-                '"%s" does not appear to be a WKT point.' % str(wkt)
-            )
+            if wkt.startswith('POINT'):
+                wkt = wkt[5:].strip()
+                if wkt.startswith('('):
+                    wkt = wkt.lstrip('(')
+                    if wkt.endswith(')'):
+                        wkt = wkt.rstrip(')')
+                        return wkt.split()
+        raise InitCoordinatesException(
+            '"%s" does not appear to be a WKT point.' % str(wkt))
 
     def _initCoordinatesFromObject(self, obj):
         try:
@@ -167,55 +171,32 @@ class Point(object):
 
         """
         err = '"%s" is not a keyword-args style string.' % str(point)
-        # Normalize point string
-        try:
-            point = ' '.join(point.strip().split())
-        except AttributeError:
+
+        if not isinstance(point, str):
             raise InitCoordinatesException(err)
-        puncs = ((' = ', '= ', ' ='), (' : ', ': ', ' :'), (' , ', ', ', ' ,'))
-        norm_puncs = ('=', ':', ',')
-        for ps, n in zip(puncs, norm_puncs):
-            for p in ps:
-                # Replace unnormalized puncuation, p, with normalized
-                # punctuation, n.
-                point = point.replace(p, n)
 
-        # x and y will be either scalars or strings like "x=-123"
-        try:
-            x, y = point.split(',')
-        except ValueError:
-            x, y = point.split(' ')
+        point = point.strip()
 
-        # Get x and y labels, if any
-        try:
-            x_label, x = x.split('=')
-        except ValueError:
-            try:
-                x_label, x = x.split(':')
-            except ValueError:
-                # Assume positional, no label
-                x_label = 'x'
-
-        try:
-            y_label, y = y.split('=')
-        except ValueError:
-            try:
-                y_label, y = y.split(':')
-            except ValueError:
-                # Assume positional, no label
-                y_label = 'y'
+        pattern = (
+            r'(?P<x_label>[a-z]+)\s*(=|:)\s*(?P<x>-?\d+(?:\.\d+)?)'
+            r'\s*,?\s*'
+            r'(?P<y_label>[a-z]+)\s*(=|:)\s*(?P<y>-?\d+(?:\.\d+)?)'
+        )
 
         x_labels = ('x', 'lng', 'lon', 'long', 'longitude')
         y_labels = ('y', 'lat', 'latitude')
 
-        # Possibly swap X and Y if labels were given and
-        if (x_label in y_labels) or (y_label in x_labels):
-            x, y = y, x
-
-        try:
+        match = re.match(pattern, point)
+        if match:
+            x_label = match.group('x_label')
+            x = float(match.group('x'))
+            y_label = match.group('y_label')
+            y = float(match.group('y'))
+            if x_label in y_labels and y_label in x_labels:
+                x, y = y, x
             return x, y
-        except NameError:
-            raise InitCoordinatesException(err)
+
+        raise InitCoordinatesException(err)
 
     def __str__(self):
         """Return a WKT string for this point."""
