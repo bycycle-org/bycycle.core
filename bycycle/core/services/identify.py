@@ -44,34 +44,20 @@ class Service(services.Service):
         input_srid = input_srid or region.srid
         earth_circumference = region.earth_circumference
         Entity = getattr(region.module, layer)
-        c = Entity.__table__.c
         # Get "well known text" version of input ``point``
         wkt = str(point)
         # Transform WKT point to DB geometry object
-        transform = func.GeomFromText(wkt, input_srid)
+        geom = func.ST_GeomFromText(wkt, input_srid)
         # Function to convert input ``point`` to native geometry
         if input_srid != region.srid:
-            transform = func.transform(transform, region.srid)
+            geom = func.st_transform(geom, region.srid)
         # Function to get the distance between input point and table points
-        distance = func.distance(transform, c.geom)
-        # This is what we're SELECTing--all columns in the layer plus the
-        # distance from the input point to points in the nodes table (along
-        # with the node ID and geom).
-        cols = c + [distance.label('distance')]
-        # Limit the search to within `expand_dist` feet of the input point.
-        # Keep trying until we find a match or until `expand_dist` is
-        # larger than half the circumference of the earth.
-        expand_dist = region.block_length
-        overlaps = c.geom.op('&&')  # geometry A overlaps geom B operator
-        expand = func.expand  # geometry bounds expanding function
-        db_q = db.Session.query(*cols)
-        while expand_dist < earth_circumference:
-            where = overlaps(expand(transform, expand_dist))
-            row = db_q.filter(where).order_by('distance').first()
-            if row is None:
-                expand_dist *= 2
-            else:
-                return Entity.get(row.id)
-        raise IdentifyError(
-            'Could not identify feature nearest to "%s" in region "%s", layer '
-            '"%s"' % (q, region, layer))
+        distance = func.st_distance(geom, Entity.geom)
+        q = db.Session.query(Entity, distance.label('distance'))
+        q = q.order_by(distance)
+        record = q.first()
+        if record is None:
+            raise IdentifyError(
+                'Could not identify feature nearest to "%s" in region "%s", '
+                'layer "%s"' % (q, region, layer))
+        return record[0]
