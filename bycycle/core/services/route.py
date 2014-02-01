@@ -327,8 +327,8 @@ class Service(services.Service):
             node.edges_t.append(edge_t)
 
             # Graft node_f and node_t onto H
-            H.add_node(node_f_id, G[node_f_id])
-            H.add_node(node_t_id, G[node_t_id])
+            H.add_node(node_f_id, G[node_f_id].copy())
+            H.add_node(node_t_id, G[node_t_id].copy())
 
             edge_f_attrs = self.region.convert_edge_for_matrix(edge_f)
             edge_t_attrs = self.region.convert_edge_for_matrix(edge_t)
