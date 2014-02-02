@@ -26,7 +26,7 @@ setup(
         'pyproj>=1.9.3',
         'psycopg2>=2.5.2',
         'SQLAlchemy>=0.9.1',
-        'Dijkstar>=2.0',
+        'Dijkstar>=2.1',
         'tangled',
     ),
     entry_points="""
