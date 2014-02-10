@@ -20,7 +20,7 @@ setup(
     ],
     packages=find_packages(),
     zip_safe=False,
-    install_requires=(
+    install_requires=[
         'glineenc>=1.0',
         'Shapely>=1.3.0',
         'pyproj>=1.9.3',
@@ -28,7 +28,12 @@ setup(
         'SQLAlchemy>=0.9.1',
         'Dijkstar>=2.1',
         'tangled>=0.1a5',
-    ),
+    ],
+    extras_require={
+        'dev': [
+            'coverage>=3.7.1',
+        ],
+    },
     entry_points="""
     [console_scripts]
     bycycle-integrate = bycycle.core.scripts.integrate:main
