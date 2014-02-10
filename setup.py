@@ -27,7 +27,7 @@ setup(
         'psycopg2>=2.5.2',
         'SQLAlchemy>=0.9.1',
         'Dijkstar>=2.1',
-        'tangled',
+        'tangled>=0.1a5',
     ),
     entry_points="""
     [console_scripts]
