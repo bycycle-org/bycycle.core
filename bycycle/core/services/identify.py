@@ -42,7 +42,6 @@ class Service(services.Service):
             raise IdentifyError(
                 'Cannot identify because POINT is not valid: %s.' % q)
         input_srid = input_srid or region.srid
-        earth_circumference = region.earth_circumference
         Entity = getattr(region.module, layer)
         # Get "well known text" version of input ``point``
         wkt = str(point)
