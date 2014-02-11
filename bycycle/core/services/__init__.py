@@ -1,12 +1,15 @@
 """Provides a base class for the byCycle core services."""
-from bycycle.core.model import regions
+from bycycle.core.model.regions import  getRegionKey
+from bycycle.core.model import Region
 
 
 class Service(object):
     """Base class for byCycle services."""
 
-    def __init__(self, region=None):
+    def __init__(self, session, region=None):
         """Initialize service with ``region`` and database ``session``.
+
+        ``session`` A SQLAlchemy database session.
 
         ``region`` string | ``Region`` | None
             Either a region key or a `Region` object. In the first case a new
@@ -20,18 +23,30 @@ class Service(object):
             instance, or None.
 
         """
+        self.session = session
         self.region = region
 
-    def _get_region(self):
+    @property
+    def region(self):
         try:
             return self._region
         except AttributeError:
             return None
 
-    def _set_region(self, region):
-        self._region = regions.getRegion(region)
-
-    region = property(_get_region, _set_region)
+    @region.setter
+    def region(self, region):
+        if region:
+            if not isinstance(region, Region):
+                region_key = getRegionKey(region)
+                if region_key == 'all':
+                    region = None
+                else:
+                    q = self.session.query(Region)
+                    q = q.filter_by(slug=region_key)
+                    region = q.one()
+        else:
+            region = None
+        self._region = region
 
     def query(self, q, **kwargs):
         """Query this ``Service`` and return an object or objects.

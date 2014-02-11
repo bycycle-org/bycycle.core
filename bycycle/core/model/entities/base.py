@@ -1,5 +1,5 @@
 from sqlalchemy import func, select, Column, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import object_session, relationship
 from sqlalchemy.types import CHAR, Integer
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
@@ -7,7 +7,7 @@ from shapely import geometry, wkt
 from shapely.geometry.base import BaseGeometry
 
 from bycycle.core.util import joinAttrs
-from bycycle.core.model.db import engine, metadata, Session
+from bycycle.core.model.db import engine, metadata
 
 
 __all__ = ['Base', 'Node', 'Edge']
@@ -15,56 +15,7 @@ __all__ = ['Base', 'Node', 'Edge']
 
 class Entity(object):
 
-    @classmethod
-    def q(cls):
-        return Session.query(cls)
-
-    @classmethod
-    def get(cls, id_or_ids):
-        if isinstance(id_or_ids, (list, tuple, set)):
-            return cls.q().filter(cls.id.in_(id_or_ids)).all()
-        else:
-            return cls.q().get(id_or_ids)
-
-    @classmethod
-    def get_by_slug(cls, slug, unique=False):
-        return cls.get_by('slug', slug, unique=True)
-
-    @classmethod
-    def get_by(cls, col, values, unique=False):
-        """Get objects keyed on ``col`` and having the given ``values``.
-
-        ``col``
-            A column name
-
-        ``values``
-            A single value or sequence (`list` or `tuple`) of values.
-
-        ``unique``
-            Whether or not we expect a single value to be returned. Corresponds
-            to a UNIQUE index.
-
-        """
-        if not isinstance(values, (tuple, list)):
-            values = [values]
-        q = cls.q().filter(getattr(cls, col).in_(values))
-        if unique:
-            result = q.one()
-        else:
-            objects = q.all()
-            result = objects[0] if len(objects) == 1 else objects
-        return result
-
-    @classmethod
-    def simplify_object(cls, obj):
-        # XXX: I'm pretty sure this is never called. Either remove it or fix
-        #      to_simple_object() calls so that it is;
-        #      restler.Entity.to_simple_object() would call it, but that's
-        #      overridden by our classes, which don't make a super call.
-        obj = super(cls, cls).simplify_object(obj)
-        if isinstance(obj, BaseGeometry):
-            obj = obj.__geo_interface__
-        return obj
+    pass
 
 
 Base = declarative_base(metadata=metadata, cls=Entity)
@@ -194,7 +145,8 @@ class Edge(object):
         f = func.st_astext(f)
 
         # Query DB and get WKT POINT
-        select_ = select([f.label('wkt_point')], c.id == self.id, bind=engine)
+        bind = object_session(self).bind
+        select_ = select([f.label('wkt_point')], c.id == self.id, bind=bind)
         result = select_.execute()
         wkt_point = result.fetchone().wkt_point
 

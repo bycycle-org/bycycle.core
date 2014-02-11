@@ -1,13 +1,23 @@
 import unittest
 
-from bycycle.core.services.route import *
-from bycycle.core.model.route import Route
+from bycycle.core.model import db, Route
+from bycycle.core.services.route import Service, InputError
+
+
+def setUpModule():
+    db.init()
 
 
 class Test_A_Route(unittest.TestCase):
 
+    def setUp(self):
+        self.session = db.make_session()
+
+    def tearDown(self):
+        self.session.close()
+
     def _query(self, q, region=None, **kwargs):
-        service = Service(region=region)
+        service = Service(self.session, region=region)
         route_or_routes = service.query(q, **kwargs)
         return route_or_routes
 

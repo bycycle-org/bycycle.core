@@ -52,7 +52,7 @@ class Service(services.Service):
             geom = func.st_transform(geom, region.srid)
         # Function to get the distance between input point and table points
         distance = func.st_distance(geom, Entity.geom)
-        q = db.Session.query(Entity, distance.label('distance'))
+        q = self.session.query(Entity, distance.label('distance'))
         q = q.order_by(distance)
         record = q.first()
         if record is None:

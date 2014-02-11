@@ -39,9 +39,6 @@ from bycycle.core.model.entities import public
 from bycycle.core.model.sttypes import street_types_ftoa
 
 
-db.connectMetadata()
-
-
 class Integrator(object):
 
     user = os.environ['USER']
@@ -56,6 +53,13 @@ class Integrator(object):
         self.source = source
         self.layer = layer
         self.no_prompt = no_prompt
+        db.init()
+        self.session = db.make_session()
+
+    def get_region_by_slug(self, slug):
+        q = self.session.query(public.Region)
+        q = q.filter_by(slug=slug)
+        return q.one()
 
     def run(self, start=0, end=None, no_prompt=False, only=None):
         start = start or 0
@@ -138,22 +142,22 @@ class Integrator(object):
     def delete_region(self):
         """Delete region and any dependent records."""
         try:
-            region = public.Region.get_by_slug(self.region_key)
+            region = self.get_region_by_slug(self.region_key)
         except sqlalchemy.orm.exc.NoResultFound:
             pass
         except sqlalchemy.exc.ProgrammingError as e:
             if not 'does not exist' in str(e):
                 raise
         else:
-            db.Session.delete(region)
-            db.Session.flush()
+            self.session.delete(region)
+            self.session.flush()
 
     def get_or_create_region(self):
         """Create region."""
         public.Region.__table__.create(checkfirst=True)
         try:
-            region = public.Region.get_by_slug(self.region_key)
-        except sqlalchemy.orm.exc.NoResultFound as e:
+            region = self.get_region_by_slug(self.region_key)
+        except sqlalchemy.orm.exc.NoResultFound:
             self.echo('Region %s not found.' % self.region_key)
             region = None
         if region is None:
@@ -169,7 +173,7 @@ class Integrator(object):
                 block_length=data.block_length,
                 jog_length=data.jog_length,
             )
-            db.Session.flush()
+            self.session.flush()
 
             # Add edge attributes
             self.echo('Adding edge attributes to region.')
@@ -177,9 +181,9 @@ class Integrator(object):
             for a in self.region_data_module.edge_attrs:
                 region.edge_attrs.append(public.EdgeAttr(name=a))
 
-            db.Session.add(region)
-            db.Session.flush()
-            db.Session.refresh(region)
+            self.session.add(region)
+            self.session.flush()
+            self.session.refresh(region)
         return region
 
     def drop_schema(self):
@@ -297,14 +301,14 @@ class Integrator(object):
 
         raw_records = set([get_city_state_and_zip(r) for r in raw_records])
 
-        places = db.Session.query(Place).all()
+        places = self.session.query(Place).all()
         existing_records = set([(p.city_name, p.state_code, p.zip_code) for p
                                 in places])
 
         records = []
         new_records = raw_records.difference(existing_records)
-        city_q = db.Session.query(City)
-        state_q = db.Session.query(State)
+        city_q = self.session.query(City)
+        state_q = self.session.query(State)
         for r in new_records:
             city_name, state_code, zc = r[0], r[1], r[2]
             city = city_q.filter_by(city=city_name).one()
@@ -398,7 +402,7 @@ class Integrator(object):
         street_names[(None, None, None, None)] = None
 
         self.echo('Getting places...')
-        places = db.Session.query(Place).all()
+        places = self.session.query(Place).all()
         places = dict(
             [((p.city_name, p.state_code, p.zip_code), p.id) for p in places])
         places[(None, None, None)] = None

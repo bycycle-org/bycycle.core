@@ -210,7 +210,7 @@ class Service(services.Service):
 
     def _getGeocodes(self, waypoints):
         """Return a `list` of `Geocode`s associated with each ``waypoint``."""
-        geocode_service = geocode.Service(region=self.region)
+        geocode_service = geocode.Service(self.session, region=self.region)
         geocodes = []
         addresses_not_found = []
         multiple_match_found = False
@@ -406,12 +406,11 @@ class Service(services.Service):
         Node = self.region.module.Node
 
         directions = []
-        linestring = None
         distance = {}
         edge_ids = [attrs[0] for attrs in edge_attrs]
 
         # Get edges along path
-        q = Edge.q().filter(Edge.id.in_(edge_ids))
+        q = self.session.query(Edge).filter(Edge.id.in_(edge_ids))
         q = q.options(joinedload(Edge.node_f))
         q = q.options(joinedload(Edge.node_t))
         q = q.options(joinedload(Edge.street_name))
@@ -579,7 +578,7 @@ class Service(services.Service):
         # each node individually inside the loop--that causes up to 2*N
         # additional queries being issued to the database (fetching of
         # the inbound and outbound edges for the node).
-        q = Node.q()
+        q = self.session.query(Node)
         q = q.filter(Node.id.in_(i[1] for i in toward_args))
         q = q.options(joinedload(Node.edges_f))
         q = q.options(joinedload(Node.edges_t))
