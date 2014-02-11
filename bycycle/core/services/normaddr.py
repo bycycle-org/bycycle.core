@@ -337,7 +337,7 @@ Another possible reason is that you entered a street name without a number. For 
         if sttype in sttypes_ftoa:
             # If a full street type was entered...
             # E.g., street name is 'johnson' and street type is 'creek'
-            q = StreetName.q()
+            q = self.session.query(StreetName)
             count1 = q.filter_by(name=num_name).filter_by(sttype=sttype).count()
             if not count1:
                 # ...and there is no street in the DB with the name & type...

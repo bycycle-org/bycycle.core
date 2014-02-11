@@ -1,6 +1,3 @@
-from bycycle.core.model.entities import Region
-
-
 unknown_region = None
 portlandor = 'portlandor'
 
@@ -90,32 +87,3 @@ def getRegionKey(region):
     except KeyError:
         raise ValueError('Could not determine region key for "%s"' % region)
     return region
-
-
-def getRegion(region):
-    """Get `Region` for ``region``.
-
-    If ``region`` is a `Region` or `None`, just return ``region``; if it's a
-    valid region key, create a new `Region`.
-
-    ``region`` `Region` | `string` | `None`
-        Either a `Region` object or a region key.
-
-    return `Region` | None
-
-    raise ValueError
-        Region key cannot be determined for ``region``
-
-    """
-    if region:
-        if isinstance(region, Region):
-            _region = region
-        else:
-            region_key = getRegionKey(region)
-            if region_key == 'all':
-                _region = None
-            else:
-                _region = Region.get_by_slug(region_key)
-    else:
-        _region = None
-    return _region

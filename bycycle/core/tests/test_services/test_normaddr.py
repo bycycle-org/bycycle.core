@@ -1,13 +1,21 @@
 import unittest
-from bycycle.core.services.normaddr import *
-from bycycle.core.model import address, db
-from bycycle.core.model.entities import Region, StreetName
-from sqlalchemy import *
+
+from bycycle.core.model import address, db, Region, StreetName
+from bycycle.core.services.normaddr import Service
+
+
+def setUpModule():
+    db.init()
 
 
 class TestGetCrossStreets(unittest.TestCase):
 
-    service = Service()
+    def setUp(self):
+        self.session = db.make_session()
+        self.service = Service(self.session)
+
+    def tearDown(self):
+        self.session.close()
 
     def _testGood(self, addrs):
         for addr in addrs:
@@ -57,7 +65,12 @@ class TestGetCrossStreets(unittest.TestCase):
 
 class TestGetNumberAndStreet(unittest.TestCase):
 
-    service = Service()
+    def setUp(self):
+        self.session = db.make_session()
+        self.service = Service(self.session)
+
+    def tearDown(self):
+        self.session.close()
 
     def _testGood(self, addrs):
         for addr in addrs:
@@ -85,10 +98,16 @@ class TestGetNumberAndStreet(unittest.TestCase):
 
 class TestPortlandOR(unittest.TestCase):
 
-    region = Region.get_by_slug('portlandor')
+    def setUp(self):
+        self.session = db.make_session()
+        q = self.session.query(Region).filter_by(slug='portlandor')
+        self.region = q.one()
+
+    def tearDown(self):
+        self.session.close()
 
     def _query(self, q, region=None):
-        service = Service(region=region)
+        service = Service(self.session, region=region)
         oAddr = service.query(q)
         return oAddr
 
@@ -98,7 +117,7 @@ class TestPortlandOR(unittest.TestCase):
         Edge = self.region.module.Edge
 
         # Get street name ID for n alberta st
-        q = db.Session.query(StreetName)
+        q = self.session.query(StreetName)
         q = q.filter_by(prefix='n').filter_by(name='alberta')
         street_name = q.filter_by(sttype='st').first()
         self.assertIsNotNone(street_name)
@@ -106,7 +125,7 @@ class TestPortlandOR(unittest.TestCase):
 
         # Get edge matching 633 N Alberta St
         num = 633
-        q = db.Session.query(Edge)
+        q = self.session.query(Edge)
         q = q.filter(Edge.addr_f_l <= num).filter(Edge.addr_t_l >= num)
         edge = q.filter_by(street_name_id=street_name_id).first()
         self.assertIsNotNone(edge)

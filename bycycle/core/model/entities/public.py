@@ -2,7 +2,7 @@
 import os
 
 from sqlalchemy import Column, ForeignKey, func, select
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import object_session, relationship
 from sqlalchemy.types import Integer, String, CHAR, Float
 
 from tangled.util import load_object
@@ -160,7 +160,10 @@ class Region(Base):
 
         timer.start()
         print('Getting edge IDs...')
-        q = db.Session.query(Edge.id)
+
+        session = object_session(self)
+
+        q = session.query(Edge.id)
         ids = [i for (i,) in q.values(Edge.id)]
         num_edges = len(ids)
         took()
@@ -173,7 +176,7 @@ class Region(Base):
         meter_i = 1
 
         def get_rows(offset=0, limit=1000):
-            q = db.Session.query(Edge)
+            q = session.query(Edge)
             while offset < num_edges:
                 rows = q.filter(Edge.id.in_(ids[offset:(offset + limit)]))
                 for row in rows:
@@ -201,8 +204,7 @@ class Region(Base):
             meter.update(meter_i)
             meter_i += 1
 
-        db.Session.close()
-        print
+        print()
         took()
 
         timer.start()

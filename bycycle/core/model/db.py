@@ -5,30 +5,35 @@ generic (i.e., not region-specific) database functions.
 
 """
 import psycopg2
-from sqlalchemy import MetaData, orm, create_engine
+from sqlalchemy import MetaData, create_engine
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import SQLAlchemyError
 
 
 metadata = MetaData()
+engine = None
+connection = None
+cursor = None
+session_factory = None
 
 
 def init(**connection_args):
-    global engine, connection, cursor, Session
+    global engine, connection, cursor, session_factory
     engine = create_engine(make_url(**connection_args))
+    metadata.bind = engine
     connection = engine.raw_connection()
     cursor = connection.cursor()
-    _Session = orm.sessionmaker(autoflush=True, autocommit=True, bind=engine)
-    Session = orm.scoped_session(_Session)
+    session_factory = sessionmaker(
+        autoflush=True, autocommit=True, bind=engine)
+
+
+def make_session():
+    return session_factory()
 
 
 def make_url(drivername='postgresql', database='bycycle', **kwargs):
     return URL(drivername, database=database, **kwargs)
-
-
-def connectMetadata(md=None):
-    """Connect metadata to ``engine``. Use ``md`` if specified."""
-    (md or metadata).bind = engine
 
 
 def dropAllTables(md=None):
@@ -39,20 +44,6 @@ def dropAllTables(md=None):
 def createAllTables(md=None):
     md = md or metadata
     md.create_all()
-
-
-def clearSession():
-    del session_context.current
-
-
-def turnSQLEchoOff():
-    """Turn off echoing of SQL statements."""
-    engine.echo = False
-
-
-def turnSQLEchoOn():
-    """Turn on echoing of SQL statements."""
-    engine.echo = True
 
 
 def vacuum(*tables):
@@ -216,9 +207,6 @@ def addGeometryColumn(table, srid, geom_type, schema='public', name='geom'):
     commit()
 
 
-init()
-
-
 if __name__ == '__main__':
     import sys
     from bycycle.core import model
@@ -232,5 +220,4 @@ if __name__ == '__main__':
             args = sys.argv[2:]
         except IndexError:
             args = []
-        model.db.connectMetadata()
         getattr(model.db, action)(*args)

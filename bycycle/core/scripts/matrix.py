@@ -14,7 +14,7 @@ The matrices for all regions can be created by using the special value
 import argparse
 import sys
 
-from bycycle.core.model import Region
+from bycycle.core.model import db, Region
 
 
 help_text = __doc__
@@ -31,13 +31,17 @@ def main(argv=None):
     else:
         args = parser.parse_args()
 
+    db.init()
+    session = db.make_session()
+
     if 'all' in args.regions:
         print('Creating all matrices...')
-        regions = Region.q().all()
+        regions = session.query(Region).all()
     else:
         regions = []
         for slug in args.regions:
-            region = Region.get_by_slug(slug)
+            q = session.query(Region).filter_by(slug=slug)
+            region = q.first()
             if region is None:
                 sys.stderr.write('Unknown region {0}'.format(slug))
                 sys.exit(1)

@@ -1,27 +1,27 @@
 import unittest
+
+from bycycle.core.model import db, Geocode, StreetName
 from bycycle.core.util import meter
-from bycycle.core.model import StreetName
-from bycycle.core.model.geocode import *
-from bycycle.core.services.geocode import *
+from bycycle.core.services.geocode import (
+    Service, AddressNotFoundError, MultipleMatchingAddressesError)
 
 
-quiet = 1
-if not quiet:
-    timer = meter.Timer()
+def setUpModule():
+    db.init()
 
 
 class TestPortlandOR(unittest.TestCase):
 
-    service = Service(region='portlandor')
+    def setUp(self):
+        self.session = db.make_session()
+        self.service = Service(self.session, region='portlandor')
+
+    def tearDown(self):
+        self.session.close()
 
     def _query(self, q, **kwargs):
-        if not quiet:
-            print('\n*****', q)
-            timer.start()
         _geocode = self.service.query(q, **kwargs)
         self.assertIsInstance(_geocode, Geocode)
-        if not quiet:
-            print(timer.stop(), 'seconds\n')
         return _geocode
 
     def _queryRaises(self, q, exc, **kwargs):
@@ -33,7 +33,7 @@ class TestPortlandOR(unittest.TestCase):
         Edge = self.service.region.module.Edge
 
         # Get street name ID for n alberta st
-        q = db.Session.query(StreetName)
+        q = self.session.query(StreetName)
         q = q.filter_by(prefix='n').filter_by(name='alberta')
         street_name = q.filter_by(sttype='st').first()
         self.assertIsNotNone(street_name)
@@ -41,7 +41,7 @@ class TestPortlandOR(unittest.TestCase):
 
         # Get edge matching 633 N Alberta St
         num = 633
-        q = db.Session.query(Edge)
+        q = self.session.query(Edge)
         q = q.filter(Edge.addr_f_l <= num).filter(Edge.addr_t_l >= num)
         edge = q.filter_by(street_name_id=street_name_id).first()
         self.assertIsNotNone(edge)
@@ -91,7 +91,7 @@ class TestPortlandOR(unittest.TestCase):
     ### Node
 
     def test_NodeAddress(self):
-        db_q = db.Session.query(self.service.region.module.Node)
+        db_q = self.session.query(self.service.region.module.Node)
         n = db_q.first()
         q = str(n.id)
         geocode = self._query(q)
@@ -182,13 +182,14 @@ class TestPortlandOR(unittest.TestCase):
 
 
 class Test_An_Existing_Address(unittest.TestCase):
+
     def test_should_be_found(self):
         q = '4122 NE Sandy'
-        geocode = Service(region='portlandor').query(q)
+        geocode = Service(db.make_session(), region='portlandor').query(q)
 
     def test_should_have_specific_coordinates(self):
         q = '1806 SE 52nd Ave, Portland'
-        geocode = Service(region='portlandor').query(q)
+        geocode = Service(db.make_session(), region='portlandor').query(q)
         self.assertEqual(int(geocode.xy.x), 7661523)
         self.assertEqual(int(geocode.xy.y), 679077)
 

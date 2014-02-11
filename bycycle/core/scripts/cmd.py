@@ -3,8 +3,9 @@
 import importlib
 import sys
 
-import bycycle.core.services
-from bycycle.core.model import regions
+from tangled.util import load_object
+
+from bycycle.core.model import db, regions
 from bycycle.core.util import meter
 
 
@@ -28,8 +29,8 @@ def main(argv):
         addError('No service specified')
     else:
         service = services.get(service, service)
-        service_module = importlib.import_module(
-            '.' + service, 'bycycle.core.services')
+        module_name = 'bycycle.core.services.{}'.format(service)
+        service_factory = load_object(module_name, 'Service')
 
     try:
         q = argv[2]
@@ -52,10 +53,18 @@ def main(argv):
         region = ''
 
     region = regions.getRegionKey(region)
+    db.init()
+    session = db.make_session()
     timer.start()
-    service = service_module.Service(region=region)
-    response = service.query(q)
-    print(response)
+    try:
+        service = service_factory(session, region=region)
+        response = service.query(q)
+    except Exception:
+        session.rollback()
+        raise
+    else:
+        session.close()
+        print(response)
     print('%.2f seconds' % timer.stop())
 
 

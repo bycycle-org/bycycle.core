@@ -129,7 +129,7 @@ class Service(services.Service):
         # First, normalize the address, getting back an `Address` object.
         # The NA service may find a region, iff `region` isn't already set. If
         # so, we want to use that region as the region for this query.
-        na_service = normaddr.Service(region=self.region)
+        na_service = normaddr.Service(self.session, region=self.region)
         oAddr = na_service.query(q, **self.query_kwargs)
         self.region = na_service.region
 
@@ -173,7 +173,7 @@ class Service(services.Service):
         else:
             raise ValueError('Could not determine address type for address '
                              '"%s" in region "%s"' %
-                             (q, region or '[No region specified]'))
+                             (q, self.region or '[No region specified]'))
 
         if len(geocodes) > 1:
             raise MultipleMatchingAddressesError(geocodes=geocodes)
@@ -200,7 +200,7 @@ class Service(services.Service):
         """
         geocodes = []
         num = oAddr.number
-        q = db.Session.query(Edge)
+        q = self.session.query(Edge)
         q = q.filter(Edge.addr_min != None, Edge.addr_max != None)
         q = q.filter(Edge.addr_min <= num, num <= Edge.addr_max)
 
@@ -242,7 +242,7 @@ class Service(services.Service):
         def raise_not_found():
             raise AddressNotFoundError(address=oAddr, region=self.region)
 
-        q = db.Session.query(Edge)
+        q = self.session.query(Edge)
         filter = self.filter_by_street_name(oAddr.street_name1)
         if filter is not None:
             q = q.filter(filter)
@@ -259,7 +259,7 @@ class Service(services.Service):
             node_ids1.add(e.node_f_id)
             node_ids1.add(e.node_t_id)
 
-        q = db.Session.query(Edge)
+        q = self.session.query(Edge)
         filter = self.filter_by_street_name(oAddr.street_name2)
         if filter is not None:
             q = q.filter(filter)
@@ -280,7 +280,7 @@ class Service(services.Service):
         if not node_ids:
             raise_not_found()
 
-        nodes = db.Session.query(Node).filter(Node.id.in_(node_ids))
+        nodes = self.session.query(Node).filter(Node.id.in_(node_ids))
         if not nodes:
             raise_not_found()
 
@@ -346,14 +346,14 @@ class Service(services.Service):
             node_id = oAddr.network_id
         except AttributeError:
             # No network ID, so look up `Node` by distance
-            id_service = identify.Service(region=self.region)
+            id_service = identify.Service(self.session, region=self.region)
             try:
                 node = id_service.query(
                     oAddr.point, layer='Node', **self.query_kwargs)
             except IdentifyError:
                 node = None
         else:
-            node = Node.get(node_id)
+            node = self.session.query(Node).get(node_id)
 
         # TODO: Check the `Edge`'s street names and places for [No Name]s and
         # choose the `Edge`(s) that have the least of them. Also, we should
