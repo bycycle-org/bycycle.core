@@ -16,7 +16,7 @@ class Service(services.Service):
 
     name = 'identify'
 
-    def query(self, q, layer=None, input_srid=None, **kwargs):
+    def query(self, q, layer=None, input_srid=4326, **kwargs):
         """Find feature in layer closest to point represented by ``q``.
 
         ``q``
@@ -41,7 +41,6 @@ class Service(services.Service):
         except ValueError:
             raise IdentifyError(
                 'Cannot identify because POINT is not valid: %s.' % q)
-        input_srid = input_srid or region.srid
         Entity = getattr(region.module, layer)
         # Get "well known text" version of input ``point``
         wkt = str(point)
