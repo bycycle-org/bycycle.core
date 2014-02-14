@@ -54,8 +54,8 @@ class Route(Entity):
         # Encode line for Google Map
         pairs = [(y, x) for (x, y) in linestring.coords]
         points, levels = glineenc.encode_pairs(pairs)
-        route['google_points'] = points
-        route['google_levels'] = levels
+        route['linestring']['encoded'] = points
+        route['linestring']['endoded_levels'] = levels
         return route
 
     def __repr__(self):
