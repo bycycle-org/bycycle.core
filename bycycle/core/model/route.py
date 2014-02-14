@@ -47,6 +47,7 @@ class Route(Entity):
                 'sw': {'x': minx, 'y': miny},
                 'ne': {'x': maxx, 'y': maxy}
             },
+            'bounds_array': [minx, miny, maxx, maxy],
             'center': {'x': centroid.x, 'y': centroid.y},
             'directions': self.directions,
             'distance': self.distance,
