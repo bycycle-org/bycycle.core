@@ -56,7 +56,7 @@ class Route(Entity):
         pairs = [(y, x) for (x, y) in linestring.coords]
         points, levels = glineenc.encode_pairs(pairs)
         route['linestring']['encoded'] = points
-        route['linestring']['endoded_levels'] = levels
+        route['linestring']['encoded_levels'] = levels
         return route
 
     def __repr__(self):
