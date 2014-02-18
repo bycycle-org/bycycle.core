@@ -67,7 +67,7 @@ cd $PROJECT_DIRECTORY
 mkdir src
 
 # Clone or fork the code from Bitbucket:
-hg clone https://bitbucket.org/wyatt/bycycle.core src
+hg clone https://bitbucket.org/bycycle/bycycle.core src
 
 # You'll need to create the file src/bycycle.core/bycycle/core/model/.pw
 # containing a single line with your PostgreSQL password. See Configuration
