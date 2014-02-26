@@ -110,9 +110,6 @@ class PostalGeocode(Geocode):
         })
         return obj
 
-    def __repr__(self):
-        return repr(self.to_simple_object())
-
     def __eq__(self, other):
         """Compare two `PostalGeocode`s for equality """
         return (
@@ -153,9 +150,6 @@ class IntersectionGeocode(Geocode):
             'place2': self.address.place2.to_simple_object(),
         })
         return obj
-
-    def __repr__(self):
-        return repr(self.to_simple_object())
 
     def __eq__(self, other):
         """Compare two `IntersectionGeocode`s for equality """
