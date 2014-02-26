@@ -57,7 +57,7 @@ class Geocode(Entity):
         s = ';'.join((s_addr, id_addr))
         return quote_plus(s)
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         xy = self.xy
         lat_long = self.lat_long
         if xy is not None:
@@ -73,7 +73,7 @@ class Geocode(Entity):
         }
 
     def __repr__(self):
-        return repr(self.to_simple_object())
+        return repr(self.__json_data__())
 
 
 class PostalGeocode(Geocode):
@@ -102,11 +102,11 @@ class PostalGeocode(Geocode):
         self.location = location
         self.edge = edge
 
-    def to_simple_object(self, fields=None):
-        obj = super(PostalGeocode, self).to_simple_object(fields)
+    def __json_data__(self):
+        obj = super(PostalGeocode, self).__json_data__()
         obj.update({
             'number': self.address.number,
-            'street_name': self.address.street_name.to_simple_object(),
+            'street_name': self.address.street_name.__json_data__(),
         })
         return obj
 
@@ -140,14 +140,14 @@ class IntersectionGeocode(Geocode):
         Geocode.__init__(self, region, address, node.id, xy)
         self.node = node
 
-    def to_simple_object(self, fields=None):
-        obj = super(IntersectionGeocode, self).to_simple_object(fields)
+    def __json_data__(self):
+        obj = super(IntersectionGeocode, self).__json_data__()
         obj.update({
             'street_name': self.address.street_name,
-            'street_name1': self.address.street_name1.to_simple_object(),
-            'street_name2': self.address.street_name2.to_simple_object(),
-            'place1': self.address.place1.to_simple_object(),
-            'place2': self.address.place2.to_simple_object(),
+            'street_name1': self.address.street_name1.__json_data__(),
+            'street_name2': self.address.street_name2.__json_data__(),
+            'place1': self.address.place1.__json_data__(),
+            'place2': self.address.place2.__json_data__(),
         })
         return obj
 
