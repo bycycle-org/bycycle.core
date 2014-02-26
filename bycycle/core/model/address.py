@@ -123,7 +123,7 @@ class PostalAddress(Address):
         result = joinAttrs([result, self.place], '\n')
         return result
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         return {
             'type': self.__class__.__name__,
             'number': self.number,
@@ -132,7 +132,7 @@ class PostalAddress(Address):
         }
 
     def __repr__(self):
-        return repr(self.to_simple_object())
+        return repr(self.__json_data__())
 
 
 class EdgeAddress(PostalAddress):
@@ -298,7 +298,7 @@ class IntersectionAddress(Address):
     def __str__(self):
         return joinAttrs((self.street_name, self.place), '\n')
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         return {
             'type': self.__class__.__name__,
             'street_name1': self.street_name1,
@@ -308,7 +308,7 @@ class IntersectionAddress(Address):
         }
 
     def __repr__(self):
-        return repr(self.to_simple_object())
+        return repr(self.__json_data__())
 
 
 class PointAddress(IntersectionAddress):

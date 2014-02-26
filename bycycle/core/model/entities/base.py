@@ -264,5 +264,5 @@ class Edge(object):
         ]
         return joinAttrs(stuff, join_string='\n')
 
-    def to_simple_object(self, fields=None):
-        return super(Edge, self).to_simple_object(fields=fields)
+    def __json_data__(self):
+        return super(Edge, self).__json_data__()

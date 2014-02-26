@@ -34,14 +34,14 @@ class Route(Entity):
         else:
             self.linestring_lat_long = None
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         linestring = self.linestring_lat_long
         envelope = linestring.envelope
         centroid = envelope.centroid
         minx, miny, maxx, maxy = envelope.bounds
         route = {
-            'start': self.start.to_simple_object(),
-            'end': self.end.to_simple_object(),
+            'start': self.start.__json_data__(),
+            'end': self.end.__json_data__(),
             'linestring': mapping(linestring),
             'bounds': {
                 'sw': {'x': minx, 'y': miny},
@@ -60,7 +60,7 @@ class Route(Entity):
         return route
 
     def __repr__(self):
-        return repr(self.to_simple_object())
+        return repr(self.__json_data__())
 
     def __str__(self):
         directions = []

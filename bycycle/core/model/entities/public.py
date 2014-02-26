@@ -75,9 +75,9 @@ class Region(Base):
             'ne': {'x': bounds[2], 'y': bounds[3]}
         }
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         # Append dynamically computed geometries to default simple object
-        obj = super(Region, self).to_simple_object(fields=fields)
+        obj = super(Region, self).__json_data__()
         obj['geometry'] = {'4326': {}}
 
         def set_geom(geom, bounds):
@@ -274,7 +274,7 @@ class StreetName(Base):
         )
         return joinAttrs(attrs)
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         return {
             'prefix': (self.prefix or '').upper(),
             'name': self._name_for_str(),
@@ -337,7 +337,7 @@ class City(Base):
         else:
             return '[No City]'
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         return {
             'id': self.id,
             'city': str(self)
@@ -361,7 +361,7 @@ class State(Base):
         else:
             return '[No State]'
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         return {
             'id': self.id,
             'code': str(self),
@@ -418,10 +418,10 @@ class Place(Base):
         city_state = joinAttrs([self.city, self.state], ', ')
         return joinAttrs([city_state, str(self.zip_code or '')])
 
-    def to_simple_object(self, fields=None):
+    def __json_data__(self):
         return {
-            'city': (self.city.to_simple_object() if self.city is not None else None),
-            'state': (self.state.to_simple_object() if self.state is not None else None),
+            'city': (self.city.__json_data__() if self.city is not None else None),
+            'state': (self.state.__json_data__() if self.state is not None else None),
             'zip_code': str(self.zip_code or None)
         }
 
