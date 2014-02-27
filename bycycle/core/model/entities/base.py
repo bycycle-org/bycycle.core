@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from shapely import geometry, wkt
 from shapely.geometry.base import BaseGeometry
 
-from bycycle.core.util import joinAttrs
+from bycycle.core import util
 from bycycle.core.model.db import engine, metadata
 
 
@@ -255,14 +255,15 @@ class Edge(object):
 
     def __str__(self):
         stuff = [
-            joinAttrs(('Address Range:',
-                       self.addr_f_l, ', ', self.addr_f_r,
-                       'to',
-                       self.addr_t_l, ', ', self.addr_t_r)),
-            (self.street_name or '[No Street Name]'),
+            util.join((
+                'Address Range:',
+                self.addr_f_l, ', ', self.addr_f_r,
+                'to',
+                self.addr_t_l, ', ', self.addr_t_r)),
+            self.street_name or '[No Street Name]',
             self.place_l, self.place_r,
         ]
-        return joinAttrs(stuff, join_string='\n')
+        return util.join(stuff, '\n')
 
     def __json_data__(self):
         return super(Edge, self).__json_data__()

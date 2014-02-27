@@ -1,5 +1,5 @@
 """Address classes."""
-from bycycle.core.util import joinAttrs
+from bycycle.core import util
 from bycycle.core.model.point import Point
 from bycycle.core.model.entities import StreetName, Place
 
@@ -119,8 +119,8 @@ class PostalAddress(Address):
     zip_code = property(_get_zip_code, _set_zip_code)
 
     def __str__(self):
-        result = joinAttrs([self.number, self.street_name])
-        result = joinAttrs([result, self.place], '\n')
+        result = util.join([self.number, self.street_name])
+        result = util.join([result, self.place], '\n')
         return result
 
     def __json_data__(self):
@@ -283,7 +283,7 @@ class IntersectionAddress(Address):
     zip_code2 = property(_get_zip_code2, _set_zip_code2)
 
     def _get_street_name(self):
-        return joinAttrs((self.street_name1, self.street_name2), ' & ')
+        return util.join((self.street_name1, self.street_name2), ' & ')
 
     street_name = property(_get_street_name)
 
@@ -296,7 +296,7 @@ class IntersectionAddress(Address):
     place = property(_get_place)
 
     def __str__(self):
-        return joinAttrs((self.street_name, self.place), '\n')
+        return util.join((self.street_name, self.place), '\n')
 
     def __json_data__(self):
         return {
