@@ -8,9 +8,6 @@ TODO
 - Make sure sttypes in the DB are using the USPS abbreviations
 
 """
-from bycycle.core.util import swapKeysAndValues
-
-
 street_types_ftoa = {
     'alley': 'aly',
     'annex': 'anx',
@@ -222,7 +219,7 @@ street_types_ftoa = {
     'well': 'wl',
     'wells': 'wls'
 }
-street_types_atof = swapKeysAndValues(street_types_ftoa)
+street_types_atof = {v: k for k, v in street_types_ftoa.items()}
 street_types_atof['ave'] = 'avenue'
 street_types_atof['pkwy'] = 'parkway'
 street_types_atof['walk'] = 'walk'

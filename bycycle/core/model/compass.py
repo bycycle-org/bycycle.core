@@ -1,6 +1,3 @@
-from bycycle.core.util import swapKeysAndValues
-
-
 directions_ftoa = {
     'north': 'n',
     'south': 's',
@@ -11,7 +8,7 @@ directions_ftoa = {
     'southeast': 'se',
     'southwest': 'sw',
 }
-directions_atof = swapKeysAndValues(directions_ftoa)
+directions_atof = {v: k for k, v in directions_ftoa.items()}
 
 
 directions_dtoa = {
@@ -24,7 +21,7 @@ directions_dtoa = {
     '135': 'se',
     '225': 'sw',
 }
-directions_atod = swapKeysAndValues(directions_dtoa)
+directions_atod = {v: k for k, v in directions_dtoa.items()}
 
 
 suffixes_ftoa = {
@@ -33,4 +30,4 @@ suffixes_ftoa = {
     'eastbound': 'eb',
     'westbound': 'wb',
 }
-suffixes_atof = swapKeysAndValues(suffixes_ftoa)
+suffixes_atof = {v: k for k, v in suffixes_ftoa.items()}
