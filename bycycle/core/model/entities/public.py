@@ -11,8 +11,8 @@ from dijkstar import Graph
 from shapely import wkt
 import pyproj
 
-from bycycle.core import model_path
-from bycycle.core.util import gis, joinAttrs
+from bycycle.core import model_path, util
+from bycycle.core.util import gis
 from bycycle.core.model import db
 from bycycle.core.model.entities import Base
 
@@ -272,7 +272,7 @@ class StreetName(Base):
             (self.sttype or '').title(),
             (self.suffix or '').upper()
         )
-        return joinAttrs(attrs)
+        return util.join(attrs)
 
     def __json_data__(self):
         return {
@@ -415,8 +415,8 @@ class Place(Base):
     state_name = property(_get_state_name, _set_state_name)
 
     def __str__(self):
-        city_state = joinAttrs([self.city, self.state], ', ')
-        return joinAttrs([city_state, str(self.zip_code or '')])
+        city_state = util.join([self.city, self.state], ', ')
+        return util.join([city_state, str(self.zip_code or '')])
 
     def __json_data__(self):
         return {
