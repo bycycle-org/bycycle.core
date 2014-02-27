@@ -16,6 +16,9 @@ class Address(object):
     def __repr__(self):
         return repr(self.__json_data__())
 
+    def __str__(self):
+        return self.as_string('\n')
+
 
 class PostalAddress(Address):
 
@@ -120,9 +123,9 @@ class PostalAddress(Address):
 
     zip_code = property(_get_zip_code, _set_zip_code)
 
-    def __str__(self):
+    def as_string(self, line_separator='\n'):
         result = util.join([self.number, self.street_name])
-        result = util.join([result, self.place], '\n')
+        result = util.join([result, self.place], line_separator)
         return result
 
     def __json_data__(self):
@@ -142,15 +145,10 @@ class EdgeAddress(PostalAddress):
         self.network_id = network_id
         self.region_key = region_key
 
-    def __str__(self):
-        s = PostalAddress.__str__(self)
-        if s == str(PostalAddress()):
-            s = str(
-                '-'.join(
-                    [str(a) for a in
-                     (self.number, self.network_id, self.region_key)]
-                )
-            )
+    def as_string(self, line_separator='\n'):
+        s = super().as_string(line_separator)
+        if s == PostalAddress().as_string(line_separator):
+            s = '{0.number}-{0.network_id}-{0.region_key}'.format(self)
         return s
 
 
@@ -295,8 +293,8 @@ class IntersectionAddress(Address):
 
     place = property(_get_place)
 
-    def __str__(self):
-        return util.join((self.street_name, self.place), '\n')
+    def as_string(self, line_separator='\n'):
+        return util.join((self.street_name, self.place), line_separator)
 
     def __json_data__(self):
         return {
@@ -328,9 +326,9 @@ class PointAddress(IntersectionAddress):
         return self.point.z
     z = property(_get_z)
 
-    def __str__(self):
-        s = IntersectionAddress.__str__(self)
-        if s == str(IntersectionAddress()):
+    def as_string(self, line_separator='\n'):
+        s = super().as_string(line_separator)
+        if s == IntersectionAddress().as_string(line_separator):
             s = str(self.point)
         return s
 
@@ -342,10 +340,8 @@ class NodeAddress(IntersectionAddress):
         self.network_id = network_id
         self.region_key = region_key
 
-    def __str__(self):
-        s = IntersectionAddress.__str__(self)
-        if s == str(IntersectionAddress()):
-            s = str(
-                '-'.join([str(a) for a in (self.network_id, self.region_key)])
-            )
+    def as_string(self, line_separator='\n'):
+        s = super().as_string(line_separator)
+        if s == IntersectionAddress().as_string(line_separator):
+            s = '{0.network_id}-{0.region_key}'.format(self)
         return s
