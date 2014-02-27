@@ -1,13 +1,3 @@
-def getMostFrequentInList(the_list):
-    """Get the list item that occurs most often."""
-    cnt = {}
-    the_list = [i for i in the_list if i]
-    for i in the_list:
-        cnt[i] = cnt.get(i, 0) + 1
-    C = [None] + sorted(cnt.keys(), key=cnt.get)
-    return C[-1]
-
-
 def joinAttrs(attrs, join_string=' '):
     """Join the values in attrs, leaving out empty values."""
     if isinstance(attrs, dict):
