@@ -12,7 +12,9 @@ class AddressError(Exception):
 
 
 class Address(object):
-    pass
+
+    def __repr__(self):
+        return repr(self.__json_data__())
 
 
 class PostalAddress(Address):
@@ -131,8 +133,6 @@ class PostalAddress(Address):
             'place': self.place
         }
 
-    def __repr__(self):
-        return repr(self.__json_data__())
 
 
 class EdgeAddress(PostalAddress):
@@ -306,9 +306,6 @@ class IntersectionAddress(Address):
             'street_name2': self.street_name2,
             'place2': self.place2
         }
-
-    def __repr__(self):
-        return repr(self.__json_data__())
 
 
 class PointAddress(IntersectionAddress):
