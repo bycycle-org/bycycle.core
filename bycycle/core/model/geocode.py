@@ -1,6 +1,4 @@
 """Geocode classes."""
-from urllib.parse import quote_plus
-
 from shapely.geometry import Point, mapping
 
 from bycycle.core.model.entities.base import Entity
@@ -47,16 +45,6 @@ class Geocode(Entity):
     def __str__(self):
         return '\n'.join((str(self.address), str(self.xy)))
 
-    def urlStr(self):
-        # TODO: should do s_addr = self.address.urlStr()
-        s_addr = str(self.address).replace('\n', ', ')
-        # Build the "ID address" => num?, network ID, region key
-        num = getattr(self.address, 'number', '')
-        id_addr = ('%s-%s-%s' % (num, self.network_id, self.region.slug))
-        id_addr = id_addr.lstrip('-')  # in case it's not postal
-        s = ';'.join((s_addr, id_addr))
-        return quote_plus(s)
-
     def __json_data__(self):
         xy = self.xy
         lat_long = self.lat_long
@@ -66,6 +54,7 @@ class Geocode(Entity):
             lat_long = mapping(lat_long)
         return {
             'type': self.__class__.__name__,
+            'id': self.id,
             'address': str(self.address),
             'point': xy,
             'lat_long': lat_long,
@@ -99,6 +88,8 @@ class PostalGeocode(Geocode):
         """
         xy, location = edge.getPointAndLocationOfNumber(address.number)
         Geocode.__init__(self, region, address, edge.id, xy)
+        self.id = '{}-{}-{}'.format(
+            address.number, self.network_id, self.region.slug)
         self.location = location
         self.edge = edge
 
@@ -138,6 +129,7 @@ class IntersectionGeocode(Geocode):
         """
         xy = node.geom
         Geocode.__init__(self, region, address, node.id, xy)
+        self.id = '{}-{}'.format(self.network_id, self.region.slug)
         self.node = node
 
     def __json_data__(self):
