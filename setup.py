@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='bycycle.core',
-    version='0.5a2',
+    version='0.6.dev0',
     description='byCycle core model and services',
     long_description='byCycle model, routing, and geocoding.',
     license='GPLv3',
