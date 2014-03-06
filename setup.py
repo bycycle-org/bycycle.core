@@ -26,7 +26,7 @@ setup(
         'Shapely>=1.3.0',
         'pyproj>=1.9.3',
         'psycopg2>=2.5.2',
-        'SQLAlchemy>=0.9.1',
+        'SQLAlchemy>=0.9.3',
         'Dijkstar>=2.1',
         'tangled>=0.1a5',
     ],
