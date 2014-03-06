@@ -28,7 +28,7 @@ setup(
         'psycopg2>=2.5.2',
         'SQLAlchemy>=0.9.3',
         'Dijkstar>=2.1',
-        'tangled>=0.1a5',
+        'tangled>=0.1a6',
     ],
     extras_require={
         'dev': [
