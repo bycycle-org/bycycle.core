@@ -37,6 +37,7 @@ setup(
     },
     entry_points="""
     [console_scripts]
+    bycycle = bycycle.core.scripts.main:main
     bycycle-integrate = bycycle.core.scripts.integrate:main
     bycycle-matrix = bycycle.core.scripts.matrix:main
     """,
