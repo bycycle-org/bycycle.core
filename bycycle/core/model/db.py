@@ -101,19 +101,3 @@ def dropTable(table, cascade=False):
             rollback()
         else:
             raise e
-
-
-if __name__ == '__main__':
-    import sys
-    from bycycle.core import model
-    try:
-        action = sys.argv[1]
-    except IndexError:
-        print('No action')
-    else:
-        print('Action: %s' % action)
-        try:
-            args = sys.argv[2:]
-        except IndexError:
-            args = []
-        getattr(model.db, action)(*args)
