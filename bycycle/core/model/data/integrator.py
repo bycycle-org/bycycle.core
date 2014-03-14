@@ -209,16 +209,7 @@ class Integrator(object):
 
     def create_schema_tables(self):
         """Create all regional tables. Ignores existing tables."""
-        region = self.get_or_create_region()
         db.createAllTables()
-        schema = self.region_module.Edge.__table__.schema
-        SRID = self.region_data_module.SRID
-        db.addGeometryColumn(
-            self.region_module.Edge.__table__.name, SRID, 'LINESTRING',
-            schema=schema)
-        db.addGeometryColumn(
-            self.region_module.Node.__table__.name, SRID,
-            'POINT', schema=schema)
 
     def transfer_street_names(self):
         """Transfer street names from raw table."""

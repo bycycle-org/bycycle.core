@@ -175,38 +175,6 @@ def getById(class_or_mapper, session, *ids):
     return ordered_objects
 
 
-def addGeometryColumn(table, srid, geom_type, schema='public', name='geom'):
-    """Add a PostGIS geometry column to ``table``.
-
-    ``table``
-        SQLAlchemy ``Table``
-
-    ``srid``
-        Spatial reference ID
-
-    ``geom_type``
-        POINT, LINESTRING, etc
-
-    ``name``
-        Name to give the new geometry column
-
-    """
-    # Add geometry columns after tables are created and add gist INDEXes them
-    drop_col = 'ALTER TABLE "%s"."%s" DROP COLUMN %s'
-    add_geom_col = "SELECT AddGeometryColumn('%s', '%s', '%s', %s, '%s', 2)"
-    create_gist_index = ('CREATE INDEX "%s_%s_gist"'
-                         'ON "%s"."%s"'
-                         'USING GIST ("%s")')
-    geom_type = geom_type.upper()
-    try:
-        execute(drop_col % (schema, table, name))
-    except psycopg2.ProgrammingError:
-        rollback()  # important!
-    execute(add_geom_col % (schema, table, name, srid, geom_type))
-    execute(create_gist_index % (table, name, schema, table, name))
-    commit()
-
-
 if __name__ == '__main__':
     import sys
     from bycycle.core import model
