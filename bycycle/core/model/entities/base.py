@@ -18,7 +18,10 @@ class Entity(object):
         data = {}
         for name in self.__dict__:
             if not name.startswith('_'):
-                data[name] = self.__dict__[name]
+                v = self.__dict__[name]
+                if hasattr(v, '__json_data__'):
+                    v = v.__json_data__()
+                data[name] = v
         return data
 
 
