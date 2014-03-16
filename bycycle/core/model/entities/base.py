@@ -9,7 +9,7 @@ from bycycle.core import util
 from bycycle.core.model.db import metadata
 
 
-__all__ = ['Base', 'Node', 'Edge']
+__all__ = ['Entity', 'Base', 'Node', 'Edge']
 
 
 class Entity(object):
