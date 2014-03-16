@@ -4,10 +4,9 @@ from sqlalchemy.types import CHAR, Integer
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
 from shapely import geometry, wkt
-from shapely.geometry.base import BaseGeometry
 
 from bycycle.core import util
-from bycycle.core.model.db import engine, metadata
+from bycycle.core.model.db import metadata
 
 
 __all__ = ['Base', 'Node', 'Edge']
