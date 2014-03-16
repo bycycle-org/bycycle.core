@@ -15,7 +15,12 @@ __all__ = ['Base', 'Node', 'Edge']
 
 class Entity(object):
 
-    pass
+    def __json_data__(self):
+        data = {}
+        for name in self.__dict__:
+            if not name.startswith('_'):
+                data[name] = self.__dict__[name]
+        return data
 
 
 Base = declarative_base(metadata=metadata, cls=Entity)
