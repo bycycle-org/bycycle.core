@@ -11,19 +11,6 @@ directions_ftoa = {
 directions_atof = {v: k for k, v in directions_ftoa.items()}
 
 
-directions_dtoa = {
-    '0': 'n',
-    '180': 's',
-    '90': 'e',
-    '270': 'w',
-    '45': 'ne',
-    '315': 'nw',
-    '135': 'se',
-    '225': 'sw',
-}
-directions_atod = {v: k for k, v in directions_dtoa.items()}
-
-
 suffixes_ftoa = {
     'northbound': 'nb',
     'southhbound': 'sb',

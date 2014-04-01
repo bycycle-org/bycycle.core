@@ -1,22 +1,19 @@
-#!/usr/bin/env python
-"""Command-line interface to the byCycle library."""
 import argparse
 import re
 import time
 
 from tangled.util import load_object
 
-from bycycle.core.model import db, regions
+from bycycle.core import db
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('service')
     parser.add_argument('q')
-    parser.add_argument('-r', '--region', default='')
     args = parser.parse_args(argv)
 
-    module_name = 'bycycle.core.services.{}'.format(args.service)
+    module_name = 'bycycle.core.service.{}'.format(args.service)
     service_factory = load_object(module_name, 'Service')
 
     q = args.q
@@ -26,12 +23,11 @@ def main(argv=None):
         if len(q) < 2:
             parser.error('Route must be specified as "A to B"')
 
-    region = regions.getRegionKey(args.region)
     db.init()
     session = db.make_session()
     start_time = time.time()
     try:
-        service = service_factory(session, region=region)
+        service = service_factory(session)
         response = service.query(q)
     except Exception:
         session.rollback()

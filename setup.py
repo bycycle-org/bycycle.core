@@ -27,8 +27,8 @@ setup(
         'pyproj>=1.9.3',
         'psycopg2>=2.5.2',
         'SQLAlchemy>=0.9.3',
-        'Dijkstar>=2.1',
-        'tangled>=0.1a6',
+        'Dijkstar>=2.2',
+        'tangled>=0.1a7',
     ],
     extras_require={
         'dev': [
@@ -38,7 +38,9 @@ setup(
     entry_points="""
     [console_scripts]
     bycycle = bycycle.core.scripts.main:main
-    bycycle-integrate = bycycle.core.scripts.integrate:main
-    bycycle-matrix = bycycle.core.scripts.matrix:main
+    bycycle-fetch = bycycle.core.scripts.fetch:fetch
+    bycycle-import = bycycle.core.scripts.importer:do_import
+    bycycle-graph = bycycle.core.scripts.graph:make_graph
+
     """,
 )
