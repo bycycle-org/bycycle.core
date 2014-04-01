@@ -49,6 +49,20 @@ changes to clean things up a bit.
   bycycle-is-back:tip` for more details.
 
 
+0.4
+---
+
+- Migrated from MySQL to PostgreSQL
+- Uses SQLAlchemy to interact with the database instead of using raw SQL
+- Uses PostGIS for storing and operating on spatial data
+- Uses the PCL to manipulate geometries in Python
+- Moved services into classes that have a common base
+- Switched to a reStructuredText style of docstrings
+- Cleaned up the route service quite a bit
+- Added a unittest test suite for the route service
+- Created a Route class
+
+
 Ancient History (<= 0.4)
 ------------------------
 
