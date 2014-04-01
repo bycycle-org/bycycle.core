@@ -1,86 +1,34 @@
-"""Route entity."""
-from shapely.geometry import LineString, mapping
-
 import glineenc
 
-from bycycle.core.model.entities.base import Entity
-
-
-__all__ = ['Route']
+from . import Entity
 
 
 class Route(Entity):
-    """Represents a route between two addresses."""
 
-    member_name = 'route'
-    collection_name = 'routes'
-    member_title = 'Route'
-    collection_title = 'Routes'
-
-    def __init__(self,
-                 region,
-                 start, end,
-                 directions, linestring, distance):
-        self.region = region
+    def __init__(self, start, end, directions, linestring, distance):
         self.start = start
         self.end = end
         self.directions = directions
         self.distance = distance
+        self.bounds = linestring.bounds
         self.linestring = linestring
-        if linestring is not None:
-            xs, ys = zip(*self.linestring.coords)
-            xs, ys = region.proj(xs, ys, inverse=True)
-            self.linestring_lat_long = LineString(zip(xs, ys))
-        else:
-            self.linestring_lat_long = None
-
-    def __json_data__(self):
-        linestring = self.linestring_lat_long
-        envelope = linestring.envelope
-        centroid = envelope.centroid
-        minx, miny, maxx, maxy = envelope.bounds
-        route = {
-            'start': self.start.__json_data__(),
-            'end': self.end.__json_data__(),
-            'linestring': mapping(linestring),
-            'bounds': {
-                'sw': {'x': minx, 'y': miny},
-                'ne': {'x': maxx, 'y': maxy}
-            },
-            'bounds_array': [minx, miny, maxx, maxy],
-            'center': {'x': centroid.x, 'y': centroid.y},
-            'directions': self.directions,
-            'distance': self.distance,
-        }
-        # Encode line for Google Map
+        self.linestring_lat_long = linestring.lat_long
         pairs = [(y, x) for (x, y) in linestring.coords]
         points, levels = glineenc.encode_pairs(pairs)
-        route['linestring']['encoded'] = points
-        route['linestring']['encoded_levels'] = levels
-        return route
-
-    def __repr__(self):
-        return repr(self.__json_data__())
+        self.linestring_encoded = points
+        self.linestring_encoded_levels = levels
 
     def __str__(self):
+        template = '{}{i}. {turn} on {street} toward {toward} -- {miles} miles'
         directions = []
-        for d in self.directions:
-            directions.append('%s on %s toward %s -- %s %s' % (
-                d['turn'],
-                d['street'],
-                d['toward'],
-                '%.2f' % (d['distance']['miles']),
-                'miles',
-            ))
-        directions = '\n'.join([
-            '%s%s. %s' % (['', ' '][i < 10], i, d)
-            for i, d
-            in enumerate(directions)
-        ])
-        s = [
-            self.start,
-            self.end,
-            'Distance: %.2f' % (self.distance['miles']),
-            directions,
-        ]
-        return '\n'.join([str(a) for a in s])
+        for i, d in enumerate(self.directions):
+            spacer = ' ' if i < 10 else ''
+            directions.append(
+                template.format(spacer, i=i, miles=d['distance']['miles'], **d))
+        directions = '\n'.join(directions)
+        distance = 'Distance: {:.2f}'.format(self.distance['miles'])
+        return '\n'.join(
+            str(a)
+            for a
+            in ('From:', self.start, 'To:', self.end, distance, directions)
+        )
