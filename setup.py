@@ -22,12 +22,12 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     install_requires=[
-        'glineenc>=1.0',
-        'Shapely>=1.3.0',
-        'pyproj>=1.9.3',
-        'psycopg2>=2.5.2',
-        'SQLAlchemy>=0.9.3',
         'Dijkstar>=2.2',
+        'glineenc>=1.0',
+        'psycopg2>=2.5.2',
+        'pyproj>=1.9.3',
+        'Shapely>=1.3.0',
+        'SQLAlchemy>=0.9.3',
         'tangled>=0.1a7',
     ],
     extras_require={
