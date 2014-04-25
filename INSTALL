@@ -1,38 +1,37 @@
 byCycle Core Installation
 +++++++++++++++++++++++++
 
-This document provides details on how to install byCycle Core, especially
-for purposes of development.
+byCycle is deployed to Ubuntu 14.04. The following section lists packages that
+aren't part of the base server install, their versions, and their Ubuntu
+package names.
 
-Dev Stack
-=========
+Packages
+========
 
-byCycle is developed mainly on Ubuntu 12.10. The following sections list the
-required packages, their versions, and their Ubuntu package names.
-
-Mercurial 2.2
--------------
+Mercurial
+---------
 mercurial
 
-PostgreSQL 9.1
+PostgreSQL 9.3
 --------------
 postgresql libpq-dev
 
-GEOS 3
-------
-libgeos-3.3.3 libgeos-dev
+GEOS 3.4.2
+----------
+libgeos-dev
 
-Proj 4.7
+Proj 4.8
 --------
 proj-bin proj-data (?)
 
-PostGIS 1.5
+PostGIS 2.1
 -----------
-postgis postgresql-9.1-postgis
+postgis postgresql-9.3-postgis-2.1
 
-Python 3.3
-----------
-python3
+Python 3.4
+==========
+
+Python 3.4 is included by default in the Ubuntu 14.04 distribution.
 
 PostgreSQL Configuration
 ========================
@@ -48,7 +47,7 @@ createdb --owner $USER $DB_NAME
 createlang plpgsql $DB_NAME
 
 # Install PostGIS stuff into the bycycle database
-cd /usr/share/postgresql/9.1/contrib/postgis-1.5
+cd /usr/share/postgresql/9.3/contrib/postgis-2.1
 psql -d $DB_NAME -f postgis.sql
 psql -d $DB_NAME -f spatial_ref_sys.sql
 
