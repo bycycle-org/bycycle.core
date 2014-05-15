@@ -176,6 +176,8 @@ class OSMImporter:
             self.engine.execute(INTERSECTION_TABLE.insert(), rows)
             rows.clear()
 
+        self.engine.execute(INTERSECTION_TABLE.delete())
+
         for osm_id, node in all_nodes.items():
             if osm_id in intersections:
                 rows.append(node)
@@ -216,6 +218,8 @@ class OSMImporter:
         def insert():
             self.engine.execute(STREET_TABLE.insert(), rows)
             rows.clear()
+
+        self.engine.execute(STREET_TABLE.delete())
 
         for el in self.root.iterfind('way'):
             osm_id = int(el.get('id'))
