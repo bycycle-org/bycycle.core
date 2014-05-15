@@ -89,12 +89,12 @@ class OSMImporter:
         return actions
 
     @reify
-    def suffixes(self):
-        suffixes = {}
+    def street_type_map(self):
+        street_type_map = {}
         for r in self.engine.execute(SUFFIX_TABLE.select()):
-            suffixes[r.name] = r.abbreviation
-            suffixes[r.alias] = r.abbreviation
-        return suffixes
+            street_type_map[r.name] = r.abbreviation
+            street_type_map[r.alias] = r.abbreviation
+        return street_type_map
 
     def run(self):
         result = None
@@ -289,16 +289,60 @@ class OSMImporter:
             return v
 
     def normalize_street_name(self, name):
-        # TODO: This only works for addresses like "West Main Street"
-        prefix, *name, suffix = name.split()
+        if name is None:
+            return None
+
+        name = name.strip()
+
+        if not name:
+            return None
+
+        parts = name.split()
+
+        if len(parts) == 1:
+            return parts[0]
+
+        prefix, *rest = parts
+        normalized_parts = []
+
         prefix_lower = prefix.lower()
         if prefix_lower in directions_ftoa:
+            # Abbreviate prefix
             prefix = directions_ftoa[prefix_lower].upper()
-        name = ' '.join(name)
-        suffix_lower = suffix.lower()
-        if suffix_lower in self.suffixes:
-            suffix = self.suffixes[suffix_lower].capitalize()
-        name = ' '.join((prefix, name, suffix))
+            normalized_parts.append(prefix)
+        else:
+            rest = [prefix] + rest
+
+        if len(rest) == 1:
+            name = rest[0]
+            normalized_parts.append(name)
+        else:
+            *name, suffix = rest
+            suffix_lower = suffix.lower()
+
+            if suffix_lower in directions_ftoa:
+                # Ends with a direction
+                suffix = directions_ftoa[suffix_lower].upper()
+
+                # Check for street type before direction
+                if len(name) > 1:
+                    *name, street_type = name
+                    street_type_lower = street_type.lower()
+                    if street_type_lower in self.street_type_map:
+                        street_type = self.street_type_map[street_type_lower]
+                        street_type = street_type.capitalize()
+                        suffix = ' '.join((street_type, suffix))
+                    else:
+                        name = name + [street_type]
+
+            elif suffix_lower in self.street_type_map:
+                # Ends with a street type
+                suffix = self.street_type_map[suffix_lower].capitalize()
+
+            normalized_parts.extend(name)
+            normalized_parts.append(suffix)
+
+        name = ' '.join(normalized_parts)
         return name
 
     def vacuum(self, *tables):
