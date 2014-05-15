@@ -17,4 +17,5 @@ def fetch(argv=None):
         kwargs['url'] = args.url
     bbox = [args.minx, args.miny, args.maxx, args.maxy]
     fetcher = OSMDataFetcher(bbox, args.file_name, **kwargs)
+    print('Fetching {0.url}'.format(fetcher))
     fetcher.run()
