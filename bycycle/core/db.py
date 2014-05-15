@@ -1,7 +1,6 @@
-"""Database connection initialization and handling.
+"""Database connection/session initialization.
 
-Provides the ``DB`` class, which connects to the database and contains various
-generic (i.e., not region-specific) database functions.
+Used internally for scripts and tests.
 
 """
 from sqlalchemy import create_engine
