@@ -170,24 +170,13 @@ class OSMImporter:
         del encountered
 
         rows = []
-        all_nodes = {}
+        all_nodes = self.get_all_nodes()
 
         def insert():
             self.engine.execute(INTERSECTION_TABLE.insert(), rows)
             rows.clear()
 
-        for el in self.root.iterfind('node'):
-            osm_id = int(el.get('id'))
-            latitude = float(el.get('lat'))
-            longitude = float(el.get('lon'))
-            lat_long = Point(longitude, latitude)
-            geom = lat_long.reproject()
-            node = {
-                'id': osm_id,
-                'geom': geom,
-                'lat_long': lat_long,
-            }
-            all_nodes[osm_id] = node
+        for osm_id, node in all_nodes.items():
             if osm_id in intersections:
                 rows.append(node)
             if len(rows) > 1000:
@@ -199,9 +188,12 @@ class OSMImporter:
         return all_nodes
 
     @action(4)
-    def process_ways(self, all_nodes):
+    def process_ways(self, all_nodes=None):
         """Process ways"""
-        rows = []
+        all_nodes = self.get_all_nodes() if all_nodes is None else all_nodes
+
+        get_tag = self.get_tag
+        normalize_street_name = self.normalize_street_name
 
         bool_converter = get_converter('bool')
 
@@ -215,11 +207,11 @@ class OSMImporter:
             except ValueError:
                 return True
 
-        get_tag = self.get_tag
-        normalize_street_name = self.normalize_street_name
-
         result = self.engine.execute(select([INTERSECTION_TABLE.c.id]))
         intersection_ids = set(r.id for r in result)
+
+        way_id = 0
+        rows = []
 
         def insert():
             self.engine.execute(STREET_TABLE.insert(), rows)
@@ -256,11 +248,13 @@ class OSMImporter:
                         way = [node]
 
             for i, way in enumerate(ways):
+                way_id += 1
                 start_node_id = way[0]['id']
                 end_node_id = way[-1]['id']
                 geom = LineString((n['geom'].coords[0] for n in way))
                 lat_long = LineString((n['lat_long'].coords[0] for n in way))
                 rows.append({
+                    'id': way_id,
                     'osm_id': osm_id,
                     'osm_seq': i,
                     'geom': geom,
@@ -287,6 +281,22 @@ class OSMImporter:
     def vacuum_tables(self):
         """Vacuum tables"""
         self.vacuum(INTERSECTION_TABLE, STREET_TABLE)
+
+    def get_all_nodes(self):
+        all_nodes = {}
+        for el in self.root.iterfind('node'):
+            osm_id = int(el.get('id'))
+            latitude = float(el.get('lat'))
+            longitude = float(el.get('lon'))
+            lat_long = Point(longitude, latitude)
+            geom = lat_long.reproject()
+            node = {
+                'id': osm_id,
+                'geom': geom,
+                'lat_long': lat_long,
+            }
+            all_nodes[osm_id] = node
+        return all_nodes
 
     @staticmethod
     def get_tag(el, tag, converter=None, default=None):
