@@ -8,9 +8,9 @@ from bycycle.core.util import Timer
 
 class OSMGraphBuilder:
 
-    def __init__(self, file_name, db_url):
-        self.file_name = file_name
+    def __init__(self, db_url, file_name):
         self.engine = create_engine(db_url)
+        self.file_name = file_name
         self.graph = Graph()
 
     def run(self):
