@@ -202,7 +202,19 @@ class OSMImporter:
     def process_ways(self, all_nodes):
         """Process ways"""
         rows = []
+
         bool_converter = get_converter('bool')
+
+        # TODO: Change oneway from bool to (-1, 0, 1)?
+        #        0 => not a one way
+        #        1 => one way in node order
+        #       -1 => one way in reverse node order
+        def oneway_converter(v):
+            try:
+                return bool_converter(v)
+            except ValueError:
+                return True
+
         get_tag = self.get_tag
         normalize_street_name = self.normalize_street_name
 
@@ -223,10 +235,11 @@ class OSMImporter:
             cycleway = get_tag(el, 'cycleway')
             foot = get_tag(el, 'foot')
             sidewalk = get_tag(el, 'sidewalk')
-            oneway = get_tag(el, 'oneway', bool_converter, False)
-            oneway_bicycle = get_tag(el, 'oneway:bicycle', bool_converter)
+
+            oneway = get_tag(el, 'oneway', oneway_converter, False)
+            oneway_bicycle = get_tag(el, 'oneway:bicycle', oneway_converter)
             if oneway_bicycle is None:
-                oneway_bicycle = get_tag(el, 'bicycle:oneway', bool_converter)
+                oneway_bicycle = get_tag(el, 'bicycle:oneway', oneway_converter)
                 if oneway_bicycle is None:
                     oneway_bicycle = oneway
 
