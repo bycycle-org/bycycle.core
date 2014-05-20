@@ -146,11 +146,11 @@ class RouteService(AService):
         annex[end_node_id] = graph[end_node_id].copy()
 
         way1_attrs = (
-            way1.id, way1.geom.length, way1.name, way1.start_node_id,
-            way1.highway, way1.bicycle, way1.foot, way1.sidewalk)
+            way1.id, way1.geom.length, way1.name, way1.highway, way1.bicycle,
+            way1.foot, way1.sidewalk)
         way2_attrs = (
-            way2.id, way2.geom.length, way2.name, way2.start_node_id,
-            way2.highway, way2.bicycle, way2.foot, way2.sidewalk)
+            way2.id, way2.geom.length, way2.name, way2.highway, way2.bicycle,
+            way2.foot, way2.sidewalk)
 
         # If start node => end node, add a edge from start node to split
         # node and from split node to end node.
