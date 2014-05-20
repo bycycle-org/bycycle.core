@@ -270,7 +270,6 @@ class RouteService(AService):
         street_names = []
         jogs = []
         for i, e in enumerate(edges):
-            print('name: {0.name}, type: {0.highway}, bike: {0.bicycle}, cycletype: {0.cycleway}'.format(e))
             street_name = e.name
             street_names.append(street_name)  # save for later
             try:
