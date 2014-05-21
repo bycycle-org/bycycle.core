@@ -70,15 +70,18 @@ class LookupService(AService):
         for matcher in matchers:
             result = matcher(s)
             if result is not None:
-                if preferred_obj is not None:
-                    result.obj = preferred_obj
-                if preferred_point is not None:
-                    result.point = preferred_point
-                return result
+                break
+        else:
+            # Fallback result
+            result = hint_result
 
-        # Fallback result
-        if hint_result is not None:
-            return hint_result
+        if result is not None:
+            if preferred_obj is not None:
+                result.obj = preferred_obj
+            if preferred_point is not None:
+                result.point = preferred_point
+                result.lat_long = preferred_point.lat_long
+            return result
 
         raise NotFoundError('Could not find {}'.format(s))
 
