@@ -54,7 +54,7 @@ class LookupService(AService):
 
         if point_hint:
             preferred_point = Point.from_string(point_hint)
-            preferred_point.reproject()
+            preferred_point = preferred_point.reproject()
             if hint_result is None:
                 hint_result = self.match_point(point_hint)
 
