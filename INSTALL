@@ -36,14 +36,16 @@ Python 3.4 is included by default in the Ubuntu 14.04 distribution.
 PostgreSQL Configuration
 ========================
 
-# Create and configure the byCycle database. The following commands should
-# be run as the postgres user. $USER is whatever OS user you'll be using to
-# run the integrate script and tests (tip: run these commands under your
-# user using `sudo -u postgres`).
+# Create and configure the byCycle database. The following commands should be
+# run as the postgres user. $DB_USER is whatever OS user you'll be using to run
+# the import script and tests (tip: run these commands under your user using
+# `sudo -u postgres`).
 
 DB_NAME=bycycle  # Required to be bycycle for now
-createuser --no-superuser --no-createrole --no-createdb --pwprompt $USER
-createdb --owner $USER $DB_NAME
+DB_USER=deploy  # Or some other OS user
+createuser --no-superuser --no-createrole --no-createdb --pwprompt $DB_USER
+createdb --owner $DB_USER $DB_NAME
+# The following may not be necessary (plpgsql may be installed by default)
 createlang plpgsql $DB_NAME
 
 # Install PostGIS stuff into the bycycle database
@@ -52,9 +54,9 @@ psql -d $DB_NAME -f postgis.sql
 psql -d $DB_NAME -f spatial_ref_sys.sql
 
 # Fix ownership
-psql -d $DB_NAME -c "ALTER SCHEMA public OWNER TO $USER"
-psql -d $DB_NAME -c "ALTER TABLE geometry_columns OWNER TO $USER"
-psql -d $DB_NAME -c "ALTER TABLE spatial_ref_sys OWNER TO $USER"
+psql -d $DB_NAME -c "ALTER SCHEMA public OWNER TO $DB_USER"
+psql -d $DB_NAME -c "ALTER TABLE geometry_columns OWNER TO $DB_USER"
+psql -d $DB_NAME -c "ALTER TABLE spatial_ref_sys OWNER TO $DB_USER"
 
 Installation of byCycle Core
 ============================
