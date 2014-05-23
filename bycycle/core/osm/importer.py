@@ -1,18 +1,32 @@
 from xml.etree import ElementTree
 
 from sqlalchemy import create_engine
+from sqlalchemy.schema import Column
 from sqlalchemy.sql import select
+from sqlalchemy.types import BigInteger, Boolean
 
 from tangled.converters import get_converter
 from tangled.decorators import reify
 
-from bycycle.core.geometry import LineString, Point
+from bycycle.core.geometry import DEFAULT_SRID, LineString, Point
+from bycycle.core.geometry.sqltypes import POINT
 from bycycle.core.model import Base, Intersection, Street, USPSStreetSuffix
 from bycycle.core.model.compass import directions_ftoa
 from bycycle.core.util import PeriodicRunner, Timer
 
 
+class Node(Base):
+
+    __tablename__ = 'node'
+
+    id = Column(BigInteger, primary_key=True)
+    is_intersection = Column(Boolean, default=False)
+    geom = Column(POINT(DEFAULT_SRID))
+    lat_long = Column(POINT(4326))
+
+
 INTERSECTION_TABLE = Intersection.__table__
+NODE_TABLE = Node.__table__
 STREET_TABLE = Street.__table__
 SUFFIX_TABLE = USPSStreetSuffix.__table__
 
@@ -133,13 +147,13 @@ class OSMImporter:
     @action(1)
     def drop_tables(self):
         """Drop tables"""
-        tables = (INTERSECTION_TABLE, STREET_TABLE)
+        tables = (NODE_TABLE, INTERSECTION_TABLE, STREET_TABLE)
         Base.metadata.drop_all(self.engine, tables=tables)
 
     @action(2)
     def create_tables(self):
         """Create tables"""
-        tables = (INTERSECTION_TABLE, STREET_TABLE)
+        tables = (NODE_TABLE, INTERSECTION_TABLE, STREET_TABLE)
         Base.metadata.create_all(self.engine, tables=tables)
 
     @action(3)
@@ -174,25 +188,43 @@ class OSMImporter:
         rows = []
 
         def insert():
-            self.engine.execute(INTERSECTION_TABLE.insert(), rows)
+            self.engine.execute(NODE_TABLE.insert(), rows)
             rows.clear()
 
+        self.engine.execute(NODE_TABLE.delete())
         self.engine.execute(INTERSECTION_TABLE.delete())
 
-        for osm_id, node in self.iter_nodes():
-            if osm_id in intersections:
+        for event, el in ElementTree.iterparse(self.file_name):
+            if el.tag == 'node':
+                osm_id = int(el.get('id'))
+                latitude = float(el.get('lat'))
+                longitude = float(el.get('lon'))
+                lat_long = Point(longitude, latitude)
+                geom = lat_long.reproject()
+                node = {
+                    'id': osm_id,
+                    'is_intersection': osm_id in intersections,
+                    'geom': geom,
+                    'lat_long': lat_long,
+                }
                 rows.append(node)
-            if len(rows) > 1000:
-                insert()
+                if len(rows) > 1000:
+                    insert()
+            el.clear()
+
+        del intersections
 
         if rows:
             insert()
 
+        self.engine.execute("""
+            INSERT INTO intersection (id, geom, lat_long)
+            SELECT id, geom, lat_long FROM node WHERE is_intersection
+        """)
+
     @action(4)
     def process_ways(self):
         """Process ways"""
-        all_nodes = {osm_id: node for (osm_id, node) in self.iter_nodes()}
-
         get_tag = self.get_tag
         normalize_street_name = self.normalize_street_name
 
@@ -207,9 +239,6 @@ class OSMImporter:
                 return bool_converter(v)
             except ValueError:
                 return True
-
-        result = self.engine.execute(select([INTERSECTION_TABLE.c.id]))
-        intersection_ids = set(r.id for r in result)
 
         way_id = 0
         rows = []
@@ -241,23 +270,27 @@ class OSMImporter:
 
                 el.clear()
 
+                node_q = NODE_TABLE.select()
+                node_q = node_q.where(NODE_TABLE.c.id.in_(node_ids))
+                node_map = {n.id: n for n in self.engine.execute(node_q)}
+                nodes = [node_map[i] for i in node_ids]
+
                 way = []
                 ways = []
-                nodes = [all_nodes[node_id] for node_id in node_ids]
                 last_i = len(nodes) - 1
                 for i, node in enumerate(nodes):
                     way.append(node)
-                    if len(way) > 1 and node['id'] in intersection_ids:
+                    if len(way) > 1 and node.is_intersection:
                         ways.append(way)
                         if i < last_i:
                             way = [node]
 
                 for i, way in enumerate(ways):
                     way_id += 1
-                    start_node_id = way[0]['id']
-                    end_node_id = way[-1]['id']
-                    geom = LineString((n['geom'].coords[0] for n in way))
-                    lat_long = LineString((n['lat_long'].coords[0] for n in way))
+                    start_node_id = way[0].id
+                    end_node_id = way[-1].id
+                    geom = LineString((n.geom.coords[0] for n in way))
+                    lat_long = LineString((n.lat_long.coords[0] for n in way))
                     rows.append({
                         'id': way_id,
                         'osm_id': osm_id,
@@ -285,25 +318,14 @@ class OSMImporter:
             insert()
 
     @action(5)
+    def drop_node_table(self):
+        """Drop temporary node table"""
+        Base.metadata.drop_all(self.engine, tables=[NODE_TABLE])
+
+    @action(6)
     def vacuum_tables(self):
         """Vacuum tables"""
         self.vacuum(INTERSECTION_TABLE, STREET_TABLE)
-
-    def iter_nodes(self):
-        for event, el in ElementTree.iterparse(self.file_name):
-            if el.tag == 'node':
-                osm_id = int(el.get('id'))
-                latitude = float(el.get('lat'))
-                longitude = float(el.get('lon'))
-                lat_long = Point(longitude, latitude)
-                geom = lat_long.reproject()
-                node = {
-                    'id': osm_id,
-                    'geom': geom,
-                    'lat_long': lat_long,
-                }
-                yield osm_id, node
-            el.clear()
 
     @staticmethod
     def get_tag(el, tag, converter=None, default=None):
