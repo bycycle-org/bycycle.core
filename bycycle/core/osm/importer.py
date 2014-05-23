@@ -156,6 +156,7 @@ class OSMImporter:
         for event, el in ElementTree.iterparse(self.file_name):
             if el.tag == 'way':
                 node_ids = [int(n.get('ref')) for n in el.iterfind('nd')]
+                el.clear()
                 # This is necessary in case a start or end node isn't shared
                 # with any other ways. E.g., at a dead end or at the data
                 # boundary.
@@ -165,7 +166,6 @@ class OSMImporter:
                         intersections.add(node_id)
                     else:
                         encountered.add(node_id)
-                el.clear()
             elif el.tag in ('node', 'ref'):
                 el.clear()
 
@@ -239,10 +239,11 @@ class OSMImporter:
                     if oneway_bicycle is None:
                         oneway_bicycle = oneway
 
-                nodes = [all_nodes[node_id] for node_id in node_ids]
+                el.clear()
 
                 way = []
                 ways = []
+                nodes = [all_nodes[node_id] for node_id in node_ids]
                 last_i = len(nodes) - 1
                 for i, node in enumerate(nodes):
                     way.append(node)
