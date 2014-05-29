@@ -1,9 +1,5 @@
-def bicycle(u, v, e, prev_e):
-    length = e[1]
-    name = e[2]
-    highway = e[3]
-    bicycle = e[4]
-    cycleway = e[5]
+def bicycle(u, v, edge, prev_edge):
+    edge_id, length, name, highway, bicycle, cycleway, *rest = edge
 
     cost = length
 
@@ -44,7 +40,7 @@ def bicycle(u, v, e, prev_e):
         elif bicycle == 'designated' and cycleway != 'proposed':
             cost *= 0.9
 
-    if prev_e and name != prev_e[2]:
+    if prev_edge and name != prev_edge[2]:
         cost *= 1.25
 
     return cost
