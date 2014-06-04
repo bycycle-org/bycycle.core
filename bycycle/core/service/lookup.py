@@ -104,36 +104,35 @@ class LookupService(AService):
             point = Point.from_string(s)
         except ValueError:
             return None
+        normalized_point = point
+        point = point.reproject()
+        geom = func.ST_GeomFromText(point.wkt, DEFAULT_SRID)
+        distance = func.ST_Distance(geom, Intersection.geom)
+        distance = distance.label('distance')
+        # Try to get an Intersection first
+        q = self.session.query(Intersection, distance)
+        q = q.filter(distance < 5)  # 5 meters (make configurable)
+        q = q.order_by(distance)
+        result = q.first()
+        if result is not None:
+            obj = result.Intersection
+            closest_point = obj.geom
         else:
-            normalized_point = point
-            point = point.reproject()
-            geom = func.ST_GeomFromText(point.wkt, DEFAULT_SRID)
-            distance = func.ST_Distance(geom, Intersection.geom)
-            distance = distance.label('distance')
-            # Try to get a Intersection first
-            q = self.session.query(Intersection, distance)
-            q = q.filter(distance < 5)  # 5 meters (make configurable)
+            # Otherwise, get a Street
+            distance = func.ST_Distance(geom, Street.geom).label('distance')
+            q = self.session.query(Street, distance)
             q = q.order_by(distance)
-            result = q.first()
-            if result is not None:
-                obj = result.Intersection
-                closest_point = obj.geom
-            else:
-                # Otherwise, get a Street
-                distance = func.ST_Distance(geom, Street.geom).label('distance')
-                q = self.session.query(Street, distance)
-                q = q.order_by(distance)
-                obj = q.first().Street
-                # Get point on Street closest to input point
-                closest_point = func.ST_ClosestPoint(Street.geom, geom)
-                closest_point = closest_point.label('closest_point')
-                q = self.session.query(closest_point).select_from(Street)
-                q = q.filter_by(id=obj.id)
-                closest_point = q.scalar()
-                closest_point = Point.from_wkb(closest_point)
-            address = obj.name
-            return LookupResult(
-                s, normalized_point, closest_point, obj, address)
+            obj = q.first().Street
+            # Get point on Street closest to input point
+            closest_point = func.ST_ClosestPoint(Street.geom, geom)
+            closest_point = closest_point.label('closest_point')
+            q = self.session.query(closest_point).select_from(Street)
+            q = q.filter_by(id=obj.id)
+            closest_point = q.scalar()
+            closest_point = Point.from_wkb(closest_point)
+        address = obj.name
+        return LookupResult(
+            s, normalized_point, closest_point, obj, address)
 
     def match_address(self, s):
         return None
