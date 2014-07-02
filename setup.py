@@ -27,9 +27,9 @@ setup(
         'glineenc>=1.0',
         'psycopg2>=2.5.3',
         'pyproj>=1.9.3',
-        'requests>=2.2.1',
+        'requests>=2.3.0',
         'Shapely>=1.3.2',
-        'SQLAlchemy>=0.9.4',
+        'SQLAlchemy>=0.9.6',
         'tangled>=0.1a7',
     ],
     extras_require={
