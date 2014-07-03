@@ -2,6 +2,7 @@ from dijkstar import Graph
 
 from sqlalchemy import create_engine
 
+from bycycle.core.geometry import DEFAULT_SRID
 from bycycle.core.model import Street
 from bycycle.core.util import Timer
 
@@ -27,7 +28,7 @@ class OSMGraphBuilder:
         for i, r in enumerate(result):
             edge = (
                 r.id,
-                r.geom.length,
+                r.geom.reproject(DEFAULT_SRID, 2913).length,
                 r.name,
                 r.highway,
                 r.bicycle,

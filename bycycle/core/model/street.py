@@ -38,19 +38,19 @@ class Street(Base):
 
     @property
     def meters(self):
-        return self.geom.length
+        return self.geom.reproject(DEFAULT_SRID, 2913).length
 
     @property
     def kilometers(self):
-        return self.geom.length * 0.001
+        return self.meters * 0.001
 
     @property
     def feet(self):
-        return self.geom.length * 3.28084
+        return self.meters * 3.28084
 
     @property
     def miles(self):
-        return self.geom.length * 0.000621371
+        return self.meters * 0.000621371
 
     def split(self, point, node_id, way1_id, way2_id):
         """Split this street at ``point``."""
