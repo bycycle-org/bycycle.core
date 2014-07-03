@@ -146,10 +146,10 @@ class RouteService(AService):
         annex[end_node_id] = graph[end_node_id].copy()
 
         way1_attrs = (
-            way1.id, way1.geom.length, way1.name, way1.highway, way1.bicycle,
+            way1.id, way1.meters, way1.name, way1.highway, way1.bicycle,
             way1.foot, way1.sidewalk)
         way2_attrs = (
-            way2.id, way2.geom.length, way2.name, way2.highway, way2.bicycle,
+            way2.id, way2.meters, way2.name, way2.highway, way2.bicycle,
             way2.foot, way2.sidewalk)
 
         # If start node => end node, add a edge from start node to split
@@ -228,7 +228,7 @@ class RouteService(AService):
         edge_map.update({e.id: e for e in split_edges})
         edges = [edge_map[i] for i in edge_ids]
 
-        edge_lengths = [e.geom.length for e in edges]
+        edge_lengths = [e.meters for e in edges]
         distance = self.distance_dict(sum(edge_lengths))
 
         # Get bearing of first and last segment of each edge. We use this
