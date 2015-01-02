@@ -30,7 +30,7 @@ setup(
         'requests>=2.5.1',
         'Shapely>=1.5.1',
         'SQLAlchemy>=0.9.8',
-        'tangled>=0.1a7',
+        'tangled>=0.1a8',
     ],
     extras_require={
         'dev': [
