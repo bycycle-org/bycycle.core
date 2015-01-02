@@ -6,7 +6,7 @@ from sqlalchemy.sql import select
 from sqlalchemy.types import BigInteger, Boolean
 
 from tangled.converters import get_converter
-from tangled.decorators import reify
+from tangled.decorators import cached_property
 
 from bycycle.core.geometry import DEFAULT_SRID, LineString, Point
 from bycycle.core.geometry.sqltypes import POINT
@@ -89,7 +89,7 @@ class OSMImporter:
         else:
             self.actions = self.all_actions
 
-    @reify
+    @cached_property
     def all_actions(self):
         actions = []
         for name, attr in self.__class__.__dict__.items():
@@ -101,7 +101,7 @@ class OSMImporter:
         actions.sort(key=lambda a: a.order)
         return actions
 
-    @reify
+    @cached_property
     def street_type_map(self):
         street_type_map = {}
         for r in self.engine.execute(SUFFIX_TABLE.select()):
