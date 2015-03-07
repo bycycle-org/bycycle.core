@@ -25,10 +25,10 @@ setup(
     install_requires=[
         'Dijkstar>=2.2',
         'glineenc>=1.0',
-        'psycopg2>=2.5.4',
+        'psycopg2>=2.6',
         'pyproj>=1.9.4',
-        'requests>=2.5.1',
-        'Shapely>=1.5.1',
+        'requests>=2.5.3',
+        'Shapely>=1.5.6',
         'SQLAlchemy>=0.9.8',
         'tangled>=0.1a8',
     ],
