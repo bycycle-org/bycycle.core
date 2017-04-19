@@ -1,28 +1,24 @@
-import argparse
 import re
 import sys
 import time
 
+from runcommands import command
+from runcommands.util import abort
 from tangled.util import load_object
 
 from bycycle.core import db
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('service')
-    parser.add_argument('q')
-    args = parser.parse_args(argv)
-
-    module_name = 'bycycle.core.service.{}'.format(args.service)
+@command(choices={'service': ('lookup', 'route')})
+def bycycle(config, service, q):
+    """Run a bycycle service"""
+    module_name = f'bycycle.core.service.{service}'
     service_factory = load_object(module_name, 'Service')
 
-    q = args.q
-
-    if args.service == 'route':
+    if service == 'route':
         q = re.split('\s+to\s+', q, re.I)
         if len(q) < 2:
-            parser.error('Route must be specified as "A to B"')
+            abort(1, 'Route must be specified as "A to B"')
 
     db.init()
     session = db.make_session()
@@ -40,4 +36,4 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(bycycle.console_script())
