@@ -25,8 +25,12 @@ def init(config):
 
 
 @command
-def install(config):
-    commands.local(config, '{venv.pip} install -r requirements.txt')
+def install(config, upgrade=False):
+    commands.local(config, (
+        '{venv.pip} install',
+        '--upgrade' if upgrade else '',
+        '-r requirements.txt',
+    ))
 
 
 @command
