@@ -27,6 +27,7 @@ setup(
         'psycopg2>=2.7.1',
         'pyproj>=1.9.5.1',
         'requests>=2.13.0',
+        'runcommands>=1.0a16',
         'Shapely>=1.5.17',
         'SQLAlchemy>=1.1.9',
         'tangled>=0.1a9',
@@ -38,10 +39,7 @@ setup(
     },
     entry_points="""
     [console_scripts]
-    bycycle = bycycle.core.__main__:main
-    bycycle-fetch = bycycle.core.scripts.fetch:fetch
-    bycycle-import = bycycle.core.scripts.importer:do_import
-    bycycle-graph = bycycle.core.scripts.graph:make_graph
+    bycycle = bycycle.core.__main__:bycycle.console_script
 
     """,
 )
