@@ -1,59 +1,55 @@
 byCycle Core Installation
 +++++++++++++++++++++++++
 
-byCycle is deployed to Ubuntu 14.04. The following section lists packages that
-aren't part of the base server install, their versions, and their Ubuntu
-package names.
+This document focuses on installation for development.
 
 Packages
 ========
 
-Mercurial
----------
-mercurial
+- Mercurial 4
+- Python 3.6
+- PostgreSQL 9.4
+- PostGIS 2
+- GEOS 3
+- Proj 4
 
-PostgreSQL 9.3
---------------
-postgresql libpq-dev
+Installation
+============
 
-GEOS 3.4.2
-----------
-libgeos-dev
-
-Proj 4.8
---------
-proj-bin proj-data (?)
-
-PostGIS 2.1
------------
-postgis postgresql-9.3-postgis-2.1
-
-Python 3.4
-==========
-
-Python 3.4 is included by default in the Ubuntu 14.04 distribution.
+- First, clone the repository using Mercurial:
+  ``hg clone ssh://hg@bitbucket.org/bycycle/bycycle.core``
+- Change into the ``bycycle.core`` directory
+- If you've got ``make`` installed, ``make init` should do the trick
+- If you don't have ``make``, the basic steps are:
+  - Create a virtualenv
+  - Install this package into the virtualenv
+  - Create a PostGIS-enabled PostgreSQL database
+  - Import USPS street suffixes
+  - Get some OSM data and create a routing graph
 
 PostgreSQL Configuration
 ========================
 
-# Create and configure the byCycle database. The following commands should be
-# run as the postgres user. $DB_USER is whatever OS user you'll be using to run
-# the import script and tests (tip: run these commands under your user using
-# `sudo -u postgres`).
+- Create bycycle user
+- Create bycycle database owned by bycycle user
+- Install PostGIS
+- Create tables
 
-DB_NAME=bycycle  # Required to be bycycle for now
-DB_USER=deploy  # Or some other OS user
-createuser --no-superuser --no-createrole --no-createdb --pwprompt $DB_USER
-createdb --owner $DB_USER $DB_NAME
-# The following may not be necessary (plpgsql may be installed by default)
-createlang plpgsql $DB_NAME
+Once the ``bycycle.core`` package is installed, the easiest way to do this is
+to run ``run create-db create-schema``.
 
-# Install PostGIS stuff into the bycycle database
-cd /usr/share/postgresql/9.3/contrib/postgis-2.1
-psql -d $DB_NAME -f postgis.sql
-psql -d $DB_NAME -f spatial_ref_sys.sql
+USPS Street Suffix Import
+=========================
 
-# Fix ownership
-psql -d $DB_NAME -c "ALTER SCHEMA public OWNER TO $DB_USER"
-psql -d $DB_NAME -c "ALTER TABLE geometry_columns OWNER TO $DB_USER"
-psql -d $DB_NAME -c "ALTER TABLE spatial_ref_sys OWNER TO $DB_USER"
+Once the ``bycycle.core`` package is installed, the easiest way to do this is
+to run ``run load-usps-street-suffixes``.
+
+OSM Data Import
+===============
+
+- Fetch data within a specified bounding box
+- Import that OSM data into the database
+- Create a routing graph from the imported OSM data
+
+Once the ``bycycle.core`` package is installed, the easiest way to do this is
+to run ``run fetch-osm-data load-osm-data create-graph``
