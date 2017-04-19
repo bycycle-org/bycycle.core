@@ -22,6 +22,7 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     install_requires=[
+        'boto3>=1.4.4',
         'Dijkstar>=2.2',
         'glineenc>=1.0',
         'psycopg2>=2.7.1',
