@@ -38,7 +38,7 @@ setup(
     },
     entry_points="""
     [console_scripts]
-    bycycle = bycycle.core.scripts.main:main
+    bycycle = bycycle.core.__main__:main
     bycycle-fetch = bycycle.core.scripts.fetch:fetch
     bycycle-import = bycycle.core.scripts.importer:do_import
     bycycle-graph = bycycle.core.scripts.graph:make_graph

@@ -1,5 +1,6 @@
 import argparse
 import re
+import sys
 import time
 
 from tangled.util import load_object
@@ -36,3 +37,7 @@ def main(argv=None):
         session.close()
         print(response)
     print('{:.2f} seconds'.format(time.time() - start_time))
+
+
+if __name__ == '__main__':
+    sys.exit(main())
