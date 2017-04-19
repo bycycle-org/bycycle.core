@@ -1,23 +1,28 @@
-all: build
+venv ?= .env
 
-build:
-	@buildout
+init: $(venv)
+	$(venv)/bin/pip install -r requirements.txt
+
+$(venv):
+	virtualenv -p python3 $(venv)
+
+sdist: clean clean-dist
+	$(venv)/bin/python setup.py sdist
 
 test:
-	@test -f ./bin/python || make
-	@./bin/tangled test
+	$(venv)/bin/tangled test
 
-sdist: clean build
-	@./bin/python setup.py sdist
+clean: clean-dist clean-pycache
 
-clean-buildout:
-	@rm -vrf .installed.cfg bin develop-eggs parts
+clean-all: clean clean-venv
 
 clean-dist:
-	@rm -vrf build dist *.egg-info
+	rm -frv dist
 
 clean-pycache:
-	@echo "Removing __pycache__ directories"
-	@find . -type d -name __pycache__ | xargs rm -rf
+	find . -type d -name __pycache__ | xargs rm -rf
 
-clean: clean-buildout clean-dist clean-pycache
+clean-venv:
+	rm -frv $(venv)
+
+.PHONY = init install sdist test clean clean-all clean-dist clean-pycache clean-venv
