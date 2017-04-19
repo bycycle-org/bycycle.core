@@ -25,16 +25,16 @@ setup(
     install_requires=[
         'Dijkstar>=2.2',
         'glineenc>=1.0',
-        'psycopg2>=2.6',
-        'pyproj>=1.9.4',
-        'requests>=2.5.3',
-        'Shapely>=1.5.6',
-        'SQLAlchemy>=0.9.8',
-        'tangled>=0.1a8',
+        'psycopg2>=2.7.1',
+        'pyproj>=1.9.5.1',
+        'requests>=2.13.0',
+        'Shapely>=1.5.17',
+        'SQLAlchemy>=1.1.9',
+        'tangled>=0.1a9',
     ],
     extras_require={
         'dev': [
-            'coverage>=3.7.1',
+            'coverage>=4.3.4',
         ],
     },
     entry_points="""
