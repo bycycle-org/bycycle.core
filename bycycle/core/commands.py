@@ -6,6 +6,13 @@ from runcommands.util import printer
 from tangled.util import asset_path
 
 
+def get_version(config):
+    result = commands.local(config, 'hg id -i', hide='stdout')
+    version = result.stdout.strip()
+    version = version.rstrip('+')
+    return version
+
+
 @command
 def init(config):
     install(config)
