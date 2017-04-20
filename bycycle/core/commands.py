@@ -3,7 +3,14 @@ import csv
 from runcommands import command, commands
 from runcommands.util import printer
 
+from sqlalchemy.engine import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from tangled.util import asset_path
+
+from bycycle.core.model import Base
+from bycycle.core.model.suffix import USPSStreetSuffix
+from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
 
 
 def get_version(config):
@@ -59,8 +66,6 @@ def create_db(config, user='{db.user}', name='{db.name}', host='{db.host}', drop
 
 @command
 def create_schema(config):
-    from bycycle.core.model import Base
-    from sqlalchemy import create_engine
     engine = create_engine(config.db.url)
     Base.metadata.create_all(bind=engine)
 
@@ -68,10 +73,6 @@ def create_schema(config):
 @command
 def load_usps_street_suffixes(config):
     """Load USPS street suffixes into database."""
-    from sqlalchemy.engine import create_engine
-    from sqlalchemy.orm import sessionmaker
-    from bycycle.core.model.suffix import USPSStreetSuffix
-
     path = asset_path('bycycle.core.model', f'{USPSStreetSuffix.__tablename__}.csv')
 
     engine = create_engine(config.db.url)
@@ -96,7 +97,6 @@ def load_usps_street_suffixes(config):
 def fetch_osm_data(config, url=None, path='osm.data',
                    minx=-122.7248, miny=45.4975, maxx=-122.6190, maxy=45.5537):
     """Fetch OSM data and save to file."""
-    from bycycle.core.osm import OSMDataFetcher
     bbox = (minx, miny, maxx, maxy)
     fetcher = OSMDataFetcher(bbox, path, url)
     fetcher.run()
@@ -105,7 +105,6 @@ def fetch_osm_data(config, url=None, path='osm.data',
 @command
 def load_osm_data(config, path='osm.data', db_url='{db.url}', actions=()):
     """Read OSM data from file and load into database."""
-    from bycycle.core.osm import OSMImporter
     db_url = db_url.format_map(config)
     importer = OSMImporter(path, db_url, actions)
     importer.run()
@@ -114,7 +113,6 @@ def load_osm_data(config, path='osm.data', db_url='{db.url}', actions=()):
 @command
 def create_graph(config, db_url='{db.url}', path='bycycle.core:matrix'):
     """Read OSM data from database and write graph to path."""
-    from bycycle.core.osm import OSMGraphBuilder
     db_url = db_url.format_map(config)
     path = asset_path(path)
     builder = OSMGraphBuilder(db_url, path)
