@@ -16,7 +16,10 @@ test:
 
 clean: clean-dist clean-pycache
 
-clean-all: clean clean-venv
+clean-all: clean-build clean-dist clean-pycache clean-venv
+
+clean-build:
+	rm -frv build
 
 clean-dist:
 	rm -frv dist
@@ -27,4 +30,4 @@ clean-pycache:
 clean-venv:
 	rm -frv $(venv)
 
-.PHONY = init install sdist test clean clean-all clean-dist clean-pycache clean-venv
+.PHONY = init install sdist test clean clean-all clean-build clean-dist clean-pycache clean-venv
