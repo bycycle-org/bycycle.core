@@ -1,4 +1,6 @@
-from setuptools import setup, find_packages
+from setuptools import setup, PEP420PackageFinder
+
+find_packages = PEP420PackageFinder.find
 
 
 setup(
@@ -19,8 +21,8 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
-    packages=find_packages(),
-    zip_safe=False,
+    packages=find_packages(include=['bycycle', 'bycycle.core', 'bycycle.core.*']),
+    include_package_data=True,
     install_requires=[
         'boto3>=1.4.4',
         'Dijkstar>=2.2',
