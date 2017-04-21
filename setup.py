@@ -5,7 +5,7 @@ find_packages = PEP420PackageFinder.find
 
 setup(
     name='bycycle.core',
-    version='0.6.dev0',
+    version='0.6.dev1',
     description='byCycle core model and services',
     long_description='byCycle model, routing, and geocoding.',
     license='GPLv3',
