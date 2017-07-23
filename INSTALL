@@ -6,7 +6,6 @@ This document focuses on installation for development.
 Packages
 ========
 
-- Mercurial 4
 - Python 3.6
 - PostgreSQL 9.4
 - PostGIS 2
@@ -16,8 +15,8 @@ Packages
 Installation
 ============
 
-- First, clone the repository using Mercurial:
-  ``hg clone ssh://hg@bitbucket.org/bycycle/bycycle.core``
+- First, clone the repository using git:
+  ``git clone git@github.com:bycycle-org/bycycle.core``
 - Change into the ``bycycle.core`` directory
 - If you've got ``make`` installed, ``make init` should do the trick
 - If you don't have ``make``, the basic steps are:

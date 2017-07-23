@@ -13,13 +13,6 @@ from bycycle.core.model.suffix import USPSStreetSuffix
 from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
 
 
-def get_version(config):
-    result = commands.local(config, 'hg id -i', hide='stdout')
-    version = result.stdout.strip()
-    version = version.rstrip('+')
-    return version
-
-
 @command
 def init(config):
     install(config)

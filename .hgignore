@@ -1,3 +1,0 @@
-^bycycle/core/model/.pw
-^bycycle/core/model/[a-z]+/data/.*\.sql$
-^bycycle/core/matrix$
