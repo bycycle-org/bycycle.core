@@ -6,8 +6,8 @@ This document focuses on installation for development.
 Packages
 ========
 
-- Python 3.6
 - PostgreSQL 9.4
+- Python 3.5
 - PostGIS 2
 - GEOS 3
 - Proj 4

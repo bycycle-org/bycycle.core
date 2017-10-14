@@ -19,7 +19,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.5',
     ],
     packages=find_packages(include=['bycycle', 'bycycle.core', 'bycycle.core.*']),
     include_package_data=True,

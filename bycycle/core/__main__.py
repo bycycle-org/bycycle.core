@@ -12,7 +12,7 @@ from bycycle.core import db
 @command(choices={'service': ('lookup', 'route')})
 def bycycle(config, service, q):
     """Run a bycycle service"""
-    module_name = f'bycycle.core.service.{service}'
+    module_name = 'bycycle.core.service.{service}'.format(service=service)
     service_factory = load_object(module_name, 'Service')
 
     if service == 'route':

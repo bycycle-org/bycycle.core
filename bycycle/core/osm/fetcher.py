@@ -20,10 +20,10 @@ class OSMDataFetcher:
         def hook(num_blocks, block_size, total_size):
             size = num_blocks * block_size
             if total_size == -1:
-                msg = f'\r{size}B'
+                msg = '\r{size}B'.format_map(locals())
             else:
-                msg = f'\r{size}B of {total_size}B'
+                msg = '\r{size}B of {total_size}B'.format_map(locals())
             print(msg, end='', flush=True)
-        print(f'Fetching {self.url}...', flush=True)
+        print('Fetching {self.url}...'.format_map(locals()), flush=True)
         urlretrieve(self.url, self.file_name, hook)
-        print(f'\nSaved to {self.file_name}')
+        print('\nSaved to {self.file_name}'.format_map(locals()))

@@ -47,14 +47,15 @@ def create_db(config, user='{db.user}', name='{db.name}', host='{db.host}', drop
             '--user postgres',
             '--host', host,
             '--dbname', database,
-            '--command', f'"{sql};"',
+            '--command', '"{sql};"'.format(sql=sql),
         ), abort_on_failure=False)
 
-    run_psql_command(f'DROP DATABASE {name}', condition=drop_database)
-    run_psql_command(f'DROP USER {user}', condition=drop_user)
-    run_psql_command(f'CREATE USER {user}')
-    run_psql_command(f'CREATE DATABASE {name} OWNER {user}')
-    run_psql_command(f'CREATE EXTENSION postgis', database=name)
+    f = locals()
+    run_psql_command('DROP DATABASE {name}'.format_map(f), condition=drop_database)
+    run_psql_command('DROP USER {user}'.format_map(f), condition=drop_user)
+    run_psql_command('CREATE USER {user}'.format_map(f))
+    run_psql_command('CREATE DATABASE {name} OWNER {user}'.format_map(f))
+    run_psql_command('CREATE EXTENSION postgis'.format_map(f), database=name)
 
 
 @command
@@ -66,7 +67,8 @@ def create_schema(config):
 @command
 def load_usps_street_suffixes(config):
     """Load USPS street suffixes into database."""
-    path = asset_path('bycycle.core.model', f'{USPSStreetSuffix.__tablename__}.csv')
+    file_name = '{model.__tablename__}.csv'.format(model=USPSStreetSuffix)
+    path = asset_path('bycycle.core.model', file_name)
 
     engine = create_engine(config.db.url)
     session = sessionmaker(bind=engine)()
@@ -74,7 +76,7 @@ def load_usps_street_suffixes(config):
     printer.info('Deleting existing USPS street suffixes...', end=' ')
     count = session.query(USPSStreetSuffix).delete()
     session.commit()
-    printer.info(f'{count} deleted')
+    printer.info(count, 'deleted')
 
     printer.info('Adding USPS street suffixes...', end=' ')
     with open(path) as fp:
@@ -83,7 +85,7 @@ def load_usps_street_suffixes(config):
     count = len(records)
     session.add_all(records)
     session.commit()
-    printer.info(f'{count} added')
+    printer.info(count, 'added')
 
 
 @command
