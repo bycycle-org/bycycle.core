@@ -57,7 +57,7 @@ class Test_A_Route(unittest.TestCase):
 
     def test_intersection_addresses(self):
         q = ('NW 17th and Couch', 'SE 21st and Clinton')
-        route = self._query(q, region='portlandor')
+        route = self._query(q)
         self.assertIsInstance(route, Route)
 
     def test_synthetic_destination_node_directly_after_last_turn(self):
@@ -83,7 +83,7 @@ class Test_A_Route(unittest.TestCase):
 
         """
         q = ('1815 nw couch', '633 n alberta')
-        route = self._query(q, region='portlandor')
+        route = self._query(q)
         self.assertIsInstance(route, Route)
         d = route.directions
         self.assertIs(d[-1]['toward'], None)
