@@ -22,5 +22,5 @@ def make_session():
     return session_factory()
 
 
-def make_url(drivername='postgresql', database='bycycle', **kwargs):
-    return URL(drivername, database=database, **kwargs)
+def make_url(drivername='postgresql', user='bycycle', host='localhost', database='bycycle', **kwargs):
+    return URL(drivername, username=user, host=host, database=database, **kwargs)
