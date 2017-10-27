@@ -24,20 +24,20 @@ setup(
     packages=find_packages(include=['bycycle', 'bycycle.core', 'bycycle.core.*']),
     include_package_data=True,
     install_requires=[
-        'boto3>=1.4.4',
+        'boto3>=1.4.7',
         'Dijkstar>=2.2',
         'glineenc>=1.0',
-        'psycopg2>=2.7.1',
+        'psycopg2>=2.7.3.2',
         'pyproj>=1.9.5.1',
-        'requests>=2.13.0',
+        'requests>=2.18.4',
         'runcommands>=1.0a26',
         'Shapely>=1.6.2',
-        'SQLAlchemy>=1.1.9',
+        'SQLAlchemy>=1.1.15',
         'tangled>=0.1a9',
     ],
     extras_require={
         'dev': [
-            'coverage>=4.3.4',
+            'coverage>=4.4.1',
         ],
     },
     entry_points="""
