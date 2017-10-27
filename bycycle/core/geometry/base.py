@@ -1,6 +1,6 @@
 from shapely import wkb, wkt
+from shapely.errors import ReadingError
 from shapely.geometry import mapping
-from shapely.geos import ReadingError
 from shapely.ops import transform
 
 from .proj import (

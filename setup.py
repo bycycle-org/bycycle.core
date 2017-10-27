@@ -31,7 +31,7 @@ setup(
         'pyproj>=1.9.5.1',
         'requests>=2.13.0',
         'runcommands>=1.0a26',
-        'Shapely>=1.5.17',
+        'Shapely>=1.6.2',
         'SQLAlchemy>=1.1.9',
         'tangled>=0.1a9',
     ],
