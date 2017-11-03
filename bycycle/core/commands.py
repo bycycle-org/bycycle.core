@@ -1,6 +1,7 @@
 import csv
 
-from runcommands import command, commands
+from runcommands import command
+from runcommands.commands import local
 from runcommands.util import printer
 
 from sqlalchemy.engine import create_engine
@@ -26,7 +27,7 @@ def init(config):
 
 @command
 def install(config, upgrade=False):
-    commands.local(config, (
+    local(config, (
         '{venv.pip} install',
         '--upgrade' if upgrade else '',
         '-r requirements.txt',
@@ -42,7 +43,7 @@ def create_db(config, user='{db.user}', name='{db.name}', host='{db.host}', drop
     def run_psql_command(sql, condition=True, database='postgres'):
         if not condition:
             return
-        commands.local(config, (
+        local(config, (
             'psql',
             '--user postgres',
             '--host', host,
