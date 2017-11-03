@@ -1,6 +1,7 @@
 import csv
 
 from runcommands import command
+from runcommands.command import Command
 from runcommands.commands import local
 from runcommands.util import printer
 
@@ -113,3 +114,8 @@ def create_graph(config, db_url='{db.url}', path='bycycle.core:matrix'):
     path = asset_path(path)
     builder = OSMGraphBuilder(db_url, path)
     builder.run()
+
+__all__ = [
+    name for name, obj in vars().items()
+    if isinstance(obj, Command) and obj.qualified_name.startswith('bycycle.core.')
+]
