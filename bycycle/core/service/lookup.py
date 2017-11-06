@@ -83,7 +83,7 @@ class LookupService(AService):
                 result.lat_long = preferred_point.lat_long
             return result
 
-        raise NotFoundError('Could not find {}'.format(s))
+        raise NotFoundError('Lookup failed', 'Could not find "{}"'.format(s))
 
     def match_id(self, s):
         match = ID_RE.match(s)
