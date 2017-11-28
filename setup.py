@@ -25,7 +25,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'boto3>=1.4.7',
-        'Dijkstar>=2.2',
+        'Dijkstar>=2.3',
         'glineenc>=1.0',
         'psycopg2>=2.7.3.2',
         'pyproj>=1.9.5.1',
