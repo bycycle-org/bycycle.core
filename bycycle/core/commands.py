@@ -1,9 +1,8 @@
 import csv
 
 from runcommands import command
-from runcommands.command import Command
 from runcommands.commands import local
-from runcommands.util import printer
+from runcommands.util import get_all_list, printer
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import ProgrammingError
@@ -142,7 +141,4 @@ def get_db_init_args(config, **overrides):
     return connection_args
 
 
-__all__ = [
-    name for name, obj in vars().items()
-    if isinstance(obj, Command) and obj.qualified_name.startswith('bycycle.core.')
-]
+__all__ = get_all_list(vars())
