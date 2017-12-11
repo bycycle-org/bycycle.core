@@ -6,10 +6,11 @@ from runcommands.commands import local
 from runcommands.util import printer
 
 from sqlalchemy.engine import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import ProgrammingError
 
 from tangled.util import asset_path
 
+from bycycle.core import db
 from bycycle.core.model import Base
 from bycycle.core.model.suffix import USPSStreetSuffix
 from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
@@ -36,33 +37,50 @@ def install(config, upgrade=False):
 
 
 @command
-def create_db(config, user='{db.user}', name='{db.name}', host='{db.host}', drop=False,
-              drop_database=False, drop_user=False):
+def create_db(config,
+              # Owner and database to create
+              owner=None, database=None,
+              # Postgres superuser used to run drop & create commands
+              superuser='postgres', superuser_password=None, host=None,
+              drop=False, drop_database=False, drop_user=False):
+    owner = owner or config.db.user
+    database = database or config.db.database
     drop_database = drop or drop_database
     drop_user = drop or drop_user
 
-    def run_psql_command(sql, condition=True, database='postgres'):
-        if not condition:
-            return
-        local(config, (
-            'psql',
-            '--user postgres',
-            '--host', host,
-            '--dbname', database,
-            '--command', '"{sql};"'.format(sql=sql),
-        ), abort_on_failure=False)
+    common_connection_args = dict(user=superuser, password=superuser_password, host=host)
+    common_engine_args = dict(isolation_level='AUTOCOMMIT')
+
+    connection_args = get_db_init_args(config, **common_connection_args)
+    postgres_engine = create_engine(db.make_url(**connection_args), **common_engine_args)
+
+    connection_args = get_db_init_args(config, database=database, **common_connection_args)
+    app_engine = create_engine(db.make_url(**connection_args), **common_engine_args)
 
     f = locals()
-    run_psql_command('DROP DATABASE {name}'.format_map(f), condition=drop_database)
-    run_psql_command('DROP USER {user}'.format_map(f), condition=drop_user)
-    run_psql_command('CREATE USER {user}'.format_map(f))
-    run_psql_command('CREATE DATABASE {name} OWNER {user}'.format_map(f))
-    run_psql_command('CREATE EXTENSION postgis'.format_map(f), database=name)
+    
+    def execute(engine, sql, condition=True):
+        if not condition:
+            return
+        try:
+            engine.execute(sql.format_map(f))
+        except ProgrammingError as exc:
+            error = str(exc.orig)
+            if 'already exists' in str(exc):
+                printer.warning(exc.statement.strip(), error.strip(), sep=': ')
+            else:
+                raise
+
+    execute(postgres_engine, 'DROP DATABASE {database}', condition=drop_database)
+    execute(postgres_engine, 'DROP USER {owner}', condition=drop_user)
+    execute(postgres_engine, 'CREATE USER {owner}')
+    execute(postgres_engine, 'CREATE DATABASE {database} OWNER {owner}')
+    execute(app_engine, 'CREATE EXTENSION postgis')
 
 
 @command
 def create_schema(config):
-    engine = create_engine(config.db.url)
+    engine, _ = db.init(**get_db_init_args(config))
     Base.metadata.create_all(bind=engine)
 
 
@@ -72,8 +90,8 @@ def load_usps_street_suffixes(config):
     file_name = '{model.__tablename__}.csv'.format(model=USPSStreetSuffix)
     path = asset_path('bycycle.core.model', file_name)
 
-    engine = create_engine(config.db.url)
-    session = sessionmaker(bind=engine)()
+    engine, session_factory = db.init(**get_db_init_args(config))
+    session = session_factory()
 
     printer.info('Deleting existing USPS street suffixes...', end=' ')
     count = session.query(USPSStreetSuffix).delete()
@@ -114,6 +132,15 @@ def create_graph(config, db_url='{db.url}', path='bycycle.core:matrix'):
     path = asset_path(path)
     builder = OSMGraphBuilder(db_url, path)
     builder.run()
+
+
+def get_db_init_args(config, **overrides):
+    connection_args = {k: v for (k, v) in config.db.items()}
+    connection_args.pop('url')
+    for name, value in ((k, v) for (k, v) in overrides.items() if v):
+        connection_args[name] = value
+    return connection_args
+
 
 __all__ = [
     name for name, obj in vars().items()
