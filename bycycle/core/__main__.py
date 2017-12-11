@@ -20,8 +20,9 @@ def bycycle(config, service, q):
         if len(q) < 2:
             abort(1, 'Route must be specified as "A to B"')
 
-    db.init()
-    session = db.make_session()
+    _, session_factory = db.init()
+    session = session_factory()
+
     start_time = time.time()
     try:
         service = service_factory(session)

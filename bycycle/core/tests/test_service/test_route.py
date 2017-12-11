@@ -6,14 +6,11 @@ from bycycle.core.model import Route
 from bycycle.core.service.route import RouteService
 
 
-def setUpModule():
-    db.init()
-
-
 class Test_A_Route(unittest.TestCase):
 
     def setUp(self):
-        self.session = db.make_session()
+        self.engine, self.session_factory = db.init()
+        self.session = self.session_factory()
 
     def tearDown(self):
         self.session.close()

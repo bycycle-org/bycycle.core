@@ -17,10 +17,7 @@ def init(**connection_args):
     if engine is None:
         engine = create_engine(make_url(**connection_args))
         session_factory = sessionmaker(bind=engine)
-
-
-def make_session():
-    return session_factory()
+    return engine, session_factory
 
 
 def make_url(drivername='postgresql', user='bycycle', host='localhost', database='bycycle', **kwargs):
