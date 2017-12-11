@@ -3,13 +3,7 @@ from shapely.errors import ReadingError
 from shapely.geometry import mapping
 from shapely.ops import transform
 
-from .proj import (
-    DEFAULT_SRID,
-    DEFAULT_INPUT_SRID,
-    default_projector,
-    inverse_projector,
-    make_transformer,
-)
+from .proj import DEFAULT_INPUT_SRID, DEFAULT_SRID, make_transformer
 
 
 class Base:
@@ -51,15 +45,13 @@ class Base:
         """
         if input_srid == output_srid:
             return self.__class__(self)
-        elif input_srid == DEFAULT_INPUT_SRID and output_srid == DEFAULT_SRID:
-            projector = default_projector
         else:
             projector = make_transformer(input_srid, output_srid)
         return transform(projector, self)
 
     @property
     def lat_long(self):
-        return transform(inverse_projector, self)
+        return self.reproject(DEFAULT_SRID, DEFAULT_INPUT_SRID)
 
     def __repr__(self):
         return self.__str__()

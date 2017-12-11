@@ -1,4 +1,4 @@
-from functools import partial
+from functools import lru_cache, partial
 
 import pyproj
 
@@ -6,17 +6,15 @@ import pyproj
 __all__ = [
     'DEFAULT_INPUT_SRID',
     'DEFAULT_SRID',
-    'default_projector',
-    'inverse_projector',
+    'make_transformer',
 ]
 
 
-DEFAULT_SRID = 3857
 DEFAULT_INPUT_SRID = 4326
-default_projector = pyproj.Proj(init='epsg:{}'.format(DEFAULT_SRID))
-inverse_projector = partial(default_projector, inverse=True)
+DEFAULT_SRID = 3857
 
 
+@lru_cache()
 def make_transformer(input_srid, output_srid):
     return partial(
         pyproj.transform,
