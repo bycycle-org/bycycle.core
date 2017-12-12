@@ -6,8 +6,7 @@ from urllib.request import urlretrieve
 DEFAULT_URL = (
     'http://overpass-api.de/api/interpreter?data='
     '[out:json];'
-    'way[highway]({bbox});'
-    '<;>;'
+    '(way[highway]({bbox});>;);'
     'out;'
 )
 
