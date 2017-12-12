@@ -1,3 +1,5 @@
+import os
+
 from urllib.request import urlretrieve
 
 
@@ -26,13 +28,30 @@ class OSMDataFetcher:
         self.file_name = file_name
 
     def run(self):
-        def hook(num_blocks, block_size, total_size):
-            size = num_blocks * block_size
+        def get_size_and_unit(size, gb=2 ** 30, mb=2 ** 20, kb=2 ** 10):
+            unit = 'B'
+            if size > gb:
+                size, unit = size / gb, 'GB'
+            elif size > mb:
+                size, unit = size / mb, 'MB'
+            elif size > kb:
+                size, unit = size / kb, 'KB'
+            return size, unit
+
+        def show_progress(size, total_size):
+            size, unit = get_size_and_unit(size)
             if total_size == -1:
-                msg = '\r{size}B'.format_map(locals())
+                msg = '\r{size:.2f}{unit}'.format_map(locals())
             else:
-                msg = '\r{size}B of {total_size}B'.format_map(locals())
-            print(msg, end='', flush=True)
+                total_size, total_unit = get_size_and_unit(total_size)
+                msg = '\r{size:.2f}{unit} of {total_size:.2f}{total_unit}'.format_map(locals())
+            print(' ' * 20, '\r', msg, sep='', end='', flush=True)
+
+        def hook(num_blocks, block_size, total_size):
+            show_progress(num_blocks * block_size, total_size)
+
         print('Fetching {self.url}...'.format_map(locals()), flush=True)
         urlretrieve(self.url, self.file_name, hook)
+        stat = os.stat(self.file_name)
+        show_progress(stat.st_size, stat.st_size)
         print('\nSaved to {self.file_name}'.format_map(locals()))
