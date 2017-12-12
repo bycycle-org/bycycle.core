@@ -126,27 +126,31 @@ class OSMImporter:
 
     def run(self):
         result = None
-        template = '\r{0.order}. {0.description}... {1}'
         action_timer = Timer()
         total_timer = Timer()
         total_timer.start()
         runner_threads = []
-        status = lambda a, t: print(template.format(a, t), end='')
+
+        def status(for_action, timer, end=''):
+            message = '\r{action.order}. {action.description}... {timer}'
+            message = message.format(action=for_action, timer=timer)
+            print(' ' * (len(message) + 20), message, sep='', end=end)
+
         try:
-            for a in self.actions:
+            for current_action in self.actions:
                 with action_timer:
-                    print(template.format(a, action_timer), end='')
+                    status(current_action, action_timer)
                     runner = PeriodicRunner(
-                        target=status, args=(a, action_timer), interval=0.2)
+                        target=status, args=(current_action, action_timer), interval=0.2)
                     runner_threads.append(runner)
                     runner.start()
                     if result is not None:
-                        result = a.meth(result)
+                        result = current_action.meth(result)
                     else:
-                        result = a.meth()
+                        result = current_action.meth()
                     runner.stop()
                     runner.join()
-                    print(template.format(a, action_timer))
+                    status(current_action, action_timer, end='\n')
         except KeyboardInterrupt:
             for r in runner_threads:
                 r.stop()
