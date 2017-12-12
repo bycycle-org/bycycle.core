@@ -111,7 +111,8 @@ def load_usps_street_suffixes(config):
 def fetch_osm_data(config, url=None, path='osm.data',
                    minx=-122.7248, miny=45.4975, maxx=-122.6190, maxy=45.5537):
     """Fetch OSM data and save to file."""
-    bbox = (minx, miny, maxx, maxy)
+    # Bounding box is S, W, N, E as required by Overpass API
+    bbox = miny, minx, maxy, maxx
     fetcher = OSMDataFetcher(bbox, path, url)
     fetcher.run()
 

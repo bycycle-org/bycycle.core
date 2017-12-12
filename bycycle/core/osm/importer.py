@@ -1,8 +1,7 @@
-from xml.etree import ElementTree
+import json
 
 from sqlalchemy import create_engine
 from sqlalchemy.schema import Column
-from sqlalchemy.sql import select
 from sqlalchemy.types import BigInteger, Boolean
 
 from tangled.converters import get_converter
@@ -90,6 +89,22 @@ class OSMImporter:
             self.actions = self.all_actions
 
     @cached_property
+    def data(self):
+        with open(self.file_name) as fp:
+            data = json.load(fp)
+        return data
+
+    def iter_nodes(self):
+        for el in self.data['elements']:
+            if el['type'] == 'node':
+                yield el
+
+    def iter_ways(self):
+        for el in self.data['elements']:
+            if el['type'] == 'way':
+                yield el
+
+    @cached_property
     def all_actions(self):
         actions = []
         for name, attr in self.__class__.__dict__.items():
@@ -167,21 +182,17 @@ class OSMImporter:
         intersections = set()
 
         # Go through all the ways and find all the intersection nodes.
-        for event, el in ElementTree.iterparse(self.file_name):
-            if el.tag == 'way':
-                node_ids = [int(n.get('ref')) for n in el.iterfind('nd')]
-                el.clear()
-                # This is necessary in case a start or end node isn't shared
-                # with any other ways. E.g., at a dead end or at the data
-                # boundary.
-                encountered |= {node_ids[0], node_ids[-1]}
-                for node_id in node_ids:
-                    if node_id in encountered:
-                        intersections.add(node_id)
-                    else:
-                        encountered.add(node_id)
-            elif el.tag in ('node', 'ref'):
-                el.clear()
+        for el in self.iter_ways():
+            node_ids = el['nodes']
+            # This is necessary in case a start or end node isn't shared
+            # with any other ways. E.g., at a dead end or at the data
+            # boundary.
+            encountered |= {node_ids[0], node_ids[-1]}
+            for node_id in node_ids:
+                if node_id in encountered:
+                    intersections.add(node_id)
+                else:
+                    encountered.add(node_id)
 
         del encountered
 
@@ -194,23 +205,21 @@ class OSMImporter:
         self.engine.execute(NODE_TABLE.delete())
         self.engine.execute(INTERSECTION_TABLE.delete())
 
-        for event, el in ElementTree.iterparse(self.file_name):
-            if el.tag == 'node':
-                osm_id = int(el.get('id'))
-                latitude = float(el.get('lat'))
-                longitude = float(el.get('lon'))
-                lat_long = Point(longitude, latitude)
-                geom = lat_long.reproject()
-                node = {
-                    'id': osm_id,
-                    'is_intersection': osm_id in intersections,
-                    'geom': geom,
-                    'lat_long': lat_long,
-                }
-                rows.append(node)
-                if len(rows) > 1000:
-                    insert()
-            el.clear()
+        for el in self.iter_nodes():
+            osm_id = el['id']
+            latitude = el['lat']
+            longitude = el['lon']
+            lat_long = Point(longitude, latitude)
+            geom = lat_long.reproject()
+            node = {
+                'id': osm_id,
+                'is_intersection': osm_id in intersections,
+                'geom': geom,
+                'lat_long': lat_long,
+            }
+            rows.append(node)
+            if len(rows) > 1000:
+                insert()
 
         del intersections
 
@@ -242,6 +251,7 @@ class OSMImporter:
 
         way_id = 0
         rows = []
+        empty_tags = []
 
         def insert():
             self.engine.execute(STREET_TABLE.insert(), rows)
@@ -249,70 +259,66 @@ class OSMImporter:
 
         self.engine.execute(STREET_TABLE.delete())
 
-        for event, el in ElementTree.iterparse(self.file_name):
-            if el.tag == 'way':
-                osm_id = int(el.get('id'))
-                node_ids = [int(n.get('ref')) for n in el.iterfind('nd')]
+        for el in self.iter_ways():
+            osm_id = el['id']
+            node_ids = el['nodes']
+            tags = el.get('tags', empty_tags)
 
-                name = get_tag(el, 'name', normalize_street_name)
-                highway = get_tag(el, 'highway')
-                bicycle = get_tag(el, 'bicycle')
-                cycleway = get_tag(el, 'cycleway')
-                foot = get_tag(el, 'foot')
-                sidewalk = get_tag(el, 'sidewalk')
+            name = get_tag(tags, 'name', normalize_street_name)
+            highway = get_tag(tags, 'highway')
+            bicycle = get_tag(tags, 'bicycle')
+            cycleway = get_tag(tags, 'cycleway')
+            foot = get_tag(tags, 'foot')
+            sidewalk = get_tag(tags, 'sidewalk')
 
-                oneway = get_tag(el, 'oneway', oneway_converter, False)
-                oneway_bicycle = get_tag(el, 'oneway:bicycle', oneway_converter)
+            oneway = get_tag(tags, 'oneway', oneway_converter, False)
+            oneway_bicycle = get_tag(tags, 'oneway:bicycle', oneway_converter)
+            if oneway_bicycle is None:
+                oneway_bicycle = get_tag(tags, 'bicycle:oneway', oneway_converter)
                 if oneway_bicycle is None:
-                    oneway_bicycle = get_tag(el, 'bicycle:oneway', oneway_converter)
-                    if oneway_bicycle is None:
-                        oneway_bicycle = oneway
+                    oneway_bicycle = oneway
 
-                el.clear()
+            node_q = NODE_TABLE.select()
+            node_q = node_q.where(NODE_TABLE.c.id.in_(node_ids))
+            node_map = {n.id: n for n in self.engine.execute(node_q)}
+            nodes = [node_map[i] for i in node_ids]
 
-                node_q = NODE_TABLE.select()
-                node_q = node_q.where(NODE_TABLE.c.id.in_(node_ids))
-                node_map = {n.id: n for n in self.engine.execute(node_q)}
-                nodes = [node_map[i] for i in node_ids]
+            way = []
+            ways = []
+            last_i = len(nodes) - 1
+            for i, node in enumerate(nodes):
+                way.append(node)
+                if len(way) > 1 and node.is_intersection:
+                    ways.append(way)
+                    if i < last_i:
+                        way = [node]
 
-                way = []
-                ways = []
-                last_i = len(nodes) - 1
-                for i, node in enumerate(nodes):
-                    way.append(node)
-                    if len(way) > 1 and node.is_intersection:
-                        ways.append(way)
-                        if i < last_i:
-                            way = [node]
+            for i, way in enumerate(ways):
+                way_id += 1
+                start_node_id = way[0].id
+                end_node_id = way[-1].id
+                geom = LineString((n.geom.coords[0] for n in way))
+                lat_long = LineString((n.lat_long.coords[0] for n in way))
+                rows.append({
+                    'id': way_id,
+                    'osm_id': osm_id,
+                    'osm_seq': i,
+                    'geom': geom,
+                    'lat_long': lat_long,
+                    'start_node_id': start_node_id,
+                    'end_node_id': end_node_id,
+                    'name': name,
+                    'highway': highway,
+                    'bicycle': bicycle,
+                    'cycleway': cycleway,
+                    'foot': foot,
+                    'sidewalk': sidewalk,
+                    'oneway': oneway,
+                    'oneway_bicycle': oneway_bicycle,
+                })
 
-                for i, way in enumerate(ways):
-                    way_id += 1
-                    start_node_id = way[0].id
-                    end_node_id = way[-1].id
-                    geom = LineString((n.geom.coords[0] for n in way))
-                    lat_long = LineString((n.lat_long.coords[0] for n in way))
-                    rows.append({
-                        'id': way_id,
-                        'osm_id': osm_id,
-                        'osm_seq': i,
-                        'geom': geom,
-                        'lat_long': lat_long,
-                        'start_node_id': start_node_id,
-                        'end_node_id': end_node_id,
-                        'name': name,
-                        'highway': highway,
-                        'bicycle': bicycle,
-                        'cycleway': cycleway,
-                        'foot': foot,
-                        'sidewalk': sidewalk,
-                        'oneway': oneway,
-                        'oneway_bicycle': oneway_bicycle,
-                    })
-
-                if len(rows) > 1000:
-                    insert()
-            elif el.tag in ('node', 'ref'):
-                el.clear()
+            if len(rows) > 1000:
+                insert()
 
         if rows:
             insert()
@@ -328,17 +334,15 @@ class OSMImporter:
         self.vacuum(INTERSECTION_TABLE, STREET_TABLE)
 
     @staticmethod
-    def get_tag(el, tag, converter=None, default=None):
-        tag_el = el.find('tag[@k="{}"]'.format(tag))
-        if tag_el is None:
+    def get_tag(tags, name, converter=None, default=None):
+        if name not in tags:
             return default
-        else:
-            v = tag_el.get('v')
-            if not v.strip():
-                return default
-            if converter:
-                v = converter(v)
-            return v
+        value = tags[name].strip()
+        if not value:
+            return default
+        if converter:
+            value = converter(value)
+        return value
 
     def normalize_street_name(self, name):
         if name is None:

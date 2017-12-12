@@ -1,19 +1,28 @@
 from urllib.request import urlretrieve
 
 
-DEFAULT_URL = 'http://www.overpass-api.de/api/xapi?way[highway=*][bbox={}]'
+DEFAULT_URL = (
+    'http://overpass-api.de/api/interpreter?data='
+    '[out:json];'
+    'way[highway]({bbox});'
+    '<;>;'
+    'out;'
+)
 
 
 class OSMDataFetcher:
 
-    """Fetch OSM data inside a bounding box."""
+    """Fetch OSM data inside a bounding box.
+
+    .. note:: BBOX order is S, W, N, E
+
+    """
 
     def __init__(self, bbox, file_name, url=DEFAULT_URL):
-        if url is None:
-            url = DEFAULT_URL
+        url = url or DEFAULT_URL
         self.bbox = bbox
-        bbox = ','.join(str(f) for f in bbox)
-        self.url = url.format(bbox)
+        self.bbox_str = ','.join(str(f) for f in bbox)
+        self.url = url.format(bbox=self.bbox_str)
         self.file_name = file_name
 
     def run(self):
