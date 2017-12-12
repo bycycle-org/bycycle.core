@@ -40,41 +40,51 @@ def create_db(config,
               # Owner and database to create
               owner=None, database=None,
               # Postgres superuser used to run drop & create commands
-              superuser='postgres', superuser_password=None, host=None,
-              drop=False, drop_database=False, drop_user=False):
+              superuser='postgres', superuser_password=None, superuser_database='postgres',
+              host=None, drop=False, drop_database=False, drop_user=False):
     owner = owner or config.db.user
     database = database or config.db.database
     drop_database = drop or drop_database
     drop_user = drop or drop_user
 
-    common_connection_args = dict(user=superuser, password=superuser_password, host=host)
-    common_engine_args = dict(isolation_level='AUTOCOMMIT')
-
-    connection_args = get_db_init_args(config, **common_connection_args)
-    postgres_engine = create_engine(db.make_url(**connection_args), **common_engine_args)
-
-    connection_args = get_db_init_args(config, database=database, **common_connection_args)
-    app_engine = create_engine(db.make_url(**connection_args), **common_engine_args)
-
     f = locals()
-    
-    def execute(engine, sql, condition=True):
+
+    def execute(engine, sql, condition=True, format_map=f):
         if not condition:
             return
         try:
-            engine.execute(sql.format_map(f))
+            engine.execute(sql.format_map(format_map))
         except ProgrammingError as exc:
             error = str(exc.orig)
-            if 'already exists' in str(exc):
+            exc_str = str(exc)
+            if 'already exists' in exc_str or 'does not exist' in exc_str:
                 printer.warning(exc.statement.strip(), error.strip(), sep=': ')
             else:
                 raise
+
+    common_cxn_args = dict(user=superuser, password=superuser_password, host=host)
+    common_engine_args = dict(isolation_level='AUTOCOMMIT')
+
+    # Drop/create database/user (connect to postgres database)
+
+    cxn_args = get_db_init_args(config, database=superuser_database, **common_cxn_args)
+    postgres_engine = create_engine(db.make_url(**cxn_args), **common_engine_args)
 
     execute(postgres_engine, 'DROP DATABASE {database}', condition=drop_database)
     execute(postgres_engine, 'DROP USER {owner}', condition=drop_user)
     execute(postgres_engine, 'CREATE USER {owner}')
     execute(postgres_engine, 'CREATE DATABASE {database} OWNER {owner}')
+
+    postgres_engine.dispose()
+
+    # Create extensions (connect to app database)
+
+    cxn_args = get_db_init_args(config, database=database, **common_cxn_args)
+    app_engine = create_engine(db.make_url(**cxn_args), **common_engine_args)
+
     execute(app_engine, 'CREATE EXTENSION postgis')
+
+    app_engine.dispose()
 
 
 @command
