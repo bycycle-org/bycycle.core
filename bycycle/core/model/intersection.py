@@ -9,7 +9,7 @@ from bycycle.core.model import Base
 
 class Intersection(Base):
 
-    __tablename__ = 'intersection'
+    __tablename__ = 'intersections'
 
     id = Column(BigInteger, primary_key=True)
     geom = Column(POINT(DEFAULT_SRID))

@@ -6,7 +6,7 @@ from . import Base
 
 class USPSStreetSuffix(Base):
 
-    __tablename__ = 'usps_street_suffix'
+    __tablename__ = 'usps_street_suffixes'
 
     name = Column(String, primary_key=True)
     alias = Column(String, primary_key=True)

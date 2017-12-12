@@ -16,7 +16,7 @@ from bycycle.core.util import PeriodicRunner, Timer
 
 class Node(Base):
 
-    __tablename__ = 'node'
+    __tablename__ = 'osm_nodes'
 
     id = Column(BigInteger, primary_key=True)
     is_intersection = Column(Boolean, default=False)
@@ -227,9 +227,9 @@ class OSMImporter:
             insert()
 
         self.engine.execute("""
-            INSERT INTO intersection (id, geom, lat_long)
-            SELECT id, geom, lat_long FROM node WHERE is_intersection
-        """)
+            INSERT INTO {to_table} (id, geom, lat_long)
+            SELECT id, geom, lat_long FROM {from_table} WHERE is_intersection
+        """.format(from_table=Node.__tablename__, to_table=Intersection.__tablename__))
 
     @action(4)
     def process_ways(self):

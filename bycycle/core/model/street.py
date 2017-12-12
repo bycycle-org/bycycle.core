@@ -11,7 +11,7 @@ from .intersection import Intersection
 
 class Street(Base):
 
-    __tablename__ = 'street'
+    __tablename__ = 'streets'
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     osm_id = Column(BigInteger)
