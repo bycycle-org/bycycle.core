@@ -1,7 +1,6 @@
 import unittest
 
 from bycycle.core import db
-from bycycle.core.exc import InputError
 from bycycle.core.model import Route
 from bycycle.core.service.route import RouteService
 
@@ -17,43 +16,25 @@ class Test_A_Route(unittest.TestCase):
 
     def _query(self, q, **kwargs):
         service = RouteService(self.session)
-        route_or_routes = service.query(q, **kwargs)
-        return route_or_routes
+        return service.query(q, **kwargs)
 
     def test_should_have_specific_turns(self):
-        q = ('4807 se kelly, portland, or', '45th and division, portland, or')
+        q = 'NE 9th and Holladay', 'NE 15th and Broadway'
         route = self._query(q)
         self.assertIsInstance(route, Route)
         d = route.directions
-        # KLUDGE: First turn should be EAST
-        expected_turns = ['west', 'right']
+        expected_turns = ['east', 'left', 'right', 'left', 'left', 'right', 'left']
         d_turns = [d[i]['turn'] for i in range(len(d))]
         self.assertEqual(d_turns, expected_turns)
 
-    def test_with_coordinate_addresses_should_pass(self):
-        self._query(['-122.668104,45.523127', '-122.615426,45.502625'])
-        # q = ('-122.668104,45.523127', '4807 se kelly')
-        # self._query(q)
-        # q = ('4807 se kelly', '-122.668104,45.523127')
-        # self._query(q)
-
-    def test_with_no_place_on_first_address_should_pass_but_does_not(self):
-        # FIXME: Make this NOT pass (then change the name of the test)
-        q = ('4807 se kelly', '633 n alberta, portland, or')
-        self.assertRaises(InputError, self._query, q)
-
-    def test_with_no_place_on_second_address_should_be_ok(self):
-        q = ('4807 se kelly, portland, or', '633 n alberta')
-        routes = self._query(q)
-
     def test_with_three_addresses_should_return_a_list_with_2_routes(self):
-        q = ('4807 se kelly, portland, or', '633 n alberta', '1500 ne alberta')
+        q = 'NE 9th and Holladay', 'NE 15th and Broadway', 'NE 21st and Weidler'
         routes = self._query(q)
         self.assertIsInstance(routes, list)
         self.assertEqual(len(routes), 2)
 
     def test_intersection_addresses(self):
-        q = ('NW 17th and Couch', 'SE 21st and Clinton')
+        q = 'NW 17th and Couch', 'SE 21st and Clinton'
         route = self._query(q)
         self.assertIsInstance(route, Route)
 
@@ -79,7 +60,7 @@ class Test_A_Route(unittest.TestCase):
         *--O----*
 
         """
-        q = ('1815 nw couch', '633 n alberta')
+        q = 'NW 18th and Couch', '-122.672655, 45.548242'
         route = self._query(q)
         self.assertIsInstance(route, Route)
         d = route.directions
