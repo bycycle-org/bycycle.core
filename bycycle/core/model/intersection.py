@@ -16,6 +16,7 @@ class Intersection(Base):
     lat_long = Column(POINT(4326))
 
     json_fields = {
+        'include': ['*', 'name'],
         'exclude': ['streets']  # Avoid circular reference
     }
 
