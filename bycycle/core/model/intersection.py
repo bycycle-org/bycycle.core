@@ -19,10 +19,23 @@ class Intersection(Base):
         'exclude': ['streets']  # Avoid circular reference
     }
 
+    @classmethod
+    def name_for_cross_streets(cls, streets):
+        names = {}
+
+        for street in streets:
+            name = street.name
+            if name:
+                parts = name.split()
+                key = tuple(parts[1:])
+                names[key] = name
+
+        names = sorted(names.values())
+        return ' & '.join(names[:2])
+
     @property
     def name(self):
-        names = list(sorted(set(s.name for s in self.streets if s.name)))
-        return ' & '.join(names[:2])
+        return self.name_for_cross_streets(self.streets)
 
 
 from .street import Street
