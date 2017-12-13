@@ -14,7 +14,7 @@ class NoRouteError(RouteError, NotFoundError):
 
     def __init__(self, start, end, explanation=None):
         detail = 'Unable to find a route from "{start}" to "{end}"'
-        detail = detail.format(start=start.address, end=end.address)
+        detail = detail.format(start=start.name, end=end.name)
         super().__init__(explanation, detail)
         self.start = start
         self.end = end

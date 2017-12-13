@@ -106,8 +106,8 @@ class RouteService(AService):
         return results
 
     def find_path(self, graph, s, e, cost_func=None, heuristic_func=None):
-        start = s.obj
-        end = e.obj
+        start = s.closest_object
+        end = e.closest_object
         annex = None
         split_ways = []
 
@@ -116,14 +116,14 @@ class RouteService(AService):
 
         if isinstance(start, Street):
             start_node, *start_ways = self.split_way(
-                start, s.point, -1, -1, -2, graph, annex)
+                start, s.geom, -1, -1, -2, graph, annex)
             split_ways += start_ways
         else:
             start_node = start
 
         if isinstance(end, Street):
             end_node, *end_ways = self.split_way(
-                end, e.point, -2, -3, -4, graph, annex)
+                end, e.geom, -2, -3, -4, graph, annex)
             split_ways += end_ways
         else:
             end_node = end
