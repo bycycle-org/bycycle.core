@@ -25,8 +25,7 @@ from sqlalchemy.sql import func
 from bycycle.core.exc import NotFoundError
 from bycycle.core.geometry import DEFAULT_SRID, Point
 from bycycle.core.model import LookupResult, Intersection, Street
-
-from .base import AService
+from bycycle.core.service import AService
 
 
 ID_RE = re.compile(r'^(?P<type>[a-z]+):(?P<id>\d+)$')
