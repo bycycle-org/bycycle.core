@@ -29,7 +29,7 @@ from bycycle.core.model import LookupResult, Intersection, Street
 from .base import AService
 
 
-ID_RE = re.compile(r'(?P<type>[a-z]+):(?P<id>\d+)')
+ID_RE = re.compile(r'^(?P<type>[a-z]+):(?P<id>\d+)$')
 TYPE_MAP = {
     'intersection': Intersection,
     'street': Street,
@@ -86,7 +86,7 @@ class LookupService(AService):
         raise NotFoundError('Lookup failed', 'Could not find "{}"'.format(s))
 
     def match_id(self, s):
-        match = ID_RE.match(s)
+        match = ID_RE.search(s)
         if match:
             type_ = match.group('type')
             type_ = TYPE_MAP[type_]
