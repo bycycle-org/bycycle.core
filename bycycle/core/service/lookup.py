@@ -90,8 +90,7 @@ class LookupService(AService):
         if match:
             type_ = match.group('type')
             type_ = TYPE_MAP[type_]
-            id = int(match.group('id'))
-            obj = self.session.query(type_).get(id)
+            obj = self.session.query(type_).get(match.group('id'))
             if isinstance(obj, Intersection):
                 geom = obj.geom
             else:
