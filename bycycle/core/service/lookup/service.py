@@ -20,6 +20,7 @@ object is found. Otherwise it will return ``None``.
 """
 import re
 
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 
 from bycycle.core.exc import NotFoundError
@@ -27,8 +28,11 @@ from bycycle.core.geometry import DEFAULT_SRID, Point
 from bycycle.core.model import LookupResult, Intersection, Street
 from bycycle.core.service import AService
 
+from .exc import MultipleLookupResultsError
+
 
 ID_RE = re.compile(r'^(?P<type>[a-z]+):(?P<id>\d+)$')
+CROSS_STREETS_RE = re.compile(r'^\s*(?P<street>.+)\s+(?:and|at|&)\s+(?P<cross_street>.+)\s*$')
 TYPE_MAP = {
     'intersection': Intersection,
     'street': Street,
@@ -135,7 +139,46 @@ class LookupService(AService):
         return None
 
     def match_cross_streets(self, s):
-        return None
+        match = CROSS_STREETS_RE.search(s)
+
+        if match is None:
+            return None
+
+        data = match.groupdict()
+
+        # Case-insensitive regex operator
+        regex_op = Street.name.op('~*')
+
+        q = self.session.query(Intersection)
+        q = q.filter(Intersection.streets.any(regex_op(r'\m{street}\M'.format(**data))))
+        q = q.filter(Intersection.streets.any(regex_op(r'\m{cross_street}\M'.format(**data))))
+        q = q.distinct()
+        q = q.options(joinedload(Intersection.streets))
+
+        matches = sorted(q, key=lambda i: i.name)
+
+        if not matches:
+            return None
+
+        filtered_matches = []
+
+        for intersection in matches:
+            buffer = intersection.geom.buffer(100)
+            for f, f_buffer in filtered_matches:
+                if buffer.overlaps(f_buffer):
+                    break
+            else:
+                filtered_matches.append((intersection, buffer))
+
+        filtered_matches = [f[0] for f in filtered_matches]
+
+        if len(filtered_matches) == 1:
+            intersection = filtered_matches[0]
+            name = intersection.name
+            geom = intersection.geom
+            return LookupResult(s, name, geom, intersection, name)
+
+        raise MultipleLookupResultsError(choices=filtered_matches)
 
     def match_poi(self, s):
         return None
