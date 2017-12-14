@@ -33,7 +33,7 @@ setup(
         'runcommands>=1.0a26',
         'Shapely>=1.6.2',
         'SQLAlchemy>=1.1.15',
-        'tangled>=0.1a9',
+        'tangled>=1.0a12',
     ],
     extras_require={
         'dev': [

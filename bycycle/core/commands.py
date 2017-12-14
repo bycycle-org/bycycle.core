@@ -7,6 +7,7 @@ from runcommands.util import get_all_list, printer
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import ProgrammingError
 
+from tangled.commands import test
 from tangled.util import asset_path
 
 from bycycle.core import db
@@ -152,4 +153,4 @@ def get_db_init_args(config, **overrides):
     return connection_args
 
 
-__all__ = get_all_list(vars())
+__all__ = get_all_list(vars()) + ['test']
