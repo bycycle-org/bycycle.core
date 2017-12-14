@@ -7,20 +7,13 @@ setup(
     name='bycycle.core',
     version='0.6.dev5',
     description='byCycle core model and services',
-    long_description='byCycle model, routing, and geocoding.',
-    license='GPLv3',
-    author='Wyatt Baldwin, byCycle.org',
+    long_description='byCycle model, geocoding, and routing/directions.',
+    author='Wyatt Baldwin',
     author_email='wyatt@bycycle.org',
-    keywords='bicycle bike cycle trip planner geocoder',
+    keywords='bicycle bike cycle geocoder trip planner route finder directions',
     url='http://bycycle.org/',
-    classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-    ],
+    download_url='https://github.com/bycycle-org/bycycle.core',
+    license='GPLv3',
     packages=find_packages(include=['bycycle', 'bycycle.core', 'bycycle.core.*']),
     include_package_data=True,
     install_requires=[
@@ -45,4 +38,12 @@ setup(
     bycycle = bycycle.core.__main__:bycycle.console_script
 
     """,
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+    ],
 )
