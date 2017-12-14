@@ -26,7 +26,7 @@ class EmptyGraphError(RouteError):
     explanation = 'The routing graph is empty (how is this possible?)'
 
 
-class MultipleLookupResultsError(RouteError):
+class MultipleRouteLookupResultsError(RouteError):
 
     title = 'Multiple Matches Found'
     explanation = 'Multiple results were found that match one or more input addresses'

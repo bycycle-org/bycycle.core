@@ -13,8 +13,9 @@ from bycycle.core.exc import InputError
 from bycycle.core.geometry import LineString, Point
 from bycycle.core.model import Intersection, Street
 from bycycle.core.service import AService, LookupService
+from bycycle.core.service.lookup import MultipleLookupResultsError
 
-from .exc import EmptyGraphError, MultipleLookupResultsError, NoRouteError
+from .exc import EmptyGraphError, MultipleRouteLookupResultsError, NoRouteError
 
 
 graph = None
@@ -97,12 +98,16 @@ class RouteService(AService):
         results = []
         raise_multi = False
         for w, id_hint, point_hint in zip(waypoints, ids, points):
-            result = lookup_service.query(w, id_hint, point_hint)
-            if isinstance(result, (list, tuple)):
+            try:
+                result = lookup_service.query(w, id_hint, point_hint)
+            except MultipleLookupResultsError as exc:
+
                 raise_multi = True
-            results.append(result)
+                results.append(exc.choices)
+            else:
+                results.append(result)
         if raise_multi:
-            raise MultipleLookupResultsError(choices=results)
+            raise MultipleRouteLookupResultsError(choices=results)
         return results
 
     def find_path(self, graph, s, e, cost_func=None, heuristic_func=None):
