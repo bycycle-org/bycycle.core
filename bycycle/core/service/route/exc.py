@@ -12,9 +12,9 @@ class NoRouteError(RouteError, NotFoundError):
     title = 'Route Not Found'
     explanation = 'Unable to find route'
 
-    def __init__(self, start, end, explanation=None):
-        detail = 'Unable to find a route from "{start}" to "{end}"'
-        detail = detail.format(start=start.name, end=end.name)
+    def __init__(self, start, end, detail=None):
+        explanation = 'Unable to find a route from "{start}" to "{end}"'
+        explanation = explanation.format(start=start.name, end=end.name)
         super().__init__(explanation, detail)
         self.start = start
         self.end = end
