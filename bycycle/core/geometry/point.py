@@ -2,15 +2,30 @@ import shapely.geometry
 
 from tangled.converters import as_tuple_of
 
-
 from .base import Base
 
 
 class Point(Base, shapely.geometry.Point):
 
-    string_converter = as_tuple_of(float, sep=',')
-    """Allows conversion of strings of the form '{x}, {y}'.
+    @classmethod
+    def string_converter(cls, string, *, converter=as_tuple_of(float, sep=',')):
+        """Convert string to coordinates.
 
-    Used by :meth:`Base.from_string`.
+        Used by :meth:`Base.from_string`.
 
-    """
+        Args:
+            string (str): A string like 'x, y'
+            converter: Splits string into coordinates
+
+        Returns:
+            Tuple of floats: (x, y)
+
+        Raises:
+            ValueError: When the string can't be parsed
+
+        """
+        coordinates = converter(string)
+        num = len(coordinates)
+        if num != 2:
+            raise ValueError('Expected two coordinates; got %s' % num)
+        return coordinates
