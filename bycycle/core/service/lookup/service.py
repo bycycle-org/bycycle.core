@@ -23,12 +23,11 @@ import re
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 
-from bycycle.core.exc import NotFoundError
 from bycycle.core.geometry import DEFAULT_SRID, Point
 from bycycle.core.model import LookupResult, Intersection, Street
 from bycycle.core.service import AService
 
-from .exc import MultipleLookupResultsError
+from .exc import MultipleLookupResultsError, NoResultError
 
 
 ID_RE = re.compile(r'^(?P<type>[a-z]+):(?P<id>\d+)$')
@@ -86,7 +85,7 @@ class LookupService(AService):
                 result.lat_long = preferred_point.lat_long
             return result
 
-        raise NotFoundError('Could not find "{}"'.format(s))
+        raise NoResultError(s)
 
     def match_id(self, s):
         match = ID_RE.search(s)
