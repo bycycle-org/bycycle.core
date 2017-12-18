@@ -42,10 +42,10 @@ class InputError(ByCycleError):
     title = 'Not Understood'
     explanation = 'That input was not understood'
 
-    def __init__(self, errors, explanation=None):
+    def __init__(self, errors, detail=None):
         if isinstance(errors, str):
             errors = [errors]
-        detail = '\n'.join(str(e) for e in errors)
+        explanation = '\n'.join(str(e) for e in errors)
         super().__init__(explanation, detail)
         self.errors = errors
 
