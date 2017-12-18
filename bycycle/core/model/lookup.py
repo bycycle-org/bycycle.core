@@ -34,7 +34,7 @@ class LookupResult(Entity):
         self.geom = geom
         self.lat_long = geom.lat_long
         self.closest_object = closest_object
-        self.name = name or '[unknown]'
+        self.name = name or '{x:.5f}, {y:.5f}'.format(x=self.lat_long.x, y=self.lat_long.y)
 
     def __str__(self):
         return '\n'.join(str(attr) for attr in (self.name, self.lat_long))
