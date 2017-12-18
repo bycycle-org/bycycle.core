@@ -78,19 +78,19 @@ class RouteService(AService):
         if points is None:
             points = [None] * num_waypoints
         if num_waypoints == 0:
-            errors.append('Please enter start and end addresses.')
+            errors.append('Please enter starting point and destination')
         if num_waypoints == 1:
-            errors.append('Please enter an end address.')
+            errors.append('Please enter a destination')
         else:
             if num_waypoints == 2:
                 if not waypoints[0]:
-                    errors.append('Please enter a start address.')
+                    errors.append('Please enter a starting point')
                 if not waypoints[-1]:
-                    errors.append('Please enter an end address.')
+                    errors.append('Please enter a destination')
             else:
                 for w in waypoints:
                     if not w:
-                        errors.append('Addresses cannot be blank.')
+                        errors.append('Destinations cannot be blank')
                         break
         if errors:
             raise InputError(errors)
