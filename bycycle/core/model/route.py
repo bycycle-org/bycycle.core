@@ -6,6 +6,8 @@ from . import Entity
 class Route(Entity):
 
     def __init__(self, start, end, directions, linestring, distance):
+        self.id = ';'.join((start.id, end.id))
+        self.name = ' to '.join(name for name in (start.name, end.name) if name)
         self.start = start
         self.end = end
         self.directions = directions
