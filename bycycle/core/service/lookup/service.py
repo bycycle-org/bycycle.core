@@ -56,7 +56,8 @@ class LookupService(AService):
 
         if point_hint:
             preferred_point = Point.from_string(point_hint)
-            preferred_point = preferred_point.reproject()
+            if self.is_lat_long(preferred_point):
+                preferred_point = preferred_point.reproject()
             if hint_result is None:
                 hint_result = self.match_point(point_hint)
 
@@ -86,6 +87,9 @@ class LookupService(AService):
 
         raise NoResultError(s)
 
+    def is_lat_long(self, point):
+        return abs(point.x) <= 180 and abs(point.y) <= 90
+
     def match_id(self, s):
         match = ID_RE.search(s)
         if match:
@@ -105,7 +109,8 @@ class LookupService(AService):
         except ValueError:
             return None
         normalized_point = point
-        point = point.reproject()
+        if self.is_lat_long(point):
+            point = point.reproject()
         geom = func.ST_GeomFromText(point.wkt, DEFAULT_SRID)
         distance = func.ST_Distance(geom, Intersection.geom)
         distance = distance.label('distance')
