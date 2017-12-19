@@ -13,7 +13,6 @@ class Intersection(Base):
 
     id = Column(BigInteger, primary_key=True)
     geom = Column(POINT(DEFAULT_SRID))
-    lat_long = Column(POINT(4326))
 
     json_fields = {
         'include': ['*', 'name'],

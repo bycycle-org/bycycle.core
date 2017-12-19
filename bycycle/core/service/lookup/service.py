@@ -82,7 +82,6 @@ class LookupService(AService):
                 result.closest_object = preferred_obj
             if preferred_point is not None:
                 result.geom = preferred_point
-                result.lat_long = preferred_point.lat_long
             return result
 
         raise NoResultError(s)

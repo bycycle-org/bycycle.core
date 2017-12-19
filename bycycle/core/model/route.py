@@ -14,7 +14,6 @@ class Route(Entity):
         self.distance = distance
         self.bounds = linestring.bounds
         self.linestring = linestring
-        self.linestring_lat_long = linestring.lat_long
         pairs = [(y, x) for (x, y) in linestring.coords]
         points, levels = glineenc.encode_pairs(pairs)
         self.linestring_encoded = points

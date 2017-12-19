@@ -17,7 +17,6 @@ class Street(Base):
     osm_id = Column(BigInteger)
     osm_seq = Column(Integer)
     geom = Column(LINESTRING(DEFAULT_SRID))
-    lat_long = Column(LINESTRING(4326))
     start_node_id = Column(BigInteger, ForeignKey(Intersection.id))
     end_node_id = Column(BigInteger, ForeignKey(Intersection.id))
 
@@ -82,7 +81,6 @@ class Street(Base):
             end_node_id=node_id,
             end_node=shared_node,
             geom=line1,
-            lat_long=line1.lat_long,
         )
 
         # Shared node to end
@@ -91,7 +89,6 @@ class Street(Base):
             start_node_id=node_id,
             start_node=shared_node,
             geom=line2,
-            lat_long=line2.lat_long,
         )
 
         shared_node.ways = [way1, way2]

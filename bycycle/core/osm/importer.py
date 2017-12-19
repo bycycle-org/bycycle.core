@@ -21,7 +21,6 @@ class Node(Base):
     id = Column(BigInteger, primary_key=True)
     is_intersection = Column(Boolean, default=False)
     geom = Column(POINT(DEFAULT_SRID))
-    lat_long = Column(POINT(4326))
 
 
 INTERSECTION_TABLE = Intersection.__table__
@@ -219,7 +218,6 @@ class OSMImporter:
                 'id': osm_id,
                 'is_intersection': osm_id in intersections,
                 'geom': geom,
-                'lat_long': lat_long,
             }
             rows.append(node)
             if len(rows) > 1000:
@@ -232,7 +230,7 @@ class OSMImporter:
 
         self.engine.execute("""
             INSERT INTO {to_table} (id, geom, lat_long)
-            SELECT id, geom, lat_long FROM {from_table} WHERE is_intersection
+            SELECT id, geom FROM {from_table} WHERE is_intersection
         """.format(from_table=Node.__tablename__, to_table=Intersection.__tablename__))
 
     @action(4)
