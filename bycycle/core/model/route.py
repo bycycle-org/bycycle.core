@@ -1,5 +1,3 @@
-import glineenc
-
 from . import Entity
 
 
@@ -14,10 +12,6 @@ class Route(Entity):
         self.distance = distance
         self.bounds = linestring.bounds
         self.linestring = linestring
-        pairs = [(y, x) for (x, y) in linestring.coords]
-        points, levels = glineenc.encode_pairs(pairs)
-        self.linestring_encoded = points
-        self.linestring_encoded_levels = levels
 
     def __str__(self):
         template = '{}{i}. {turn} on {street} toward {toward} -- {miles} miles'
