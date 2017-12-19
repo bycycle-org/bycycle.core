@@ -4,9 +4,6 @@ from sqlalchemy.schema import MetaData
 from sqlalchemy.ext.declarative import declarative_base
 
 
-metadata = MetaData()
-
-
 class Entity(object):
 
     json_fields = '*'
@@ -68,4 +65,4 @@ class Entity(object):
         return data
 
 
-Base = declarative_base(metadata=metadata, cls=Entity)
+Base = declarative_base(metadata=MetaData(), cls=Entity)
