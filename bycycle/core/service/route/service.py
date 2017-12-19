@@ -1,4 +1,3 @@
-from collections import namedtuple
 import threading
 from math import atan2, degrees
 
@@ -23,7 +22,6 @@ GRAPH = None
 GRAPH_LOCK = threading.Lock()
 
 
-Toward = namedtuple('Toward', ('street_name', 'node_id'))
 # XXX: Loading the entire graph into memory isn't scalable.
 #      Also the current approach doesn't allow for selecting
 #      a different graph depending on the mode (or any other
@@ -45,7 +43,7 @@ class RouteService(AService):
 
     name = 'route'
 
-    def query(self, q, cost_func='bicycle', ids=None, points=None):
+    def query(self, q, cost_func='bicycle', heuristic_func=None, ids=None, points=None):
         waypoints = self.get_waypoints(q, ids, points)
         graph = get_graph()
 
@@ -56,24 +54,21 @@ class RouteService(AService):
 
         paths_info = []
         for s, e in zip(waypoints[:-1], waypoints[1:]):
-            # path_info: node_ids, edge_attrs, split_edges
-            path_info = self.find_path(graph, s, e, cost_func=cost_func)
+            path_info = self.find_path(
+                graph, s, e, cost_func=cost_func, heuristic_func=heuristic_func)
             paths_info.append(path_info)
 
-        # Convert paths to `Route`e
         routes = []
         starts = waypoints[:-1]
         ends = waypoints[1:]
-        # for start/end original, start/end geocode, path...
+
         for start, end, path_info in zip(starts, ends, paths_info):
-            # route_data: nodes, edges, directions, linestring, distance
-            route_data = self.make_directions(*path_info)
-            route = Route(start, end, *route_data)
+            node_ids, edge_attrs, split_ways = path_info
+            directions, linestring, distance = self.make_directions(node_ids, edge_attrs, split_ways)
+            route = Route(start, end, directions, linestring, distance)
             routes.append(route)
-        if len(routes) == 1:
-            return routes[0]
-        else:
-            return routes
+
+        return routes[0] if len(routes) == 1 else routes
 
     def get_waypoints(self, q, ids=None, points=None):
         errors = []
@@ -120,31 +115,28 @@ class RouteService(AService):
         start = s.closest_object
         end = e.closest_object
         annex = None
-        split_ways = []
+        split_ways = {}
 
         if isinstance(start, Street) or isinstance(end, Street):
             annex = dijkstar.Graph()
 
         if isinstance(start, Street):
-            start_node, *start_ways = self.split_way(
-                start, s.geom, -1, -1, -2, graph, annex)
-            split_ways += start_ways
-        else:
-            start_node = start
+            start, *start_ways = self.split_way(start, s.geom, -1, -1, -2, graph, annex)
+            split_ways.update({w.id: w for w in start_ways})
 
         if isinstance(end, Street):
-            end_node, *end_ways = self.split_way(
-                end, e.geom, -2, -3, -4, graph, annex)
-            split_ways += end_ways
-        else:
-            end_node = end
+            end, *end_ways = self.split_way(end, e.geom, -2, -3, -4, graph, annex)
+            split_ways.update({w.id: w for w in end_ways})
 
         try:
             nodes, edge_attrs, costs, total_weight = dijkstar.find_path(
-                graph, start_node.id, end_node.id, annex, cost_func=cost_func,
-                heuristic_func=heuristic_func)
+                graph, start.id, end.id,
+                annex=annex, cost_func=cost_func, heuristic_func=heuristic_func)
         except dijkstar.NoPathError:
             raise NoRouteError(s, e)
+
+        assert nodes[0] == start.id
+        assert nodes[-1] == end.id
 
         return nodes, edge_attrs, split_ways
 
@@ -194,185 +186,157 @@ class RouteService(AService):
         ``split_edges``
             Temporary edges formed by splitting an existing edge when the
             start and/or end of a route is within an edge (e.g., for an
-            address like "123 Main St"
+            address like "123 Main St")
 
         return
-            * A list of directions. Each direction has the following form:
+            * A list of directions. Each direction has the following form::
+
               {
-                'turn': 'left',
-                'street': 'se stark st'
-                'toward': 'se 45th ave'
-                'linestring_index': 3,  # index of start point in overall LS
-                'distance': {
-                     'feet': 264,
-                     'miles': .05,
-                     'kilometers': .08,
-                 },
-                 'jogs': [{'turn': 'left', 'street': 'ne 7th ave'}, ...]
+                  'turn': 'left',
+                  'name': 'SE Stark St',
+                  'display_name': 'SE Stark St',
+                  'type': 'residential',
+                  'toward': 'SE 45th Ave',
+                  'distance': {
+                       'feet': 264.0,
+                       'miles': 0.05,
+                       'meters': 80.0,
+                       'kilometers': 0.08,
+                   },
+                   'jogs': [{'turn': 'left', 'name': 'NE 7th Ave'}, ...]
                }
 
-            * A linestring, which is a list of x, y coords. Each coordinate
-              has the following form:
-              {
-                'x': -122,
-                'y': -45
-              }
+            * A linestring, which is a list of x, y coords:
+
+              [(x, y), ...]
 
             * A `dict` of total distances in units of feet, miles, kilometers:
+
               {
-                'feet': 5487,
-                'miles': 1.04,
-                'kilometers': 1.11,
+                  'feet': 5487.0,
+                  'miles': 1.04,
+                  'meters': 1110.0,
+                  'kilometers': 1.11,
               }
 
         """
         directions = []
 
-        # Get edges along path
+        # Gather edges into a list.
+
+        edges = []
         edge_ids = [attrs[0] for attrs in edge_attrs]
-        q = self.session.query(Street).filter(Street.id.in_(edge_ids))
-        q = q.options(joinedload(Street.start_node))
-        q = q.options(joinedload(Street.end_node))
 
-        # Make sure they're in path order
-        edge_map = {e.id: e for e in q}
-        edge_map.update({e.id: e for e in split_edges})
-        edges = [edge_map[i] for i in edge_ids]
+        if edge_ids and edge_ids[0] < 0:
+            edges.append(split_edges[edge_ids[0]])
 
-        edge_lengths = [e.meters for e in edges]
-        distance = self.distance_dict(sum(edge_lengths))
+        filter_ids = [i for i in edge_ids if i > 0]
+        if filter_ids:
+            q = self.session.query(Street).filter(Street.id.in_(filter_ids))
+            q = q.options(joinedload(Street.start_node))
+            q = q.options(joinedload(Street.end_node))
+            edge_map = {edge.id: edge for edge in q}
+            edges.extend(edge_map[i] for i in filter_ids)
 
-        # Get bearing of first and last segment of each edge. We use this
-        # later to calculate turns from one edge to another--turning from
-        # heading in an `end_bearing` direction to a `bearing` direction. This
-        # also gathers up all the points for the overall linestring (for the
-        # whole route).
-        bearings = []
-        end_bearings = []
+        if len(edge_ids) > 1 and edge_ids[-1] < 0:
+            edges.append(split_edges[edge_ids[-1]])
+
+        # Group edges together by street name into stretches.
+
+        start_edges = []
+        prev_name = None
+        prev_end_bearing = None
         linestring_points = []
-        for end_node_id, e in zip(node_ids[1:], edges):
-            points = list(e.geom.coords)
-            if e.start_node_id == end_node_id:
-                # Moving to => from on arc; reverse geometry
-                points.reverse()
+        loop_data = zip(node_ids[1:], edges, [None] + edges[:-1], edges[1:] + [None])
 
-            # Append all but last point in current edge's linestring. This
-            # avoids duplicate points at intersections--below we'll have to
-            # append the last point for the last edge.
-            linestring_points += points[:-1]
+        for node_id, edge, prev_edge, next_edge in loop_data:
+            length = edge.meters
+            name = edge.name
 
-            # *b------e* b is bearing of first segment in edge; e is bearing
-            # of last segment in edge
-            bearings.append(
-                self.get_bearing(Point(points[0]), Point(points[1])))
-            end_bearings.append(
-                self.get_bearing(Point(points[-2]), Point(points[-1])))
+            points = edge.geom.coords
+            if edge.start_node.id == node_id:
+                points = points[::-1]
 
-        # Append very last point in the route, then create overall linestring
-        linestring_points.append(points[-1])
-        linestring = LineString(linestring_points)
+            start_bearing = self.get_bearing(*points[:2])
+            end_bearing = self.get_bearing(*points[-2:])
 
-        # Add the lengths of successive same-named edges and set the first of
-        # the edges' length to that "stretch" length, while setting the
-        # successive edges' lengths to `None`. In the next for loop below,
-        # edges with length `None` are skipped.
-        prev_street_name = None
-        stretch_start_i = 0
-        street_names = []
-        jogs = []
-        for i, e in enumerate(edges):
-            street_name = e.name
-            street_names.append(street_name)  # save for later
-            try:
-                next_e = edges[i + 1]
-            except IndexError:
-                next_street_name = None
+            if next_edge is None:
+                # Reached last edge
+                next_name = None
+                linestring_points.extend(points)
             else:
-                next_street_name = next_e.name
-            if street_name and street_name == prev_street_name:
-                edge_lengths[stretch_start_i] += edge_lengths[i]
-                edge_lengths[i] = None
-                prev_street_name = street_name
-            # Check for jog
-            elif (prev_street_name and
-                  edge_lengths[i] < 30 and  # 30 meters TODO: Magic number
-                  street_name != prev_street_name and
-                  prev_street_name == next_street_name):
-                edge_lengths[stretch_start_i] += edge_lengths[i]
-                edge_lengths[i] = None
-                turn = self.calculate_way_to_turn(
-                    end_bearings[i - 1], bearings[i])
-                jogs[-1].append({'turn': turn, 'street': str(street_name)})
+                next_name = next_edge.name
+                linestring_points.extend(points[:-1])
+
+            if name and name == prev_name:
+                start_edge = start_edges[-1]
+                start_edge['edges'].append(edge)
+                start_edge['end_bearing'] = end_bearing
+            elif (prev_name and
+                  length < 30 and  # 30 meters TODO: Magic number
+                  name != prev_name and
+                  prev_name == next_name):
+                start_edge = start_edges[-1]
+                start_edge['jogs'].append({
+                    'edge': edge,
+                    'start_point': points[0],
+                    'start_bearing': start_bearing,
+                    'end_bearing': end_bearing,
+                    'prev_end_bearing': prev_end_bearing,
+                })
             else:
-                # Start of a new stretch (i.e., a new direction)
-                stretch_start_i = i
-                prev_street_name = street_name
-                jogs.append([])
+                # Start of a new stretch
+                start_edges.append({
+                    'edge': edge,
+                    'edges': [edge],
+                    'jogs': [],
+                    'toward_node_id': node_id,
+                    'start_point': points[0],
+                    'start_bearing': start_bearing,
+                    'end_bearing': end_bearing,
+                })
+                prev_name = name
 
-        # Make directions list, where each direction is for a stretch of the
-        # route and a stretch consists of one or more edges that all have the
-        # same name and type.
-        edge_count = 0
-        directions_count = 0
-        linestring_index = 0
-        toward_args = []
-        first = True
-        for end_node_id, e, length in zip(node_ids[1:], edges, edge_lengths):
-            end_node = (
-                e.end_node_id
-                if end_node_id == e.end_node_id
-                else e.start_node_id)
+            prev_end_bearing = end_bearing
 
-            street_name = street_names[edge_count]
-            if street_name is None:
-                street_name = '[{}]'.format(e.highway.replace('_', ' '))
+        # Create directions from stretches.
 
-            if length is not None:  # Only do this at the start of a stretch
-                bearing = bearings[edge_count]
-                direction = {
-                    'turn': '',
-                    'street': '',
-                    'toward': '',
-                    'linestring_index': linestring_index,
-                    'jogs': jogs[directions_count],
-                    'distance': self.distance_dict(length)
-                }
+        for prev_start_edge, start_edge in zip([None] + start_edges[:-1], start_edges):
+            edge = start_edge['edge']
+            length = sum(edge.meters for edge in start_edge['edges'])
+            jogs = start_edge['jogs']
+            start_bearing = start_edge['start_bearing']
+            toward_node_id = start_edge['toward_node_id']
 
-                # Get direction of turn and street to turn onto
-                if first:
-                    first = False
-                    turn = self.get_direction_from_bearing(bearing)
-                    street = street_name
-                else:
-                    turn = self.calculate_way_to_turn(
-                        stretch_end_bearing, bearing)
-                    if turn == 'straight':
-                        # Go straight onto next street
-                        # ('street a becomes street b')
-                        street = [stretch_end_name, street_name]
-                    else:
-                        # Turn onto next street
-                        street = street_name
+            if prev_start_edge is None:
+                # First
+                turn = self.get_direction_from_bearing(start_bearing)
+            else:
+                prev_end_bearing = prev_start_edge['end_bearing']
+                turn = self.calculate_way_to_turn(prev_end_bearing, start_bearing)
 
-                # This will be used below to get a street name from one
-                # of the cross streets at the intersection we're headed
-                # toward at the start of this stretch.
-                toward_args.append(Toward(street_name, end_node_id))
+            processed_jogs = []
+            for jog in jogs:
+                jog_edge = jog['edge']
+                processed_jogs.append({
+                    'turn': self.calculate_way_to_turn(
+                        jog['prev_end_bearing'], jog['start_bearing']),
+                    'name': jog_edge.name,
+                    'display_name': jog_edge.display_name,
+                })
 
-                direction.update(dict(turn=turn, street=street))
-                directions.append(direction)
-                directions_count += 1
+            direction = {
+                'turn': turn,
+                'name': edge.name,
+                'display_name': edge.display_name,
+                'type': edge.highway,
+                'toward': toward_node_id,
+                'jogs': processed_jogs,
+                'distance': self.distance_dict(length),
+                'start_point': start_edge['start_point'],
+            }
 
-            # Save bearing if this edge is the last edge in a stretch
-            try:
-                if end_node and edge_lengths[edge_count + 1]:
-                    stretch_end_bearing = end_bearings[edge_count]
-                    stretch_end_name = street_name
-            except IndexError:
-                pass
-
-            edge_count += 1
-            linestring_index += len(e.geom.coords) - 1
+            directions.append(direction)
 
         # Get the toward street at the start of each stretch found in
         # the loop just above. This is deferred to here so that we can
@@ -381,12 +345,20 @@ class RouteService(AService):
         # each node individually inside the loop--that causes up to 2*N
         # additional queries being issued to the database (fetching of
         # the inbound and outbound edges for the node).
-        q = self.session.query(Intersection)
-        q = q.filter(Intersection.id.in_(a.node_id for a in toward_args))
-        q = q.options(joinedload(Intersection.streets))
-        node_map = {n.id: n for n in q}
-        for d, t in zip(directions, toward_args):
-            if t.node_id < 0:
+
+        filter_ids = [direction['toward'] for direction in directions]
+        if filter_ids:
+            q = self.session.query(Intersection)
+            q = q.filter(Intersection.id.in_(filter_ids))
+            q = q.options(joinedload(Intersection.streets))
+            node_map = {node.id: node for node in q}
+        else:
+            node_map = {}
+
+        for direction in directions:
+            name = direction['name']
+            toward_node_id = direction['toward']
+            if toward_node_id < 0:
                 # This is a special case where the destination is within
                 # an edge (i.e., it's a street address) AND there are no
                 # intersections between the last turn and the
@@ -397,11 +369,12 @@ class RouteService(AService):
                 # above because it doesn't really exist.
                 toward = None
             else:
-                node = node_map[t.node_id]
-                toward = self.get_different_street_name_from_intersection(
-                    t.street_name, node)
-            d['toward'] = toward
+                node = node_map[toward_node_id]
+                toward = self.get_different_name_from_intersection(name, node)
+            direction['toward'] = toward
 
+        linestring = LineString(linestring_points)
+        distance = self.distance_dict(sum(edge.meters for edge in edges))
         return directions, linestring, distance
 
     def distance_dict(self, meters):
@@ -412,20 +385,20 @@ class RouteService(AService):
             'miles': meters * 0.000621371,
         }
 
-    def get_different_street_name_from_intersection(self, street_name, node):
-        """Get a street name from ``node`` that's not ``street_name``.
+    def get_different_name_from_intersection(self, name, node):
+        """Get a street name from ``node`` that's not ``name``.
 
         If there is no such cross street, ``None`` is returned instead.
 
         """
         for street in node.streets:
             other_name = street.name
-            if other_name and other_name != street_name:
+            if other_name and other_name != name:
                 return other_name
 
     def get_bearing(self, p1, p2):
-        dx = p2.x - p1.x
-        dy = p2.y - p1.y
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
         deg = degrees(atan2(dx, dy))
         while deg < 0:
             deg += 360
