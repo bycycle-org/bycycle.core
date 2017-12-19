@@ -58,10 +58,11 @@ class Street(Base):
     def split(self, point, node_id, way1_id, way2_id):
         """Split this street at ``point``."""
         distance = self.geom.project(point)
-        coords = list(self.geom.coords)
+        coords = self.geom.coords
         shared_coords = list(point.coords)
+
         coords1 = [coords[0]]
-        coords2 = [coords[-1]]
+        coords2 = []
 
         for c in coords[1:-1]:
             p = Point(c)
@@ -70,6 +71,8 @@ class Street(Base):
                 coords1.append(c)
             elif p_distance > distance:
                 coords2.append(c)
+
+        coords2.append(coords[-1])
 
         coords1 = coords1 + shared_coords
         coords2 = shared_coords + coords2
