@@ -66,6 +66,16 @@ class Test_A_Route(unittest.TestCase):
         d = route.directions
         self.assertIs(d[-1]['toward'], None)
 
+    def test_same_start_and_end(self):
+        q = '3rd and Burnside', '3rd and Burnside'
+        route = self._query(q)
+        self.assertEqual(route.start.id, route.end.id)
+
+    def test_same_start_and_end_point(self):
+        q = '-122.69891, 45.53763', '-122.69891, 45.53763'
+        route = self._query(q)
+        self.assertEqual(route.start.id, route.end.id)
+
 
 if __name__ == '__main__':
     unittest.main()
