@@ -1,4 +1,5 @@
 from collections import namedtuple
+import threading
 from math import atan2, degrees
 
 import dijkstar
@@ -18,10 +19,24 @@ from bycycle.core.service.lookup import MultipleLookupResultsError
 from .exc import EmptyGraphError, MultipleRouteLookupResultsError, NoRouteError
 
 
-graph = None
+GRAPH = None
+GRAPH_LOCK = threading.Lock()
 
 
 Toward = namedtuple('Toward', ('street_name', 'node_id'))
+# XXX: Loading the entire graph into memory isn't scalable.
+#      Also the current approach doesn't allow for selecting
+#      a different graph depending on the mode (or any other
+#      criteria).
+def get_graph():
+    global GRAPH
+    if GRAPH is None:
+        with GRAPH_LOCK:
+            if GRAPH is None:
+                GRAPH = dijkstar.Graph.unmarshal(asset_path('bycycle.core:matrix'))
+                if not GRAPH:
+                    raise EmptyGraphError()
+    return GRAPH
 
 
 class RouteService(AService):
@@ -32,16 +47,7 @@ class RouteService(AService):
 
     def query(self, q, cost_func='bicycle', ids=None, points=None):
         waypoints = self.get_waypoints(q, ids, points)
-
-        # XXX: Loading the entire graph into memory isn't scalable.
-        #      Also the current approach doesn't allow for selecting
-        #      a different graph depending on the mode (or any other
-        #      criteria).
-        global graph
-        if graph is None:
-            graph = dijkstar.Graph.unmarshal(asset_path('bycycle.core:matrix'))
-        if not graph:
-            raise EmptyGraphError()
+        graph = get_graph()
 
         if ':' in cost_func:
             cost_func = load_object(cost_func)
