@@ -51,6 +51,10 @@ class Street(Base):
     def miles(self):
         return self.meters * 0.000621371
 
+    @property
+    def display_name(self):
+        return self.name or ('[%s]' % (self.highway or 'unknown'))
+
     def split(self, point, node_id, way1_id, way2_id):
         """Split this street at ``point``."""
         distance = self.geom.project(point)
