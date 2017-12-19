@@ -14,16 +14,34 @@ class Route(Entity):
         self.linestring = linestring
 
     def __str__(self):
-        template = '{}{i}. {turn} on {street} toward {toward} -- {miles} miles'
+        start = self.start
+        end = self.end
+        distance = self.distance
+
         directions = []
-        for i, d in enumerate(self.directions):
-            spacer = ' ' if i < 10 else ''
-            directions.append(
-                template.format(spacer, i=i, miles=d['distance']['miles'], **d))
-        directions = '\n'.join(directions)
-        distance = 'Distance: {:.2f}'.format(self.distance['miles'])
-        return '\n'.join(
-            str(a)
-            for a
-            in ('From:', self.start, 'To:', self.end, distance, directions)
+
+        direction_template = (
+            '{i: >3}. {turn} on {name} toward {toward} -- '
+            '{distance[miles]:.2f}mi/{distance[kilometers]:.2f}km'
         )
+
+        for i, direction in enumerate(self.directions, 1):
+            turn = direction['turn'].title()
+            name = direction['display_name']
+            toward = direction['toward'] or '[unknown]'
+            distance = direction['distance']
+            directions.append(direction_template.format_map(locals()))
+
+        directions = '\n'.join(directions) or 'Start and end are the same'
+
+        return """\
+From: {start.name} 
+      {start.geom.lat_long}
+
+  To: {end.name}
+      {end.geom.lat_long}
+
+Distance: {distance[miles]:.2f}mi/{distance[kilometers]:.2f}km
+
+{directions}
+""".format_map(locals())
