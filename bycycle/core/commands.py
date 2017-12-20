@@ -138,10 +138,11 @@ def load_osm_data(config, path='{bycycle.osm.data_path}', db_url='{db.url}', act
 
 
 @command
-def create_graph(config, db_url='{db.url}', path='bycycle.core:matrix'):
+def create_graph(config, db_url='{db.url}', path='{bycycle.matrix.path}'):
     """Read OSM data from database and write graph to path."""
-    db_url = db_url.format_map(config)
+    path = path.format_map(config)
     path = asset_path(path)
+    db_url = db_url.format_map(config)
     builder = OSMGraphBuilder(db_url, path)
     builder.run()
 
