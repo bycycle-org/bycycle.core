@@ -43,8 +43,8 @@ class RouteService(AService):
 
     name = 'route'
 
-    def query(self, q, cost_func='bicycle', heuristic_func=None, ids=None, points=None):
-        waypoints = self.get_waypoints(q, ids, points)
+    def query(self, q, cost_func='bicycle', heuristic_func=None, points=None):
+        waypoints = self.get_waypoints(q, points)
         graph = get_graph()
 
         if ':' in cost_func:
@@ -70,14 +70,11 @@ class RouteService(AService):
 
         return routes[0] if len(routes) == 1 else routes
 
-    def get_waypoints(self, q, ids=None, points=None):
+    def get_waypoints(self, q, points=None):
         errors = []
         waypoints = [w.strip() for w in q]
         num_waypoints = len(waypoints)
-        if ids is None:
-            ids = [None] * num_waypoints
-        if points is None:
-            points = [None] * num_waypoints
+        points = points or [None] * num_waypoints
         if num_waypoints == 0:
             errors.append('Please enter starting point and destination')
         if num_waypoints == 1:
@@ -98,9 +95,9 @@ class RouteService(AService):
         lookup_service = LookupService(self.session)
         results = []
         raise_multi = False
-        for w, id_hint, point_hint in zip(waypoints, ids, points):
+        for w, point_hint in zip(waypoints, points):
             try:
-                result = lookup_service.query(w, id_hint, point_hint)
+                result = lookup_service.query(w, point_hint)
             except MultipleLookupResultsError as exc:
 
                 raise_multi = True

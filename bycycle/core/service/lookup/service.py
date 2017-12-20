@@ -43,27 +43,7 @@ class LookupService(AService):
 
     name = 'lookup'
 
-    def query(self, s, id_hint=None, point_hint=None):
-        hint_result = preferred_obj = preferred_point = None
-
-        if id_hint:
-            hint_result = self.match_id(id_hint)
-            if hint_result is not None:
-                preferred_obj = hint_result.closest_object
-                preferred_point = hint_result.geom
-            else:
-                # TODO: Log that ID hint wasn't found or raise exc?
-                pass
-
-        if point_hint:
-            preferred_point = Point.from_string(point_hint)
-            if self.is_lat_long(preferred_point):
-                preferred_point = preferred_point.reproject()
-            if hint_result is None:
-                hint_result = self.match_point(point_hint)
-
-        # TODO: Return early if s == id_hint or s == point_hint?
-
+    def query(self, s, point_hint=None):
         matchers = (
             self.match_id,
             self.match_point,
@@ -71,19 +51,16 @@ class LookupService(AService):
             self.match_cross_streets,
             self.match_poi,
         )
+
         for matcher in matchers:
             result = matcher(s)
             if result is not None:
-                break
-        else:
-            # Fallback result
-            result = hint_result
+                return result
 
-        if result is not None:
-            if preferred_obj is not None:
-                result.closest_object = preferred_obj
-            if preferred_point is not None:
-                result.geom = preferred_point
+        if point_hint:
+            result = self.match_point(point_hint)
+            result.original_input = s
+            result.normalized_input = result.name
             return result
 
         raise NoResultError(s)
@@ -109,10 +86,11 @@ class LookupService(AService):
             return LookupResult(s, obj, geom, obj, obj.name)
 
     def match_point(self, s):
-        try:
-            point = Point.from_string(s)
-        except ValueError:
-            return None
+        if isinstance(s, str):
+            try:
+                point = Point.from_string(s)
+            except ValueError:
+                return None
         normalized_point = point
         if self.is_lat_long(point):
             point = point.reproject()
