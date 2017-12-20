@@ -229,7 +229,7 @@ class OSMImporter:
             insert()
 
         self.engine.execute("""
-            INSERT INTO {to_table} (id, geom, lat_long)
+            INSERT INTO {to_table} (id, geom)
             SELECT id, geom FROM {from_table} WHERE is_intersection
         """.format(from_table=Node.__tablename__, to_table=Intersection.__tablename__))
 
@@ -300,13 +300,11 @@ class OSMImporter:
                 start_node_id = way[0].id
                 end_node_id = way[-1].id
                 geom = LineString((n.geom.coords[0] for n in way))
-                lat_long = LineString((n.lat_long.coords[0] for n in way))
                 rows.append({
                     'id': way_id,
                     'osm_id': osm_id,
                     'osm_seq': i,
                     'geom': geom,
-                    'lat_long': lat_long,
                     'start_node_id': start_node_id,
                     'end_node_id': end_node_id,
                     'name': name,
