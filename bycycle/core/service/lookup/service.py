@@ -23,6 +23,7 @@ import re
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 
+from bycycle.core.exc import InputError
 from bycycle.core.geometry import DEFAULT_SRID, Point
 from bycycle.core.model import LookupResult, Intersection, Street
 from bycycle.core.service import AService
@@ -94,14 +95,18 @@ class LookupService(AService):
         match = ID_RE.search(s)
         if match:
             type_ = match.group('type')
+            if type_ not in TYPE_MAP:
+                raise InputError('Unknown type: %s' % type_)
             type_ = TYPE_MAP[type_]
             obj = self.session.query(type_).get(match.group('id'))
+            if obj is None:
+                return None
             if isinstance(obj, Intersection):
                 geom = obj.geom
             else:
-                geom = Point(obj.geom.centroid)
-            name = obj.name
-            return LookupResult(s, obj, geom, obj, name)
+                length = obj.geom.length
+                geom = Point(obj.geom.interpolate(length))
+            return LookupResult(s, obj, geom, obj, obj.name)
 
     def match_point(self, s):
         try:
