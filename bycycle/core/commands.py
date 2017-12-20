@@ -119,7 +119,7 @@ def load_usps_street_suffixes(config):
 
 
 @command
-def fetch_osm_data(config, url=None, path='osm.data',
+def fetch_osm_data(config, url=None, path='{bycycle.osm.data_path}',
                    minx=-122.7248, miny=45.4975, maxx=-122.6190, maxy=45.5537):
     """Fetch OSM data and save to file."""
     # Bounding box is S, W, N, E as required by Overpass API
@@ -129,8 +129,9 @@ def fetch_osm_data(config, url=None, path='osm.data',
 
 
 @command
-def load_osm_data(config, path='osm.data', db_url='{db.url}', actions=()):
+def load_osm_data(config, path='{bycycle.osm.data_path}', db_url='{db.url}', actions=()):
     """Read OSM data from file and load into database."""
+    path = path.format_map(config)
     db_url = db_url.format_map(config)
     importer = OSMImporter(path, db_url, actions)
     importer.run()
