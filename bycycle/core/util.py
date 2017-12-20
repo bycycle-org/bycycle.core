@@ -69,8 +69,7 @@ class Timer:
     def __str__(self):
         m, s = divmod(self.elapsed_time, 60)
         if m:
-            s = int(round(s))
-            return '{m}m {s}s'.format(m=int(m), s=s)
+            return '{m}m {s:.1f}s'.format(m=int(m), s=s)
         else:
             return '{s:.2f}s'.format(s=s)
 
