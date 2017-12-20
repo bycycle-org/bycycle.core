@@ -7,4 +7,4 @@ include commands.cfg
 include commands.py
 include requirements.txt
 include bycycle/core/commands.cfg
-include bycycle/core/model/usps_street_suffix.csv
+include bycycle/core/model/usps_street_suffixes.csv
