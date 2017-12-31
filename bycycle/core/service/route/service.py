@@ -1,3 +1,4 @@
+import io
 import threading
 from math import atan2, degrees
 
@@ -7,11 +8,9 @@ from sqlalchemy.orm import joinedload
 
 from tangled.util import asset_path, load_object
 
-from bycycle.core.model.route import Route
-
 from bycycle.core.exc import InputError
-from bycycle.core.geometry import LineString, Point
-from bycycle.core.model import Intersection, Street
+from bycycle.core.geometry import LineString
+from bycycle.core.model import Graph, Intersection, Route, Street
 from bycycle.core.service import AService, LookupService
 from bycycle.core.service.lookup import MultipleLookupResultsError
 
@@ -26,12 +25,17 @@ GRAPH_LOCK = threading.Lock()
 #      Also the current approach doesn't allow for selecting
 #      a different graph depending on the mode (or any other
 #      criteria).
-def get_graph():
+def get_graph(session):
     global GRAPH
     if GRAPH is None:
         with GRAPH_LOCK:
             if GRAPH is None:
-                GRAPH = dijkstar.Graph.unmarshal(asset_path('bycycle.core:matrix'))
+                q = session.query(Graph).order_by(Graph.timestamp.desc())
+                graph = q.first()
+                file = io.BytesIO()
+                file.write(graph.data)
+                file.seek(0)
+                GRAPH = dijkstar.Graph.unmarshal(file)
                 if not GRAPH:
                     raise EmptyGraphError()
     return GRAPH
@@ -45,7 +49,7 @@ class RouteService(AService):
 
     def query(self, q, cost_func='bicycle', heuristic_func=None, points=None):
         waypoints = self.get_waypoints(q, points)
-        graph = get_graph()
+        graph = get_graph(self.session)
 
         if ':' in cost_func:
             cost_func = load_object(cost_func)
