@@ -1,7 +1,7 @@
 from dijkstar import Graph
 
-from sqlalchemy import create_engine
 
+from bycycle.core import db
 from bycycle.core.geometry import DEFAULT_SRID
 from bycycle.core.model import Street
 from bycycle.core.util import Timer
@@ -9,8 +9,8 @@ from bycycle.core.util import Timer
 
 class OSMGraphBuilder:
 
-    def __init__(self, db_url, file_name):
-        self.engine = create_engine(db_url)
+    def __init__(self, connection_args, file_name):
+        self.engine, self.session = db.init(**connection_args)
         self.file_name = file_name
         self.graph = Graph()
 

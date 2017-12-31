@@ -1,12 +1,12 @@
 import json
 
-from sqlalchemy import create_engine
 from sqlalchemy.schema import Column
 from sqlalchemy.types import BigInteger, Boolean
 
 from tangled.converters import get_converter
 from tangled.decorators import cached_property
 
+from bycycle.core import db
 from bycycle.core.geometry import DEFAULT_SRID, LineString, Point
 from bycycle.core.geometry.sqltypes import POINT
 from bycycle.core.model import Base, Intersection, Street, USPSStreetSuffix
@@ -79,9 +79,9 @@ class OSMImporter:
 
     """
 
-    def __init__(self, file_name, db_url, actions=None):
+    def __init__(self, file_name, connection_args, actions=None):
         self.file_name = file_name
-        self.engine = create_engine(db_url)
+        self.engine, self.session = db.init(**connection_args)
         if actions:
             self.actions = [self.all_actions[i - 1] for i in actions]
         else:

@@ -129,27 +129,26 @@ def fetch_osm_data(config, url=None, path='{bycycle.osm.data_path}',
 
 
 @command
-def load_osm_data(config, path='{bycycle.osm.data_path}', db_url='{db.url}', actions=()):
+def load_osm_data(config, path='{bycycle.osm.data_path}', actions=()):
     """Read OSM data from file and load into database."""
     path = path.format_map(config)
-    db_url = db_url.format_map(config)
-    importer = OSMImporter(path, db_url, actions)
+    connection_args = {k: v for (k, v) in config.db.items()}
+    importer = OSMImporter(path, connection_args, actions)
     importer.run()
 
 
 @command
-def create_graph(config, db_url='{db.url}', path='{bycycle.matrix.path}'):
+def create_graph(config, path='{bycycle.matrix.path}'):
     """Read OSM data from database and write graph to path."""
     path = path.format_map(config)
     path = asset_path(path)
-    db_url = db_url.format_map(config)
-    builder = OSMGraphBuilder(db_url, path)
+    connection_args = {k: v for (k, v) in config.db.items()}
+    builder = OSMGraphBuilder(connections_args, path)
     builder.run()
 
 
 def get_db_init_args(config, **overrides):
     connection_args = {k: v for (k, v) in config.db.items()}
-    connection_args.pop('url')
     for name, value in ((k, v) for (k, v) in overrides.items() if v):
         connection_args[name] = value
     return connection_args
