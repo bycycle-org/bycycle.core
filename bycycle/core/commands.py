@@ -172,11 +172,18 @@ def load_usps_street_suffixes(config):
 
 
 @command
-def fetch_osm_data(config, url=None, path='{bycycle.osm.data_path}',
-                   minx=-122.7248, miny=45.4975, maxx=-122.6190, maxy=45.5537):
-    """Fetch OSM data and save to file."""
-    # Bounding box is S, W, N, E as required by Overpass API
+def fetch_osm_data(config, bbox, url=None, path='{bycycle.osm.data_path}'):
+    """Fetch OSM data and save to file.
+
+    The bounding box must be passed as min X, min Y, max X, max Y.
+
+    """
+    path = path.format_map(config)
+
+    # Convert bounding box to S, W, N, E as required by Overpass API.
+    minx, miny, maxx, maxy = bbox
     bbox = miny, minx, maxy, maxx
+
     fetcher = OSMDataFetcher(bbox, path, url)
     fetcher.run()
 
