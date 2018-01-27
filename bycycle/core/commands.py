@@ -1,16 +1,18 @@
 import csv
+from getpass import getpass
 
 from runcommands import command
 from runcommands.commands import local
-from runcommands.util import get_all_list, printer
+from runcommands.util import abort, confirm, get_all_list, printer
 
-from sqlalchemy.engine import create_engine
+from sqlalchemy.engine import create_engine as base_create_engine
+from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.orm import sessionmaker
 
 from tangled.commands import test
 from tangled.util import asset_path
 
-from bycycle.core import db
 from bycycle.core.model import Base
 from bycycle.core.model.suffix import USPSStreetSuffix
 from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
@@ -36,52 +38,83 @@ def install(config, upgrade=False):
     ))
 
 
-@command
+def create_engine(config, user=None, password=None, host=None, port=None, database=None):
+    user = user or config.db.get('user')
+    password = password or config.db.get('password')
+    host = host or config.db.get('host')
+    port = port or config.db.get('port', 5432)
+    database = database or config.db.get('database')
+
+    if password is None:
+        password = getpass('Database password for {user}@{host}/{name}: '.format_map(locals()))
+
+    url = URL(
+        drivername='postgresql',
+        username=user,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+    )
+
+    return base_create_engine(url, isolation_level='AUTOCOMMIT')
+
+
+def execute(engine, sql, condition=True):
+    if not condition:
+        return
+    if isinstance(sql, (list, tuple)):
+        sql = ' '.join(sql)
+    printer.info('Running SQL:', sql)
+    try:
+        return engine.execute(sql)
+    except ProgrammingError as exc:
+        error = str(exc.orig)
+        exc_str = str(exc)
+        if 'already exists' in exc_str or 'does not exist' in exc_str:
+            printer.warning(exc.statement.strip(), error.strip(), sep=': ')
+        else:
+            raise
+
+
+@command(default_env='development')
 def create_db(config,
               # Owner and database to create
-              owner=None, database=None,
+              owner=None, password=None, database=None,
               # Postgres superuser used to run drop & create commands
               superuser='postgres', superuser_password=None, superuser_database='postgres',
-              host=None, drop=False, drop_database=False, drop_user=False):
-    owner = owner or config.db.user
-    database = database or config.db.database
-    drop_database = drop or drop_database
-    drop_user = drop or drop_user
+              host=None, port=None, drop=False):
+    owner = owner or config.db.get('user')
+    password = password or config.db.get('password')
+    host = host or config.db.get('host')
 
-    f = locals()
+    database = database or config.db['database']
 
-    def execute(engine, sql, condition=True, format_map=f):
-        if not condition:
-            return
-        try:
-            engine.execute(sql.format_map(format_map))
-        except ProgrammingError as exc:
-            error = str(exc.orig)
-            exc_str = str(exc)
-            if 'already exists' in exc_str or 'does not exist' in exc_str:
-                printer.warning(exc.statement.strip(), error.strip(), sep=': ')
-            else:
-                raise
-
-    common_cxn_args = dict(user=superuser, password=superuser_password, host=host)
-    common_engine_args = dict(isolation_level='AUTOCOMMIT')
+    common_engine_args = {
+        'user': superuser,
+        'password': superuser_password,
+        'host': host,
+        'port': port,
+    }
 
     # Drop/create database/user (connect to postgres database)
 
-    cxn_args = get_db_init_args(config, database=superuser_database, **common_cxn_args)
-    postgres_engine = create_engine(db.make_url(**cxn_args), **common_engine_args)
+    postgres_engine = create_engine(config, database=superuser_database, **common_engine_args)
 
-    execute(postgres_engine, 'DROP DATABASE {database}', condition=drop_database)
-    execute(postgres_engine, 'DROP USER {owner}', condition=drop_user)
-    execute(postgres_engine, 'CREATE USER {owner}')
-    execute(postgres_engine, 'CREATE DATABASE {database} OWNER {owner}')
+    create_user_statement = ('CREATE USER', owner)
+    if password:
+        create_user_statement += ('WITH PASSWORD', password)
+
+    execute(postgres_engine, ('DROP DATABASE', database), condition=drop)
+    execute(postgres_engine, create_user_statement)
+    execute(postgres_engine, ('GRANT', owner, 'TO', superuser))
+    execute(postgres_engine, ('CREATE DATABASE', database, 'OWNER', owner))
 
     postgres_engine.dispose()
 
     # Create extensions (connect to app database)
 
-    cxn_args = get_db_init_args(config, database=database, **common_cxn_args)
-    app_engine = create_engine(db.make_url(**cxn_args), **common_engine_args)
+    app_engine = create_engine(config, database=database, **common_engine_args)
 
     execute(app_engine, 'CREATE EXTENSION postgis')
 
@@ -90,8 +123,9 @@ def create_db(config,
 
 @command
 def create_schema(config):
-    engine, _ = db.init(**get_db_init_args(config))
+    engine = create_engine(config)
     Base.metadata.create_all(bind=engine)
+    engine.dispose()
 
 
 @command
@@ -100,7 +134,8 @@ def load_usps_street_suffixes(config):
     file_name = '{model.__tablename__}.csv'.format(model=USPSStreetSuffix)
     path = asset_path('bycycle.core.model', file_name)
 
-    engine, session_factory = db.init(**get_db_init_args(config))
+    engine = create_engine(config)
+    session_factory = sessionmaker(bind=engine)
     session = session_factory()
 
     printer.info('Deleting existing USPS street suffixes...', end=' ')
@@ -116,6 +151,9 @@ def load_usps_street_suffixes(config):
     session.add_all(records)
     session.commit()
     printer.info(count, 'added')
+
+    session.close()
+    engine.dispose()
 
 
 @command
@@ -143,13 +181,6 @@ def create_graph(config, clean=True):
     connection_args = {k: v for (k, v) in config.db.items()}
     builder = OSMGraphBuilder(connection_args, clean)
     builder.run()
-
-
-def get_db_init_args(config, **overrides):
-    connection_args = {k: v for (k, v) in config.db.items()}
-    for name, value in ((k, v) for (k, v) in overrides.items() if v):
-        connection_args[name] = value
-    return connection_args
 
 
 __all__ = get_all_list(vars()) + ['test']
