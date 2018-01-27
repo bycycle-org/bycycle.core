@@ -121,6 +121,21 @@ def create_db(config,
     app_engine.dispose()
 
 
+@command(default_env='development')
+def drop_db(config, user='postgres', password=None, host=None, port=None, database=None):
+    if config.env == 'prod':
+        abort(1, 'Cannot drop prod database')
+
+    database = database or config.db['database']
+
+    prompt = 'Drop database {database}?'.format_map(locals())
+    if not confirm(config, prompt, yes_values=['yes']):
+        abort()
+
+    engine = create_engine(config, user, password, host, port, 'postgres')
+    execute(engine, 'DROP DATABASE {database}'.format_map(locals()))
+
+
 @command
 def create_schema(config):
     engine = create_engine(config)
