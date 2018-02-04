@@ -3,19 +3,21 @@ from getpass import getpass
 
 from runcommands import command
 from runcommands.commands import local
-from runcommands.util import abort, confirm, get_all_list, printer
+from runcommands.util import abort, confirm, include, printer
 
 from sqlalchemy.engine import create_engine as base_create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker
 
-from tangled.commands import test
 from tangled.util import asset_path
 
 from bycycle.core.model import Base
 from bycycle.core.model.suffix import USPSStreetSuffix
 from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
+
+
+include('tangled.commands', 'test')
 
 
 @command
@@ -203,6 +205,3 @@ def create_graph(config, clean=True):
     connection_args = {k: v for (k, v) in config.db.items()}
     builder = OSMGraphBuilder(connection_args, clean)
     builder.run()
-
-
-__all__ = get_all_list(vars()) + ['test']
