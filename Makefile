@@ -1,4 +1,4 @@
-venv ?= .env
+venv ?= .venv
 
 init: $(venv)
 	$(venv)/bin/pip install runcommands
@@ -6,7 +6,7 @@ init: $(venv)
 	$(venv)/bin/runcommand init
 
 $(venv):
-	virtualenv -p python3 $(venv)
+	python3 -m venv $(venv)
 
 sdist: clean clean-dist
 	$(venv)/bin/python setup.py sdist
