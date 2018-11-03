@@ -6,7 +6,7 @@ import dijkstar
 
 from sqlalchemy.orm import joinedload
 
-from tangled.util import asset_path, load_object
+from tangled.util import load_object
 
 from bycycle.core.exc import InputError
 from bycycle.core.geometry import LineString
