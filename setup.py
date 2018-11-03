@@ -28,7 +28,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'coverage>=4.4.2',
+            'coverage',
         ],
     },
     entry_points="""
