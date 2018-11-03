@@ -2,16 +2,16 @@ import re
 import sys
 import time
 
-from runcommands import command
+from runcommands import arg, command
 from runcommands.util import abort
 from tangled.util import load_object
 
 from bycycle.core import db
 
 
-@command(choices={'service': ('lookup', 'route')})
-def bycycle(config, service, q):
-    """Run a bycycle service"""
+@command
+def bycycle(service: arg(choices=('lookup', 'route')), q):
+    """Run a byCycle service."""
     module_name = 'bycycle.core.service.{service}'.format(service=service)
     service_factory = load_object(module_name, 'Service')
 

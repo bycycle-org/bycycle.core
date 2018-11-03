@@ -1,9 +1,11 @@
 import csv
+import os
+import unittest
 from getpass import getpass
 
 from runcommands import command
 from runcommands.commands import local
-from runcommands.util import abort, confirm, include, printer
+from runcommands.util import abort, confirm, printer
 
 from sqlalchemy.engine import create_engine as base_create_engine
 from sqlalchemy.engine.url import URL
@@ -17,41 +19,75 @@ from bycycle.core.model.suffix import USPSStreetSuffix
 from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
 
 
-include('tangled.commands', 'test')
+__all__ = [
+    'create_db',
+    'create_graph',
+    'create_schema',
+    'drop_db',
+    'fetch_osm_data',
+    'init',
+    'install',
+    'load_osm_data',
+    'load_usps_street_suffixes',
+    'test',
+]
 
 
 @command
-def init(config):
-    install(config)
-    create_db(config)
-    create_schema(config)
-    load_usps_street_suffixes(config)
-    fetch_osm_data(config)
-    load_osm_data(config)
-    create_graph(config)
+def init():
+    install()
+    create_db()
+    create_schema()
+    load_usps_street_suffixes()
+    fetch_osm_data()
+    load_osm_data()
+    create_graph()
 
 
 @command
-def install(config, upgrade=False):
-    local(config, (
-        '{venv.pip} install',
-        '--upgrade' if upgrade else '',
-        '-r requirements.txt',
+def install(where='.venv', upgrade=False):
+    local((
+        '{where}/bin/pip'.format(where=where),
+        'install',
+        ('--upgrade', '--upgrade-strategy', 'eager', 'setuptools', 'pip') if upgrade else None,
+        '-r', 'requirements.txt',
     ))
 
 
-def create_engine(config, user=None, password=None, host=None, port=None, database=None):
-    user = user or config.db.get('user')
-    password = password or config.db.get('password')
-    host = host or config.db.get('host')
-    port = port or config.db.get('port', 5432)
-    database = database or config.db.get('database')
+@command
+def test(package, coverage=True, tests=(), verbose=False, fail_fast=False):
+    cwd = os.getcwd()
+    where = os.path.join(cwd, package.replace('.', os.sep))
+    top_level_dir = cwd
 
+    coverage = coverage and not tests
+    verbosity = 2 if verbose else 1
+
+    if coverage:
+        from coverage import Coverage
+        cover = Coverage(branch=True, source=[where])
+        cover.start()
+
+    loader = unittest.TestLoader()
+    if tests:
+        suite = loader.loadTestsFromNames(tests)
+    else:
+        suite = loader.discover(where, top_level_dir=top_level_dir)
+
+    runner = unittest.TextTestRunner(verbosity=verbosity, failfast=fail_fast)
+    runner.run(suite)
+
+    if coverage:
+        cover.stop()
+        cover.report()
+
+
+def create_engine(user, password, host='localhost', port=5432, database=None, driver='postgresql'):
     if password is None:
-        password = getpass('Database password for {user}@{host}/{name}: '.format_map(locals()))
+        password = getpass('Database password for {user}@{host}/{database}: '.format_map(locals()))
 
     url = URL(
-        drivername='postgresql',
+        drivername=driver,
         username=user,
         password=password,
         host=host,
@@ -79,19 +115,12 @@ def execute(engine, sql, condition=True):
             raise
 
 
-@command(default_env='development')
-def create_db(config,
-              # Owner and database to create
-              owner=None, password=None, database=None,
+@command
+def create_db(# Owner and database to create
+              owner, password, database,
               # Postgres superuser used to run drop & create commands
-              superuser='postgres', superuser_password=None, superuser_database='postgres',
-              host=None, port=None, drop=False):
-    owner = owner or config.db.get('user')
-    password = password or config.db.get('password')
-    host = host or config.db.get('host')
-
-    database = database or config.db['database']
-
+              superuser='postgres', superuser_password='', superuser_database='postgres',
+              host='localhost', port=5432, drop=False):
     common_engine_args = {
         'user': superuser,
         'password': superuser_password,
@@ -101,7 +130,7 @@ def create_db(config,
 
     # Drop/create database/user (connect to postgres database)
 
-    postgres_engine = create_engine(config, database=superuser_database, **common_engine_args)
+    postgres_engine = create_engine(database=superuser_database, **common_engine_args)
 
     create_user_statement = ('CREATE USER', owner)
     if password:
@@ -116,42 +145,42 @@ def create_db(config,
 
     # Create extensions (connect to app database)
 
-    app_engine = create_engine(config, database=database, **common_engine_args)
+    app_engine = create_engine(database=database, **common_engine_args)
 
     execute(app_engine, 'CREATE EXTENSION postgis')
 
     app_engine.dispose()
 
 
-@command(default_env='development')
-def drop_db(config, user='postgres', password=None, host=None, port=None, database=None):
-    if config.env == 'prod':
+@command
+def drop_db(env, database,
+            superuser='postgres', superuser_password='', superuser_database='postgres',
+            host='localhost', port=5432):
+    if env == 'prod':
         abort(1, 'Cannot drop prod database')
 
-    database = database or config.db['database']
-
-    prompt = 'Drop database {database}?'.format_map(locals())
-    if not confirm(config, prompt, yes_values=['yes']):
+    prompt = 'Drop database {database} via {user}@{host}?'.format_map(locals())
+    if not confirm(prompt, yes_values=['yes']):
         abort()
 
-    engine = create_engine(config, user, password, host, port, 'postgres')
-    execute(engine, 'DROP DATABASE {database}'.format_map(locals()))
+    engine = create_engine(superuser, superuser_password, host, port, superuser_database)
+    execute(engine, ('DROP DATABASE', database))
 
 
 @command
-def create_schema(config):
-    engine = create_engine(config)
+def create_schema(user, password, database, host='localhost', port=5432):
+    engine = create_engine(user, password, host, port, database)
     Base.metadata.create_all(bind=engine)
     engine.dispose()
 
 
 @command
-def load_usps_street_suffixes(config):
+def load_usps_street_suffixes(user, password, database, host='localhost', port=5432):
     """Load USPS street suffixes into database."""
     file_name = '{model.__tablename__}.csv'.format(model=USPSStreetSuffix)
     path = asset_path('bycycle.core.model', file_name)
 
-    engine = create_engine(config)
+    engine = create_engine(user, password, host, port, database)
     session_factory = sessionmaker(bind=engine)
     session = session_factory()
 
@@ -174,14 +203,12 @@ def load_usps_street_suffixes(config):
 
 
 @command
-def fetch_osm_data(config, bbox, url=None, path='{bycycle.osm.data_path}'):
+def fetch_osm_data(bbox=(-122.7248, 45.4975, -122.6190, 45.5537), path='osm.data', url=None):
     """Fetch OSM data and save to file.
 
     The bounding box must be passed as min X, min Y, max X, max Y.
 
     """
-    path = path.format_map(config)
-
     # Convert bounding box to S, W, N, E as required by Overpass API.
     minx, miny, maxx, maxy = bbox
     bbox = miny, minx, maxy, maxx
@@ -191,17 +218,14 @@ def fetch_osm_data(config, bbox, url=None, path='{bycycle.osm.data_path}'):
 
 
 @command
-def load_osm_data(config, path='{bycycle.osm.data_path}', actions=()):
+def load_osm_data(db, path='osm.data', actions=()):
     """Read OSM data from file and load into database."""
-    path = path.format_map(config)
-    connection_args = {k: v for (k, v) in config.db.items()}
-    importer = OSMImporter(path, connection_args, actions)
+    importer = OSMImporter(path, db, actions)
     importer.run()
 
 
 @command
-def create_graph(config, clean=True):
+def create_graph(db, clean=True):
     """Read OSM data from database and write graph to path."""
-    connection_args = {k: v for (k, v) in config.db.items()}
-    builder = OSMGraphBuilder(connection_args, clean)
+    builder = OSMGraphBuilder(db, clean)
     builder.run()

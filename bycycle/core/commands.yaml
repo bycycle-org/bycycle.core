@@ -1,0 +1,37 @@
+---
+globals:
+  env: "development"
+  python:
+    version: "3.5"
+
+envs:
+  development:
+    db:
+      user: "bycycle"
+      password: ""
+      host: "localhost"
+      port: 5432
+      database: "bycycle"
+
+args:
+  create-db:
+    owner: "{{ db.user }}"
+    password: "{{ db.password }}"
+    database: "{{ db.database }}"
+    port: "{{ db.port }}"
+
+  drop-db:
+    database: "{{ db.database }}"
+    port: "{{ db.port }}"
+
+  create-schema:
+    user: "{{ db.user }}"
+    password: "{{ db.password }}"
+    database: "{{ db.database }}"
+    port: "{{ db.port }}"
+
+  load-usps-street-suffixes:
+    user: "{{ db.user }}"
+    password: "{{ db.password }}"
+    database: "{{ db.database }}"
+    port: "{{ db.port }}"

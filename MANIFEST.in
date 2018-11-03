@@ -3,8 +3,8 @@ include CHANGELOG
 include INSTALL
 include LICENSE
 include Makefile
-include commands.cfg
+include commands.yaml
 include commands.py
 include requirements.txt
-include bycycle/core/commands.cfg
+include bycycle/core/commands.yaml
 include bycycle/core/model/usps_street_suffixes.csv
