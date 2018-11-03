@@ -252,7 +252,7 @@ class RouteService(AService):
 
         for node_id, edge, prev_edge, next_edge in loop_data:
             length = edge.meters
-            name = edge.name
+            name = edge.name or edge.highway
 
             points = edge.geom.coords
             if edge.start_node.id == node_id:
@@ -266,7 +266,7 @@ class RouteService(AService):
                 next_name = None
                 linestring_points.extend(points)
             else:
-                next_name = next_edge.name
+                next_name = next_edge.name or next_edge.highway
                 linestring_points.extend(points[:-1])
 
             if name and name == prev_name:
@@ -322,13 +322,13 @@ class RouteService(AService):
                 processed_jogs.append({
                     'turn': self.calculate_way_to_turn(
                         jog['prev_end_bearing'], jog['start_bearing']),
-                    'name': jog_edge.name,
+                    'name': jog_edge.name or jog_edge.highway,
                     'display_name': jog_edge.display_name,
                 })
 
             direction = {
                 'turn': turn,
-                'name': edge.name,
+                'name': name,
                 'display_name': edge.display_name,
                 'type': edge.highway,
                 'toward': toward_node_id,
