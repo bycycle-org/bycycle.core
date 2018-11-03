@@ -18,12 +18,12 @@ setup(
     include_package_data=True,
     install_requires=[
         'Dijkstar>=2.4.0',
-        'psycopg2>=2.7.3.2',
+        'psycopg2>=2.7.5',
         'pyproj>=1.9.5.1',
-        'requests>=2.18.4',
+        'requests>=2.20.0',
         'runcommands>=1.0a31',
         'Shapely>=1.6.4',
-        'SQLAlchemy>=1.2.2',
+        'SQLAlchemy>=1.2.13',
         'tangled>=1.0a12',
     ],
     extras_require={
