@@ -35,7 +35,7 @@ __all__ = [
 
 @command
 def init():
-    install()
+    install(upgrade=True)
     create_db()
     create_schema()
     load_usps_street_suffixes()
