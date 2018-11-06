@@ -56,5 +56,5 @@ class Base:
     def __repr__(self):
         return self.__str__()
 
-    def __json_data__(self):
+    def __json__(self, request):
         return mapping(self)

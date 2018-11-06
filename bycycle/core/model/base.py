@@ -19,7 +19,7 @@ class Entity(object):
     """Specifies which fields to include/exclude in/from JSON data.
 
 
-    Used in :meth:`__json_data__`.
+    Used in :meth:`__json__`.
 
     Can be:
 
@@ -37,7 +37,7 @@ class Entity(object):
 
     """
 
-    def __json_data__(self):
+    def __json__(self, request=None):
         data = {}
 
         fields = self.json_fields
@@ -68,8 +68,8 @@ class Entity(object):
             v = self
             for name in field.split('.'):
                 v = getattr(v, name)
-            if hasattr(v, '__json_data__'):
-                v = v.__json_data__()
+            if hasattr(v, '__json__'):
+                v = v.__json__(request)
             data[field] = v
         return data
 
