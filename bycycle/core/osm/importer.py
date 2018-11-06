@@ -6,10 +6,9 @@ from sqlalchemy.types import BigInteger, Boolean
 from tangled.converters import get_converter
 from tangled.decorators import cached_property
 
-from bycycle.core import db
 from bycycle.core.geometry import DEFAULT_SRID, LineString, Point
 from bycycle.core.geometry.sqltypes import POINT
-from bycycle.core.model import Base, Intersection, Street, USPSStreetSuffix
+from bycycle.core.model import get_engine, Base, Intersection, Street, USPSStreetSuffix
 from bycycle.core.model.compass import directions_ftoa
 from bycycle.core.util import PeriodicRunner, Timer
 
@@ -81,7 +80,7 @@ class OSMImporter:
 
     def __init__(self, file_name, connection_args, actions=None):
         self.file_name = file_name
-        self.engine, self.session = db.init(**connection_args)
+        self.engine = get_engine(**connection_args)
         if actions:
             self.actions = [self.all_actions[i - 1] for i in actions]
         else:

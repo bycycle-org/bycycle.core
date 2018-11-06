@@ -1,17 +1,18 @@
 import unittest
 
-from bycycle.core import db
-from bycycle.core.model import Route
+from bycycle.core.model import get_engine, get_session_factory, Route
 from bycycle.core.service.route import RouteService
 
 
 class Test_A_Route(unittest.TestCase):
 
     def setUp(self):
-        self.engine, self.session_factory = db.init()
+        self.engine = get_engine()
+        self.session_factory = get_session_factory(self.engine)
         self.session = self.session_factory()
 
     def tearDown(self):
+        self.engine.dispose()
         self.session.close()
 
     def _query(self, q, **kwargs):

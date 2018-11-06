@@ -6,7 +6,7 @@ from runcommands import arg, command
 from runcommands.util import abort
 from tangled.util import load_object
 
-from bycycle.core import db
+from bycycle.core.model import get_engine, get_session_factory
 
 
 @command
@@ -20,7 +20,8 @@ def bycycle(service: arg(choices=('lookup', 'route')), q):
         if len(q) < 2:
             abort(1, 'Route must be specified as "A to B"')
 
-    _, session_factory = db.init()
+    engine = get_engine()
+    session_factory = get_session_factory(engine)
     session = session_factory()
 
     start_time = time.time()

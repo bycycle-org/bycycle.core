@@ -2,16 +2,16 @@ import io
 
 import dijkstar
 
-from bycycle.core import db
 from bycycle.core.geometry import DEFAULT_SRID
-from bycycle.core.model import Graph, Street
+from bycycle.core.model import get_engine, get_session_factory, Graph, Street
 from bycycle.core.util import Timer
 
 
 class OSMGraphBuilder:
 
     def __init__(self, connection_args, clean=True):
-        self.engine, self.session = db.init(**connection_args)
+        self.engine = get_engine(**connection_args)
+        self.session_factory = get_session_factory(self.engine)
         self.clean = clean
 
     def run(self):
@@ -53,7 +53,7 @@ class OSMGraphBuilder:
         timer.stop()
         print(template.format(1), timer)
 
-        session = self.session()
+        session = self.session_factory()
 
         if self.clean:
             print('Removing previous graphs...', end='')
