@@ -21,7 +21,7 @@ setup(
         'psycopg2>=2.7.5',
         'pyproj>=1.9.5.1',
         'requests>=2.20.0',
-        'runcommands>=1.0a31',
+        'runcommands>=1.0a32',
         'Shapely>=1.6.4',
         'SQLAlchemy>=1.2.13',
         'tangled>=1.0a12',
