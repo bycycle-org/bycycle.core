@@ -1,7 +1,6 @@
 venv ?= .venv
 
 init: $(venv)
-	$(venv)/bin/pip install runcommands
 	$(venv)/bin/pip install -r requirements.txt
 	$(venv)/bin/runcommand init
 
