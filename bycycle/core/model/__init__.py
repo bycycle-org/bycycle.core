@@ -8,6 +8,7 @@ from .base import Base, Entity
 from .graph import Graph
 from .intersection import Intersection
 from .lookup import LookupResult
+from .mvt import MVTCache
 from .route import Route
 from .street import Street
 from .suffix import USPSStreetSuffix
