@@ -18,6 +18,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'Dijkstar>=2.4.0',
+        'mercantile>=1.0.4',
         'psycopg2>=2.7.5',
         'pyproj>=1.9.5.1',
         'requests>=2.20.0',
