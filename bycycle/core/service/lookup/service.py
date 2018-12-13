@@ -99,7 +99,7 @@ class LookupService(AService):
         distance = distance.label('distance')
         # Try to get an Intersection first
         q = self.session.query(Intersection, distance)
-        q = q.filter(distance < 5)  # 5 meters (make configurable)
+        q = q.filter(distance < 5)  # 5 meters (TODO: make configurable)
         q = q.order_by(distance)
         result = q.first()
         if result is not None:
