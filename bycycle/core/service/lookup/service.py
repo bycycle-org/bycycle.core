@@ -82,7 +82,7 @@ class LookupService(AService):
                 geom = obj.geom
             else:
                 length = obj.geom.length
-                geom = Point(obj.geom.interpolate(length))
+                geom = Point(obj.geom.interpolate(length / 2))
             return LookupResult(s, obj, geom, obj, obj.name)
 
     def match_point(self, s):
