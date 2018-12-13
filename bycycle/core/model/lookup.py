@@ -14,11 +14,14 @@ class LookupResult(Entity):
             this will be a Point object)
         geom (Point):
             Location of result:
-                - If input is an ID, this will be the geom of the
-                  corresponding object
-                - If input is a point, this will be that point
+                - If input is an ID, this will be a point derived from
+                  the corresponding object. E.g., if it's the ID of an
+                  intersection, this will be the point the intersection
+                  is at; if it's the ID of a street, it will be the
+                  midpoint of the street.
+                - If input is a point, this will be that point.
                 - If the input is geocoded, it will be the geocoded
-                  point
+                  point.
         closest_object (object):
             Nearest object (intersection or street)
         name (str):
