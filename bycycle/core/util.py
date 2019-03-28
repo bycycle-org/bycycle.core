@@ -29,24 +29,25 @@ class Timer:
 
     """
 
-    def __init__(self):
+    def __init__(self, autoprint=False):
         self.started = False
         self.start_time = None
         self.stopped = False
         self.total_time = None
+        self.autoprint = autoprint
 
     @property
     def elapsed_time(self):
         if self.stopped:
             return self.total_time
         else:
-            return time.time() - self.start_time
+            return time.monotonic() - self.start_time
 
     def start(self):
         if self.started:
             raise TimerError('Already started')
         self.started = True
-        self.start_time = time.time()
+        self.start_time = time.monotonic()
         self.stopped = False
         self.total_time = None
 
@@ -57,7 +58,9 @@ class Timer:
             raise TimerError('Already stopped')
         self.started = False
         self.stopped = True
-        self.total_time = time.time() - self.start_time
+        self.total_time = time.monotonic() - self.start_time
+        if self.autoprint:
+            print(self)
 
     def __enter__(self):
         self.start()
@@ -70,8 +73,17 @@ class Timer:
         m, s = divmod(self.elapsed_time, 60)
         if m:
             return '{m}m {s:.1f}s'.format(m=int(m), s=s)
-        else:
+        elif s > 0.01:
             return '{s:.2f}s'.format(s=s)
+        elif s > 0.001:
+            ms = s * 1_000
+            return '{ms:.0f}ms'.format(ms=ms)
+        elif s > 0.000001:
+            us = s * 1_000_000
+            return '{us:.0f}us'.format(us=us)
+        else:
+            ns = s * 1_000_000_000
+            return '{ns:.0f}ns'.format(ns=ns)
 
 
 class PeriodicRunner(Thread):
