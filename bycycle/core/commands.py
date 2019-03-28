@@ -23,6 +23,7 @@ __all__ = [
     'create_db',
     'create_graph',
     'create_schema',
+    'dbshell',
     'drop_db',
     'fetch_osm_data',
     'init',
@@ -113,6 +114,20 @@ def execute(engine, sql, condition=True):
             printer.warning(exc.statement.strip(), error.strip(), sep=': ')
         else:
             raise
+
+
+@command
+def dbshell(user, password, database, host='localhost', port=5432):
+    environ = {}
+    if password:
+        environ['PGPASSWORD'] = password
+    local((
+        'pgcli',
+        '--user', user,
+        '--host', host,
+        '--port', port,
+        '--dbname', database,
+    ), environ=environ)
 
 
 @command

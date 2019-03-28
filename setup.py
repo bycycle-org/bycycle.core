@@ -30,6 +30,7 @@ setup(
     extras_require={
         'dev': [
             'coverage',
+            'pgcli',
         ],
     },
     entry_points="""

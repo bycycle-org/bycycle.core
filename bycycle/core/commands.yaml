@@ -35,3 +35,9 @@ args:
     password: "{{ db.password }}"
     database: "{{ db.database }}"
     port: "{{ db.port }}"
+
+  dbshell:
+    user: "{{ db.user }}"
+    password: "{{ db.password }}"
+    database: "{{ db.database }}"
+    port: "{{ db.port }}"
