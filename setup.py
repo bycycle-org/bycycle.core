@@ -19,12 +19,12 @@ setup(
     install_requires=[
         'Dijkstar>=2.4.0',
         'mercantile>=1.0.4',
-        'psycopg2>=2.7.5',
-        'pyproj>=1.9.5.1',
-        'requests>=2.20.0',
-        'runcommands>=1.0a32',
+        'psycopg2-binary>=2.8.2',
+        'pyproj>=1.9.6',
+        'requests>=2.21.0',
+        'runcommands>=1.0a35',
         'Shapely>=1.6.4',
-        'SQLAlchemy>=1.2.13',
+        'SQLAlchemy>=1.3.3',
         'tangled>=1.0a12',
     ],
     extras_require={
