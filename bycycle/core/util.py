@@ -88,26 +88,24 @@ class Timer:
 
 class PeriodicRunner(Thread):
 
-    """Runs a function periodically until stopped.
+    """Run a function periodically until stopped.
 
     Like a normal thread, call :meth:`start` to start running the
-    function. Call :meth:`stop` to stop it. The default sleep time is
-    1 second. Pass an ``interval`` as an int or float to changee this.
+    function. Call :meth:`stop` to stop it. The default sleep time is 1
+    second. Pass an ``interval`` as an int or float to changee this.
 
     """
 
-    def __init__(self, target, args=(), kwargs=None, interval=1):
-        super().__init__()
-        self.target = target
-        self.args = args
-        self.kwargs = kwargs if kwargs is not None else {}
-        self.interval = interval
-        self.stopped = Event()
+    def __init__(self, target, interval=1, **kwargs):
+        super().__init__(target=target, daemon=True, **kwargs)
+        self._interval = interval
+        self._stopped = Event()
 
     def run(self):
-        self.target(*self.args, **self.kwargs)
-        while not self.stopped.wait(self.interval):
-            self.target(*self.args, **self.kwargs)
+        while True:
+            self._target(*self._args, **self._kwargs)
+            if self._stopped.wait(self._interval):
+                break
 
     def stop(self):
-        self.stopped.set()
+        self._stopped.set()
