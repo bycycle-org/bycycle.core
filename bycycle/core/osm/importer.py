@@ -1,12 +1,14 @@
 import json
 
+from shapely.ops import transform
+
 from sqlalchemy.schema import Column
 from sqlalchemy.types import BigInteger, Boolean
 
 from tangled.converters import get_converter
 from tangled.decorators import cached_property
 
-from bycycle.core.geometry import DEFAULT_SRID, LineString, Point
+from bycycle.core.geometry import DEFAULT_SRID, make_projector, LineString, Point
 from bycycle.core.geometry.sqltypes import POINT
 from bycycle.core.model import get_engine, Base, Intersection, Street, USPSStreetSuffix
 from bycycle.core.model.compass import directions_ftoa
@@ -205,12 +207,13 @@ class OSMImporter:
         self.engine.execute(NODE_TABLE.delete())
         self.engine.execute(INTERSECTION_TABLE.delete())
 
+        projector = make_projector()
         for el in self.iter_nodes():
             osm_id = el['id']
             latitude = el['lat']
             longitude = el['lon']
             lat_long = Point(longitude, latitude)
-            geom = lat_long.reproject()
+            geom = transform(projector, lat_long)
             node = {
                 'id': osm_id,
                 'is_intersection': osm_id in intersections,
