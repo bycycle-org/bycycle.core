@@ -3,7 +3,7 @@ from shapely.errors import ReadingError
 from shapely.geometry import mapping
 from shapely.ops import transform
 
-from .proj import DEFAULT_INPUT_SRID, DEFAULT_SRID, make_transformer
+from .proj import DEFAULT_INPUT_SRID, DEFAULT_SRID, make_projector
 
 
 class Base:
@@ -46,7 +46,7 @@ class Base:
         if input_srid == output_srid:
             return self.__class__(self)
         else:
-            projector = make_transformer(input_srid, output_srid)
+            projector = make_projector(input_srid, output_srid)
         return transform(projector, self)
 
     @property

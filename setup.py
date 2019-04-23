@@ -20,7 +20,7 @@ setup(
         'Dijkstar>=2.4.0',
         'mercantile>=1.0.4',
         'psycopg2-binary>=2.8.2',
-        'pyproj>=1.9.6',
+        'pyproj>=2.1.3',
         'requests>=2.21.0',
         'runcommands>=1.0a35',
         'Shapely>=1.6.4',
