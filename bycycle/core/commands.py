@@ -224,11 +224,7 @@ def fetch_osm_data(bbox=(-122.7248, 45.4975, -122.6190, 45.5537), path='osm.data
     The bounding box must be passed as min X, min Y, max X, max Y.
 
     """
-    # Convert bounding box to S, W, N, E as required by Overpass API.
-    minx, miny, maxx, maxy = bbox
-    bbox = miny, minx, maxy, maxx
-
-    fetcher = OSMDataFetcher(bbox, path, url)
+    fetcher = OSMDataFetcher(bbox, path, 'highway', url)
     fetcher.run()
 
 

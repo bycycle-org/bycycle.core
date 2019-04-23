@@ -25,9 +25,14 @@ class OSMDataFetcher:
 
     query_types = {
         'highway': '(way[highway]({bbox});>;)',
+        'place': '',
     }
 
     def __init__(self, bbox, file_name, query, url=DEFAULT_URL):
+        # Convert bounding box to S, W, N, E as required by Overpass API.
+        minx, miny, maxx, maxy = bbox
+        bbox = miny, minx, maxy, maxx
+
         bbox_str = ','.join(str(f) for f in bbox)
 
         query = self.query_types.get(query, query)
