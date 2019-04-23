@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 from tangled.util import load_object
 
 from bycycle.core.exc import InputError
-from bycycle.core.geometry import LineString
+from bycycle.core.geometry import split_line, LineString
 from bycycle.core.model import Graph, Intersection, Route, Street
 from bycycle.core.service import AService, LookupService
 from bycycle.core.service.lookup import MultipleLookupResultsError
@@ -143,7 +143,11 @@ class RouteService(AService):
 
     def split_way(self, way, point, node_id, way1_id, way2_id, graph, annex):
         start_node_id, end_node_id = way.start_node.id, way.end_node.id
-        shared_node, way1, way2 = way.split(point, node_id, way1_id, way2_id)
+
+        line1, line2 = split_line(way.geom, point)
+        shared_node = Intersection(id=node_id, geom=point)
+        way1 = way.clone(id=way1_id, end_node_id=node_id, end_node=shared_node, geom=line1)
+        way2 = way.clone(id=way2_id, start_node_id=node_id, start_node=shared_node, geom=line2)
 
         # Graft start node and end node of way onto annex
         annex[start_node_id] = graph[start_node_id].copy()
