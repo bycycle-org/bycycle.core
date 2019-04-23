@@ -220,7 +220,7 @@ class OSMImporter:
                 'geom': geom,
             }
             rows.append(node)
-            if len(rows) > 1000:
+            if len(rows) > 500:
                 insert()
 
         del intersections
@@ -317,7 +317,7 @@ class OSMImporter:
                     'oneway_bicycle': oneway_bicycle,
                 })
 
-            if len(rows) > 1000:
+            if len(rows) > 500:
                 insert()
 
         if rows:
