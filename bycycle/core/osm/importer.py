@@ -127,7 +127,6 @@ class OSMImporter:
         action_timer = Timer()
         total_timer = Timer()
         total_timer.start()
-        runner_threads = []
 
         def status(for_action, timer, end=''):
             message = '\r{action.order}. {action.description}... {timer}'
@@ -140,7 +139,6 @@ class OSMImporter:
                     status(current_action, action_timer)
                     runner = PeriodicRunner(
                         target=status, args=(current_action, action_timer), interval=0.2)
-                    runner_threads.append(runner)
                     runner.start()
                     if result is not None:
                         result = current_action.meth(result)
@@ -150,12 +148,12 @@ class OSMImporter:
                     runner.join()
                     status(current_action, action_timer, end='\n')
         except KeyboardInterrupt:
-            for r in runner_threads:
-                r.stop()
+            runner.stop()
+            runner.join()
             print('\nAborted')
         except Exception as exc:
-            for r in runner_threads:
-                r.stop()
+            runner.stop()
+            runner.join()
             raise exc
         else:
             total_timer.stop()
