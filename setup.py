@@ -18,6 +18,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'Dijkstar>=2.4.0',
+        'mapbox>=0.18.0',
         'mercantile>=1.0.4',
         'psycopg2-binary>=2.8.2',
         'pyproj>=2.1.3',

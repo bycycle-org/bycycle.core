@@ -30,13 +30,15 @@ class LookupResult(Entity):
 
     """
 
-    def __init__(self, original_input, normalized_input, geom, closest_object, name):
+    def __init__(self, original_input, normalized_input, geom, closest_object, name,
+                 attribution=None):
         self.id = '{0.__class__.__name__}:{0.id}'.format(closest_object).lower()
         self.original_input = original_input
         self.normalized_input = normalized_input
         self.geom = geom
         self.closest_object = closest_object
         self.name = name or '{lat_long.x:.5f}, {lat_long.y:.5f}'.format(lat_long=geom.lat_long)
+        self.attribution = attribution
 
     def __str__(self):
         return '\n'.join(str(attr) for attr in (self.name, self.geom.lat_long))

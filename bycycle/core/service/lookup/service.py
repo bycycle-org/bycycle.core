@@ -18,17 +18,23 @@ The lookup service will return a :class:`LookupResult` if a matching
 object is found. Otherwise it will return ``None``.
 
 """
+import logging
 import re
+
+import mapbox
 
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 
 from bycycle.core.exc import InputError
-from bycycle.core.geometry import DEFAULT_SRID, Point
+from bycycle.core.geometry import DEFAULT_SRID, DEFAULT_INPUT_SRID, make_projector, Point
 from bycycle.core.model import LookupResult, Intersection, Street
 from bycycle.core.service import AService
 
-from .exc import MultipleLookupResultsError, NoResultError
+from .exc import LookupError, MultipleLookupResultsError, NoResultError
+
+
+log = logging.getLogger(__name__)
 
 
 ID_RE = re.compile(r'^(?P<type>[a-z]+):(?P<id>\d+)$')
@@ -47,9 +53,7 @@ class LookupService(AService):
         matchers = (
             self.match_id,
             self.match_point,
-            self.match_address,
             self.match_cross_streets,
-            self.match_poi,
         )
 
         for matcher in matchers:
@@ -61,6 +65,10 @@ class LookupService(AService):
             result = self.match_point(point_hint)
             result.original_input = s
             result.normalized_input = result.name
+            return result
+
+        result = self.match_via_mapbox(s)
+        if result is not None:
             return result
 
         raise NoResultError(s)
@@ -121,9 +129,6 @@ class LookupService(AService):
         name = closest_object.name
         return LookupResult(s, normalized_point, closest_point, closest_object, name)
 
-    def match_address(self, s):
-        return None
-
     def match_cross_streets(self, s):
         match = CROSS_STREETS_RE.search(s)
 
@@ -166,8 +171,80 @@ class LookupService(AService):
 
         raise MultipleLookupResultsError(choices=filtered_matches)
 
-    def match_poi(self, s):
-        return None
+    def match_via_mapbox(self, s):
+        try:
+            access_token = self.config['mapbox_access_token']
+        except KeyError:
+            log.warning(
+                'LookupService must configured with a mapbox_access_token to enable geocoding via '
+                'Mapbox')
+            return None
+
+        center = self.config.get('center')
+        if center is not None:
+            transformer = make_projector(DEFAULT_SRID, DEFAULT_INPUT_SRID)
+            longitude, latitude = transformer(*center)
+        else:
+            longitude, latitude = None, None
+
+        bbox = self.config.get('bbox')
+        if bbox is not None:
+            minx, miny, maxx, maxy = bbox
+            transformer = make_projector(DEFAULT_SRID, DEFAULT_INPUT_SRID)
+            minx, miny = transformer(minx, miny)
+            maxx, maxy = transformer(maxx, maxy)
+            bbox = minx, miny, maxx, maxy
+        try:
+            # REF: https://docs.mapbox.com/api/search/#geocoding
+            geocoder = mapbox.Geocoder(access_token=access_token)
+
+            # XXX: Hard coded country
+            # XXX: Hard coded place types
+            response = geocoder.forward(
+                s,
+                bbox=bbox,
+                country=['us'],
+                lat=latitude,
+                lon=longitude,
+                limit=3,
+                types=['address', 'poi'],
+            )
+        except mapbox.ValidationError as mapbox_exc:
+            raise LookupError('Unable to geocode via Mapbox geocoder', str(mapbox_exc))
+
+        log.info('Mapbox geocoder service response status code: %d', response.status_code)
+
+        data = response.json()
+
+        if response.status_code != 200:
+            error_message = data.get('message', 'Unknown Error')
+            raise LookupError('Unable to geocode via Mapbox geocoder', error_message)
+
+        all_features = data['features']
+
+        # Filter out less-relevant features
+        # XXX: What should the threshold be for deciding relevance?
+        relevant_features = [f for f in all_features if f['relevance'] > 0.9]
+
+        num_features = len(relevant_features)
+
+        if num_features == 0:
+            if all_features:
+                # Fall back to the most-relevant feature
+                relevant_features = all_features[0]
+                num_features = 1
+            else:
+                return None
+
+        if num_features == 1:
+            result = relevant_features[0]
+            return self._mapbox_result_to_lookup_result(s, result)
+        else:
+            results = tuple(self._mapbox_result_to_lookup_result(s, r) for r in relevant_features)
+            raise MultipleLookupResultsError(choices=results)
+
+    def _mapbox_result_to_lookup_result(self, s, result):
+        return LookupResult(s, )
 
 
 Service = LookupService
