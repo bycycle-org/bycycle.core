@@ -6,24 +6,38 @@ from urllib.request import urlretrieve
 DEFAULT_URL = (
     'http://overpass-api.de/api/interpreter?data='
     '[out:json];'
-    '(way[highway]({bbox});>;);'
+    '{query};'
     'out;'
 )
 
 
 class OSMDataFetcher:
 
-    """Fetch OSM data inside a bounding box.
+    """Fetch OSM data via Overpass API.
 
-    .. note:: BBOX order is S, W, N, E
+    Args:
+        bbox: Bounding box (S, W, N, E)
+        file_name: Path to save data to
+        query: Overpass API query or query type; pass a preset query
+            type (highway or place) or a query
 
     """
 
-    def __init__(self, bbox, file_name, url=DEFAULT_URL):
+    query_types = {
+        'highway': '(way[highway]({bbox});>;)',
+    }
+
+    def __init__(self, bbox, file_name, query, url=DEFAULT_URL):
+        bbox_str = ','.join(str(f) for f in bbox)
+
+        query = self.query_types.get(query, query)
+        query = query.format(bbox=bbox_str)
+
         url = url or DEFAULT_URL
+        url = url.format(query=query)
+
         self.bbox = bbox
-        self.bbox_str = ','.join(str(f) for f in bbox)
-        self.url = url.format(bbox=self.bbox_str)
+        self.url = url
         self.file_name = file_name
 
     def run(self):
