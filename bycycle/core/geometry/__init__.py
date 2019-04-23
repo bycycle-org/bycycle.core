@@ -1,6 +1,21 @@
+import re
+
 from .linestring import LineString
 from .point import Point
 from .proj import *
+
+
+def is_coord(value):
+    """Is ``value`` a valid coordinate?
+
+    Args:
+        value (str): A string representing an integer or a simple float
+
+    Returns:
+        bool: Whether the string is a valid coordinate
+
+    """
+    return re.fullmatch(r'\d+(\.\d+)?', value) is not None
 
 
 def split_line(line, point):
