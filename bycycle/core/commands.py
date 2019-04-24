@@ -14,12 +14,12 @@ from sqlalchemy.orm import sessionmaker
 
 from tangled.util import asset_path
 
-from bycycle.core.model import Base
-from bycycle.core.model.suffix import USPSStreetSuffix
+from bycycle.core.model import Base, MVTCache, USPSStreetSuffix
 from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
 
 
 __all__ = [
+    'clear_mvt_cache',
     'create_db',
     'create_graph',
     'create_schema',
@@ -215,6 +215,20 @@ def load_usps_street_suffixes(user, password, database, host='localhost', port=5
 
     session.close()
     engine.dispose()
+
+
+@command
+def clear_mvt_cache():
+    """Clear the MVT cache used in development.
+
+    This may be necessary if the cache contains stale data.
+
+    """
+    engine = create_engine('bycycle', '')
+    result = engine.execute(MVTCache.__table__.delete())
+    count = result.rowcount
+    ess = '' if count == 1 else 's'
+    printer.success(f'{count} MVT cache record{ess} deleted')
 
 
 @command
