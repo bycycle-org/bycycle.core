@@ -31,13 +31,17 @@ def bicycle(u, v, edge, prev_edge):
             cost *= 100
 
         if cycleway == 'lane':
-            # Makes a residential street equivalent to a cycle track
+            # Makes a residential street with a bike lane equivalent to
+            # a cycle track.
             cost *= 0.8
         elif cycleway == 'shared_lane':
             cost *= 0.85
         elif bicycle == 'avoid':
             cost *= 4
         elif bicycle == 'designated' and cycleway != 'proposed':
+            # NOTE: It's not clear exactly what "designated" means in
+            #       OSM because there are a lot of "designated" streets
+            #       that don't correspond to the official bike network.
             cost *= 0.9
 
     if prev_edge and name != prev_edge[2]:
