@@ -1,31 +1,42 @@
-import shapely.geometry
+import re
 
-from tangled.converters import as_tuple_of
+import shapely.geometry
 
 from .base import Base
 
 
 class Point(Base, shapely.geometry.Point):
 
+    string_re = (
+        r' *'
+        r'(?P<lat>[+-]?\d+(\.\d*)?)'
+        r'(?: *, *| +)'
+        r'(?P<long>[+-]?\d+(\.\d*)?)'
+        r' *'
+    )
+
     @classmethod
-    def string_converter(cls, string, *, converter=as_tuple_of(float, sep=',')):
+    def string_converter(cls, string):
         """Convert string to coordinates.
 
         Used by :meth:`Base.from_string`.
 
         Args:
-            string (str): A string like 'x, y'
-            converter: Splits string into coordinates
+            string (str): A lat/long string like '45.5, -122.5'
 
         Returns:
-            Tuple of floats: (x, y)
+            tuple: (long, lat)
 
         Raises:
             ValueError: When the string can't be parsed
 
         """
-        coordinates = converter(string)
-        num = len(coordinates)
-        if num != 2:
-            raise ValueError('Expected two coordinates; got %s' % num)
+        match = re.fullmatch(cls.string_re, string)
+
+        if match:
+            coordinates = [match.group('long'), match.group('lat')]
+            coordinates = [float(c) for c in coordinates]
+        else:
+            raise ValueError('String does not match expected point format')
+
         return coordinates

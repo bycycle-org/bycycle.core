@@ -20,7 +20,7 @@ class TestLookupService(unittest.TestCase):
         return service.query(q, **kwargs)
 
     def test_lookup_point(self):
-        result = self._query('-122.672655, 45.548242')
+        result = self._query('45.548242, -122.672655')
         self.assertIsInstance(result, LookupResult)
         self.assertEqual(result.name, 'N Fremont St')
 
