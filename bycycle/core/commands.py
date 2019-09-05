@@ -193,7 +193,7 @@ def drop_db(env, db, superuser='postgres', superuser_password='postgres',
     port = db['port']
     database = db['database']
 
-    prompt = 'Drop database {database} via {user}@{host}?'.format_map(locals())
+    prompt = f'Drop database {database} via {superuser}@{host}?'
     if not confirm(prompt, yes_values=['yes']):
         abort()
 
