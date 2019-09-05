@@ -165,7 +165,7 @@ def create_db(db, superuser='postgres', superuser_password='postgres',
 
     create_user_statement = ('CREATE USER', owner)
     if password:
-        create_user_statement += ('WITH PASSWORD', password)
+        create_user_statement += ('WITH PASSWORD', f"'{password}'")
 
     execute(postgres_engine, ('DROP DATABASE', database), condition=drop)
     execute(postgres_engine, create_user_statement)
