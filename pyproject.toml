@@ -1,0 +1,61 @@
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
+[tool.poetry]
+name = "bycycle.core"
+version = "0.7.dev0"
+description = "byCycle core model and services"
+readme = "README.rst"
+license = "GPL-3.0+"
+authors = ["Wyatt Baldwin <wyatt@bycycle.org>"]
+homepage = "https://bycycle.org/"
+repository = "https://github.com/bycycle-org/bycycle.core"
+
+keywords = [
+    "bicycle",
+    "bike",
+    "directions",
+    "routing",
+    "trip planner",
+]
+
+packages = [
+    { include = "bycycle" },
+]
+
+include = [
+    "AUTHORS",
+    "CHANGELOG",
+    "INSTALL",
+    "LICENSE",
+    "Makefile",
+    "commands.py",
+    "commands.yaml",
+    "bycycle/core/commands.yaml",
+    "bycycle/core/model/usps_street_suffixes.csv",
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+Dijkstar = { version = "3.0a3", extras = ["client"] }
+ijson = "^2.5.1"
+mapbox = "^0.18.0"
+mercantile = "^1.1.2"
+numpy = "^1.17.4"
+psycopg2-binary = "^2.8.4"
+pyproj = "^2.4.0"
+python-dateutil = ">=2.1,<2.8.1"
+requests = "^2.22.0"
+runcommands = "1.0a43"
+Shapely = "^1.6.4"
+SQLAlchemy = "^1.3.10"
+tangled = "^1.0a12"
+
+[tool.poetry.dev-dependencies]
+bpython = "*"
+coverage = "*"
+Dijkstar = { version = "3.0a3", extras = ["server"] }
+
+[tool.poetry.scripts]
+bycycle = "bycycle.core.__main__:bycycle.console_script"

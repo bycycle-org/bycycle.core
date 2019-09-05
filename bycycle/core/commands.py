@@ -46,13 +46,11 @@ def init():
 
 
 @command
-def install(where='.venv', upgrade=False):
-    local((
-        '{where}/bin/pip'.format(where=where),
-        'install',
-        ('--upgrade', '--upgrade-strategy', 'eager', 'setuptools', 'pip') if upgrade else None,
-        '-r', 'requirements.txt',
-    ))
+def install(upgrade=False):
+    if upgrade:
+        local('poetry update')
+    else:
+        local('poetry install')
 
 
 @command

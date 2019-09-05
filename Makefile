@@ -1,14 +1,9 @@
-venv ?= .venv
-
-init: $(venv)
-	$(venv)/bin/pip install -r requirements.txt
-	$(venv)/bin/runcommand init
-
-$(venv):
-	python3 -m venv $(venv)
+init:
+	poetry install
+	./.venv/bin/runcommand init
 
 sdist: clean clean-dist
-	$(venv)/bin/python setup.py sdist
+	./.venv/bin/poetry build
 
 clean: clean-dist clean-pycache
 
@@ -24,6 +19,6 @@ clean-pycache:
 	find . -type d -name __pycache__ | xargs rm -rf
 
 clean-venv:
-	rm -frv $(venv)
+	rm -frv .venv
 
-.PHONY = init install sdist clean clean-all clean-build clean-dist clean-pycache clean-venv
+.PHONY = init sdist clean clean-all clean-build clean-dist clean-pycache clean-venv
