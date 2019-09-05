@@ -1,3 +1,4 @@
+import code
 import csv
 import os
 import unittest
@@ -30,6 +31,7 @@ __all__ = [
     'install',
     'load_osm_data',
     'load_usps_street_suffixes',
+    'shell',
     'test',
 ]
 
@@ -79,6 +81,18 @@ def test(package, coverage=True, tests=(), verbose=False, fail_fast=False):
     if coverage:
         cover.stop()
         cover.report()
+
+
+@command
+def shell():
+    banner = 'byCycle Shell'
+    try:
+        import bpython
+    except ImportError:
+        printer.warning('bpython is not installed; falling back to python')
+        code.interact(banner=banner)
+    else:
+        bpython.embed(banner=banner)
 
 
 def create_engine(user, password, host='localhost', port=5432, database=None, driver='postgresql'):
