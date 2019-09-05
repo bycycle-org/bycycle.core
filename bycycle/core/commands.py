@@ -129,18 +129,18 @@ def execute(engine, sql, condition=True):
 
 
 @command
-    environ = {}
-    if password:
-        environ['PGPASSWORD'] = password
 def dbshell(db):
     password = db.get('password')
     local((
-        'pgcli',
-    ), environ=environ)
+        'docker', 'exec', '--interactive', '--tty',
+        ('--env', f'PGPASSWORD="{password}"') if password else None,
+        'bycycledocker_postgres_1',
+        'psql',
         '--username', db['user'],
         '--host', db['host'],
         '--port', db['port'],
         '--dbname', db['database'],
+    ))
 
 
 @command
