@@ -129,25 +129,29 @@ def execute(engine, sql, condition=True):
 
 
 @command
-def dbshell(user, password, database, host='localhost', port=5432):
     environ = {}
     if password:
         environ['PGPASSWORD'] = password
+def dbshell(db):
+    password = db.get('password')
     local((
         'pgcli',
-        '--user', user,
-        '--host', host,
-        '--port', port,
-        '--dbname', database,
     ), environ=environ)
+        '--username', db['user'],
+        '--host', db['host'],
+        '--port', db['port'],
+        '--dbname', db['database'],
 
 
 @command
-def create_db(# Owner and database to create
-              owner, password, database,
-              # Postgres superuser used to run drop & create commands
-              superuser='postgres', superuser_password='', superuser_database='postgres',
-              host='localhost', port=5432, drop=False):
+def create_db(db, superuser='postgres', superuser_password='postgres',
+              superuser_database='postgres', drop=False):
+    owner = db['user']
+    password = db.get('password')
+    host = db['host']
+    port = db['port']
+    database = db['database']
+
     common_engine_args = {
         'user': superuser,
         'password': superuser_password,
@@ -180,11 +184,14 @@ def create_db(# Owner and database to create
 
 
 @command
-def drop_db(env, database,
-            superuser='postgres', superuser_password='', superuser_database='postgres',
-            host='localhost', port=5432):
     if env == 'prod':
         abort(1, 'Cannot drop prod database')
+def drop_db(env, db, superuser='postgres', superuser_password='postgres',
+            superuser_database='postgres',):
+
+    host = db['host']
+    port = db['port']
+    database = db['database']
 
     prompt = 'Drop database {database} via {user}@{host}?'.format_map(locals())
     if not confirm(prompt, yes_values=['yes']):
@@ -195,19 +202,19 @@ def drop_db(env, database,
 
 
 @command
-def create_schema(user, password, database, host='localhost', port=5432):
-    engine = create_engine(user, password, host, port, database)
+def create_schema(db):
+    engine = create_engine(**db)
     Base.metadata.create_all(bind=engine)
     engine.dispose()
 
 
 @command
-def load_usps_street_suffixes(user, password, database, host='localhost', port=5432):
+def load_usps_street_suffixes(db):
     """Load USPS street suffixes into database."""
     file_name = '{model.__tablename__}.csv'.format(model=USPSStreetSuffix)
     path = asset_path('bycycle.core.model', file_name)
 
-    engine = create_engine(user, password, host, port, database)
+    engine = create_engine(**db)
     session_factory = sessionmaker(bind=engine)
     session = session_factory()
 
@@ -230,13 +237,13 @@ def load_usps_street_suffixes(user, password, database, host='localhost', port=5
 
 
 @command
-def clear_mvt_cache():
+def clear_mvt_cache(db):
     """Clear the MVT cache used in development.
 
     This may be necessary if the cache contains stale data.
 
     """
-    engine = create_engine('bycycle', '')
+    engine = create_engine(**db)
     result = engine.execute(MVTCache.__table__.delete())
     count = result.rowcount
     ess = '' if count == 1 else 's'
