@@ -184,10 +184,10 @@ def create_db(db, superuser='postgres', superuser_password='postgres',
 
 
 @command
-    if env == 'prod':
-        abort(1, 'Cannot drop prod database')
 def drop_db(env, db, superuser='postgres', superuser_password='postgres',
             superuser_database='postgres',):
+    if env == 'production':
+        abort(1, 'Cannot drop production database')
 
     host = db['host']
     port = db['port']
