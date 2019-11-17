@@ -1,5 +1,5 @@
 ---
-extends: "bycycle.core:commands.yaml"
+extends: bycycle.core:commands.yaml
 
 globals:
-  package: "bycycle.core"
+  package: bycycle.core

@@ -1,17 +1,17 @@
 ---
 globals:
-  env: "development"
+  env: development
   python:
     version: "3.6"
 
 envs:
   development:
     db:
-      user: "bycycle"
       password: ""
-      host: "localhost"
+      user: bycycle
+      host: localhost
       port: 5432
-      database: "bycycle"
+      database: bycycle
 
 args:
 
