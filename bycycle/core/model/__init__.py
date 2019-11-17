@@ -27,7 +27,7 @@ def get_engine(**kwargs):
     return create_engine(url, **kwargs)
 
 
-def make_url(driver='postgresql', user='bycycle', password=None, host='localhost', port=None,
+def make_url(driver='postgresql', user='bycycle', password='bycycle', host='localhost', port=None,
              database='bycycle', query=None):
     return URL(
         driver, username=user, password=password, host=host, port=port, database=database,

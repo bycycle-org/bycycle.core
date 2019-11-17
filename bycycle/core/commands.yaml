@@ -7,8 +7,8 @@ globals:
 envs:
   development:
     db:
-      password: ""
       user: bycycle
+      password: bycycle
       host: localhost
       port: 5432
       database: bycycle
