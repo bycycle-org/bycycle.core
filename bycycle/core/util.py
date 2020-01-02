@@ -73,17 +73,16 @@ class Timer:
         m, s = divmod(self.elapsed_time, 60)
         if m:
             return '{m}m {s:.1f}s'.format(m=int(m), s=s)
-        elif s > 0.01:
+        if s > 0.01:
             return '{s:.2f}s'.format(s=s)
-        elif s > 0.001:
+        if s > 0.001:
             ms = s * 1_000
             return '{ms:.0f}ms'.format(ms=ms)
-        elif s > 0.000001:
+        if s > 0.000001:
             us = s * 1_000_000
             return '{us:.0f}us'.format(us=us)
-        else:
-            ns = s * 1_000_000_000
-            return '{ns:.0f}ns'.format(ns=ns)
+        ns = s * 1_000_000_000
+        return '{ns:.0f}ns'.format(ns=ns)
 
 
 class PeriodicRunner(Thread):

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import Column
-from sqlalchemy.types import BigInteger
+from sqlalchemy.types import BigInteger, Integer
 
 from bycycle.core.geometry import DEFAULT_SRID
 from bycycle.core.geometry.sqltypes import POINT
@@ -9,7 +9,7 @@ from bycycle.core.model import Base
 
 class Intersection(Base):
 
-    __tablename__ = 'intersections'
+    __tablename__ = 'intersection'
 
     id = Column(BigInteger, primary_key=True)
     geom = Column(POINT(DEFAULT_SRID))

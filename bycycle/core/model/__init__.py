@@ -5,7 +5,6 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import configure_mappers, sessionmaker
 
 from .base import Base, Entity
-from .graph import Graph
 from .intersection import Intersection
 from .lookup import LookupResult
 from .mvt import MVTCache

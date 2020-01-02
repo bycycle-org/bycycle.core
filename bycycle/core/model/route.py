@@ -16,32 +16,27 @@ class Route(Entity):
     def __str__(self):
         start = self.start
         end = self.end
-        distance = self.distance
-
         directions = []
-
-        direction_template = (
-            '{i: >3}. {turn} on {name} toward {toward} -- '
-            '{distance[miles]:.2f}mi/{distance[kilometers]:.2f}km'
-        )
 
         for i, direction in enumerate(self.directions, 1):
             turn = direction['turn'].title()
-            name = direction['display_name']
+            name = direction['name']
             toward = direction['toward'] or '[unknown]'
             distance = direction['distance']
-            directions.append(direction_template.format_map(locals()))
+            directions.append(
+                f'{i: >3}. {turn} on {name} toward {toward} -- '
+                f'{distance["miles"]:.2f}mi/{distance["kilometers"]:.2f}km')
 
         directions = '\n'.join(directions) or 'Start and end are the same'
 
-        return """\
+        return f"""\
 From: {start.name} 
-      {start.geom.lat_long}
+      {start.geom.y}, {start.geom.x}
 
   To: {end.name}
-      {end.geom.lat_long}
+      {end.geom.y}, {end.geom.x}
 
-Distance: {distance[miles]:.2f}mi/{distance[kilometers]:.2f}km
+Distance: {self.distance['miles']:.2f}mi/{self.distance['kilometers']:.2f}km
 
 {directions}
-""".format_map(locals())
+"""

@@ -1,44 +1,21 @@
-import io
-import threading
+import logging
+from itertools import chain
 from math import atan2, degrees
 
-import dijkstar
+from dijkstar.server.client import Client, ClientError
 
 from sqlalchemy.orm import joinedload
 
-from tangled.util import load_object
-
 from bycycle.core.exc import InputError
-from bycycle.core.geometry import split_line, LineString
-from bycycle.core.model import Graph, Intersection, Route, Street
+from bycycle.core.geometry import length_in_meters, split_line, trim_line, LineString, Point
+from bycycle.core.model import Intersection, LookupResult, Route, Street
 from bycycle.core.service import AService, LookupService
 from bycycle.core.service.lookup import MultipleLookupResultsError
 
-from .exc import EmptyGraphError, MultipleRouteLookupResultsError, NoRouteError
+from .exc import MultipleRouteLookupResultsError, NoRouteError
 
 
-GRAPH = None
-GRAPH_LOCK = threading.Lock()
-
-
-# XXX: Loading the entire graph into memory isn't scalable.
-#      Also the current approach doesn't allow for selecting
-#      a different graph depending on the mode (or any other
-#      criteria).
-def get_graph(session):
-    global GRAPH
-    if GRAPH is None:
-        with GRAPH_LOCK:
-            if GRAPH is None:
-                q = session.query(Graph).order_by(Graph.timestamp.desc())
-                graph = q.first()
-                file = io.BytesIO()
-                file.write(graph.data)
-                file.seek(0)
-                GRAPH = dijkstar.Graph.unmarshal(file)
-                if not GRAPH:
-                    raise EmptyGraphError()
-    return GRAPH
+log = logging.getLogger(__name__)
 
 
 class RouteService(AService):
@@ -47,31 +24,20 @@ class RouteService(AService):
 
     name = 'route'
 
-    def query(self, q, cost_func='bicycle', heuristic_func=None, points=None):
+    def query(self, q, points=None):
         waypoints = self.get_waypoints(q, points)
-        graph = get_graph(self.session)
-
-        if ':' in cost_func:
-            cost_func = load_object(cost_func)
-        else:
-            cost_func = load_object('.cost', cost_func)
-
-        paths_info = []
-        for s, e in zip(waypoints[:-1], waypoints[1:]):
-            path_info = self.find_path(
-                graph, s, e, cost_func=cost_func, heuristic_func=heuristic_func)
-            paths_info.append(path_info)
-
-        routes = []
         starts = waypoints[:-1]
         ends = waypoints[1:]
-
-        for start, end, path_info in zip(starts, ends, paths_info):
-            node_ids, edge_attrs, split_ways = path_info
-            directions, linestring, distance = self.make_directions(node_ids, edge_attrs, split_ways)
-            route = Route(start, end, directions, linestring, distance)
+        routes = []
+        for start, end in zip(starts, ends):
+            if start.geom == end.geom:
+                coords = start.geom.coords[0]
+                route = Route(start, end, [], LineString([coords, coords]), self.distance_dict(0))
+            else:
+                path = self.find_path(start, end)
+                directions, linestring, distance = self.make_directions(*path)
+                route = Route(start, end, directions, linestring, distance)
             routes.append(route)
-
         return routes[0] if len(routes) == 1 else routes
 
     def get_waypoints(self, q, points=None):
@@ -79,6 +45,8 @@ class RouteService(AService):
         waypoints = [w.strip() for w in q]
         num_waypoints = len(waypoints)
         points = points or [None] * num_waypoints
+        if num_waypoints != len(points):
+            errors.append('Number of points does not match number of waypoints')
         if num_waypoints == 0:
             errors.append('Please enter starting point and destination')
         if num_waypoints == 1:
@@ -96,14 +64,13 @@ class RouteService(AService):
                         break
         if errors:
             raise InputError(errors)
-        lookup_service = LookupService(self.session)
+        lookup_service = LookupService(self.session, **self.config)
         results = []
         raise_multi = False
         for w, point_hint in zip(waypoints, points):
             try:
                 result = lookup_service.query(w, point_hint)
             except MultipleLookupResultsError as exc:
-
                 raise_multi = True
                 results.append(exc.choices)
             else:
@@ -112,81 +79,145 @@ class RouteService(AService):
             raise MultipleRouteLookupResultsError(choices=results)
         return results
 
-    def find_path(self, graph, s, e, cost_func=None, heuristic_func=None):
-        start = s.closest_object
-        end = e.closest_object
-        annex = None
+    def find_path(self, start_result: LookupResult, end_result: LookupResult,
+                  cost_func: str = None, heuristic_func: str = None):
+        client = Client()
+
+        start = start_result.closest_object
+        end = end_result.closest_object
+        annex_edges = []
         split_ways = {}
 
-        if isinstance(start, Street) or isinstance(end, Street):
-            annex = dijkstar.Graph()
+        add_between = isinstance(start, Street) and isinstance(end, Street) and start.id == end.id
 
         if isinstance(start, Street):
-            start, *start_ways = self.split_way(start, s.geom, -1, -1, -2, graph, annex)
+            start, *start_ways, start_edges = self.split_way(start, start_result.geom, -1, -1, -2)
+            annex_edges.extend(start_edges)
             split_ways.update({w.id: w for w in start_ways})
 
         if isinstance(end, Street):
-            end, *end_ways = self.split_way(end, e.geom, -2, -3, -4, graph, annex)
+            end, *end_ways, end_edges = self.split_way(end, end_result.geom, -2, -3, -4)
+            annex_edges.extend(end_edges)
             split_ways.update({w.id: w for w in end_ways})
 
+        if add_between:
+            obj = start_result.closest_object
+            geom = trim_line(obj.geom, start.geom, end.geom)
+
+            d1 = obj.geom.project(start.geom)
+            d2 = obj.geom.project(end.geom)
+
+            if d1 <= d2:
+                start_node, end_node = start, end
+            else:
+                start_node, end_node = end, start
+
+            if obj.base_cost is None:
+                base_cost = None
+            else:
+                fraction = length_in_meters(geom) / obj.meters
+                base_cost = obj.base_cost * fraction
+
+            way = obj.clone(
+                id=-3,
+                geom=geom,
+                start_node_id=start_node.id,
+                start_node=start_node,
+                end_node_id=end_node.id,
+                end_node=end_node,
+                base_cost=base_cost)
+
+            way_attrs = (way.id, base_cost, way.name)
+            annex_edges.append((start_node.id, end_node.id, way_attrs))
+            if not way.oneway_bicycle:
+                annex_edges.append((end_node.id, start_node.id, way_attrs))
+
+            split_ways[way.id] = way
+
         try:
-            nodes, edge_attrs, costs, total_weight = dijkstar.find_path(
-                graph, start.id, end.id,
-                annex=annex, cost_func=cost_func, heuristic_func=heuristic_func)
-        except dijkstar.NoPathError:
-            raise NoRouteError(s, e)
+            result = client.find_path(
+                start.id,
+                end.id,
+                annex_edges=annex_edges,
+                cost_func=cost_func,
+                heuristic_func=heuristic_func,
+                fields=('nodes', 'edges')
+            )
+        except ClientError as exc:
+            status_code = exc.response.status_code
+            data = exc.response.json()
+            detail = data['detail']
+            if status_code == 400:
+                raise InputError(detail)
+            if status_code == 404:
+                raise NoRouteError(start_result, end_result)
+            raise
 
-        assert nodes[0] == start.id
-        assert nodes[-1] == end.id
+        nodes = result['nodes']
+        edges = [edge[0] for edge in result['edges']]
 
-        return nodes, edge_attrs, split_ways
+        assert nodes[0] == start.id, f'Expected route start node ID: {start.id}; got {nodes[0]}'
+        assert nodes[-1] == end.id, f'Expected route end node ID: {start.id}; got {nodes[-1]}'
 
-    def split_way(self, way, point, node_id, way1_id, way2_id, graph, annex):
+        return nodes, edges, split_ways
+
+    def split_way(self, way, point, node_id, way1_id, way2_id):
         start_node_id, end_node_id = way.start_node.id, way.end_node.id
 
-        line1, line2 = split_line(way.geom, point)
+        way1_line, way2_line = split_line(way.geom, point)
         shared_node = Intersection(id=node_id, geom=point)
-        way1 = way.clone(id=way1_id, end_node_id=node_id, end_node=shared_node, geom=line1)
-        way2 = way.clone(id=way2_id, start_node_id=node_id, start_node=shared_node, geom=line2)
 
-        # Graft start node and end node of way onto annex
-        annex[start_node_id] = graph[start_node_id].copy()
-        annex[end_node_id] = graph[end_node_id].copy()
+        if way.base_cost is None:
+            way1_base_cost = None
+            way2_base_cost = None
+        else:
+            way1_fraction = length_in_meters(way1_line) / way.meters
+            way1_base_cost = way.base_cost * way1_fraction
+            way2_fraction = length_in_meters(way2_line) / way.meters
+            way2_base_cost = way.base_cost * way2_fraction
 
-        way1_attrs = (
-            way1.id, way1.meters, way1.name, way1.highway, way1.bicycle,
-            way1.foot, way1.sidewalk)
-        way2_attrs = (
-            way2.id, way2.meters, way2.name, way2.highway, way2.bicycle,
-            way2.foot, way2.sidewalk)
+        way1 = way.clone(
+            id=way1_id,
+            geom=way1_line,
+            end_node_id=shared_node.id,
+            end_node=shared_node,
+            base_cost=way1_base_cost)
 
-        # If start node => end node, add a edge from start node to split
-        # node and from split node to end node.
-        if end_node_id in annex[start_node_id]:
-            annex.add_edge(start_node_id, node_id, way1_attrs)
-            annex.add_edge(node_id, end_node_id, way2_attrs)
-            # Disallow traversal directly from start node to end node
-            del annex[start_node_id][end_node_id]
+        way2 = way.clone(
+            id=way2_id,
+            geom=way2_line,
+            start_node_id=shared_node.id,
+            start_node=shared_node,
+            base_cost=way2_base_cost)
+
+        way1_attrs = (way1.id, way1.base_cost, way1.name)
+        way2_attrs = (way2.id, way2.base_cost, way2.name)
+
+        # Add edge from start node to split node and from split node to
+        # end node.
+        annex_edges = [
+            (start_node_id, node_id, way1_attrs),
+            (node_id, end_node_id, way2_attrs),
+        ]
 
         # If end node => start node, add edge from end node to split
         # node and from split node to start node.
-        if start_node_id in annex[end_node_id]:
-            annex.add_edge(end_node_id, node_id, way2_attrs)
-            annex.add_edge(node_id, start_node_id, way1_attrs)
-            # Disallow traversal directly from end node to start node
-            del annex[end_node_id][start_node_id]
+        if not way.oneway_bicycle:
+            annex_edges.extend([
+                (end_node_id, node_id, way2_attrs),
+                (node_id, start_node_id, way1_attrs),
+            ])
 
-        return shared_node, way1, way2
+        return shared_node, way1, way2, annex_edges
 
-    def make_directions(self, node_ids, edge_attrs, split_edges):
+    def make_directions(self, node_ids, edge_ids, split_edges):
         """Process the shortest path into a nice list of directions.
 
         ``node_ids``
             The IDs of the nodes on the route
 
-        ``edges_attrs``
-            The attributes of the edges on the route as a list or tuple.
-            The first item in each list must be the edge ID.
+        ``edges_ids``
+            The IDs of the edges on the route
 
         ``split_edges``
             Temporary edges formed by splitting an existing edge when the
@@ -199,146 +230,120 @@ class RouteService(AService):
               {
                   'turn': 'left',
                   'name': 'SE Stark St',
-                  'display_name': 'SE Stark St',
                   'type': 'residential',
                   'toward': 'SE 45th Ave',
                   'distance': {
-                       'feet': 264.0,
-                       'miles': 0.05,
                        'meters': 80.0,
                        'kilometers': 0.08,
+                       'feet': 264.0,
+                       'miles': 0.05,
                    },
-                   'jogs': [{'turn': 'left', 'name': 'NE 7th Ave'}, ...]
+                  'point': (-122.5, 45.5),
+                  'edge_ids': [1, 2, 3, 4],
                }
 
             * A linestring, which is a list of x, y coords:
 
               [(x, y), ...]
 
-            * A `dict` of total distances in units of feet, miles, kilometers:
+            * A `dict` of total distances in units of meters,
+              kilometers, feet, and miles:
 
               {
-                  'feet': 5487.0,
-                  'miles': 1.04,
                   'meters': 1110.0,
                   'kilometers': 1.11,
+                  'feet': 5487.0,
+                  'miles': 1.04,
               }
 
         """
-        directions = []
-
-        # Gather edges into a list.
-
         edges = []
-        edge_ids = [attrs[0] for attrs in edge_attrs]
 
-        if edge_ids and edge_ids[0] < 0:
+        synthetic_start_edge = edge_ids[0] < 0
+        synthetic_end_edge = len(edge_ids) > 1 and edge_ids[-1] < 0
+
+        if synthetic_start_edge:
             edges.append(split_edges[edge_ids[0]])
 
-        filter_ids = [i for i in edge_ids if i > 0]
+        i = 1 if synthetic_start_edge else None
+        j = -1 if synthetic_end_edge else None
+        filter_ids = edge_ids[i:j] if i or j else edge_ids
         if filter_ids:
             q = self.session.query(Street).filter(Street.id.in_(filter_ids))
             q = q.options(joinedload(Street.start_node))
             q = q.options(joinedload(Street.end_node))
             edge_map = {edge.id: edge for edge in q}
-            edges.extend(edge_map[i] for i in filter_ids)
+            edges.extend(edge_map[edge_id] for edge_id in filter_ids)
 
-        if len(edge_ids) > 1 and edge_ids[-1] < 0:
+        if synthetic_end_edge:
             edges.append(split_edges[edge_ids[-1]])
 
-        # Group edges together by street name into stretches.
-
-        start_edges = []
+        directions = []
+        stretches = []
         prev_name = None
-        prev_end_bearing = None
         linestring_points = []
-        loop_data = zip(node_ids[1:], edges, [None] + edges[:-1], edges[1:] + [None])
+        total_distance = 0
 
-        for node_id, edge, prev_edge, next_edge in loop_data:
+        for edge, next_edge, next_node_id in zip(edges, chain(edges[1:], [None]), node_ids[1:]):
+            name = edge.name
+            geom = edge.geom
             length = edge.meters
-            name = edge.name or edge.highway
 
-            points = edge.geom.coords
-            if edge.start_node.id == node_id:
-                points = points[::-1]
+            reverse_geom = edge.start_node_id == next_node_id
+            points = geom.coords[::-1] if reverse_geom else geom.coords
 
             start_bearing = self.get_bearing(*points[:2])
             end_bearing = self.get_bearing(*points[-2:])
 
             if next_edge is None:
                 # Reached last edge
-                next_name = None
                 linestring_points.extend(points)
             else:
-                next_name = next_edge.name or next_edge.highway
                 linestring_points.extend(points[:-1])
 
+            total_distance += length
+
             if name and name == prev_name:
-                start_edge = start_edges[-1]
-                start_edge['edges'].append(edge)
-                start_edge['end_bearing'] = end_bearing
-            elif (prev_name and
-                  length < 30 and  # 30 meters TODO: Magic number
-                  name != prev_name and
-                  prev_name == next_name):
-                start_edge = start_edges[-1]
-                start_edge['jogs'].append({
-                    'edge': edge,
-                    'start_point': points[0],
-                    'start_bearing': start_bearing,
-                    'end_bearing': end_bearing,
-                    'prev_end_bearing': prev_end_bearing,
-                })
+                stretch = stretches[-1]
+                stretch['edges'].append(edge)
+                stretch['length'] += length
+                stretch['end_bearing'] = end_bearing
             else:
                 # Start of a new stretch
-                start_edges.append({
-                    'edge': edge,
+                stretches.append({
                     'edges': [edge],
-                    'jogs': [],
-                    'toward_node_id': node_id,
-                    'start_point': points[0],
+                    'length': length,
+                    'toward_node_id': next_node_id if next_node_id > -1 else None,
+                    'point': Point(*points[0]),
                     'start_bearing': start_bearing,
                     'end_bearing': end_bearing,
                 })
                 prev_name = name
 
-            prev_end_bearing = end_bearing
-
         # Create directions from stretches.
 
-        for prev_start_edge, start_edge in zip([None] + start_edges[:-1], start_edges):
-            edge = start_edge['edge']
-            length = sum(edge.meters for edge in start_edge['edges'])
-            jogs = start_edge['jogs']
-            start_bearing = start_edge['start_bearing']
-            toward_node_id = start_edge['toward_node_id']
+        for prev_stretch, stretch in zip([None] + stretches[:-1], stretches):
+            first_edge = stretch['edges'][0]
+            length = stretch['length']
+            start_bearing = stretch['start_bearing']
+            toward_node_id = stretch['toward_node_id']
 
-            if prev_start_edge is None:
-                # First
+            if prev_stretch is None:
+                # First edge in stretch
                 turn = self.get_direction_from_bearing(start_bearing)
             else:
-                prev_end_bearing = prev_start_edge['end_bearing']
+                # Remaining edges
+                prev_end_bearing = prev_stretch['end_bearing']
                 turn = self.calculate_way_to_turn(prev_end_bearing, start_bearing)
-
-            processed_jogs = []
-            for jog in jogs:
-                jog_edge = jog['edge']
-                processed_jogs.append({
-                    'turn': self.calculate_way_to_turn(
-                        jog['prev_end_bearing'], jog['start_bearing']),
-                    'name': jog_edge.name or jog_edge.highway,
-                    'display_name': jog_edge.display_name,
-                })
 
             direction = {
                 'turn': turn,
-                'name': name,
-                'display_name': edge.display_name,
-                'type': edge.highway,
+                'name': first_edge.display_name,
+                'type': first_edge.highway,
                 'toward': toward_node_id,
-                'jogs': processed_jogs,
                 'distance': self.distance_dict(length),
-                'start_point': start_edge['start_point'],
+                'point': stretch['point'],
+                'edge_ids': [edge.id for edge in stretch['edges']]
             }
 
             directions.append(direction)
@@ -363,7 +368,7 @@ class RouteService(AService):
         for direction in directions:
             name = direction['name']
             toward_node_id = direction['toward']
-            if toward_node_id < 0:
+            if toward_node_id is None:
                 # This is a special case where the destination is within
                 # an edge (i.e., it's a street address) AND there are no
                 # intersections between the last turn and the
@@ -372,14 +377,16 @@ class RouteService(AService):
                 # a toward street can't be determined. Also, the
                 # destination node won't have been fetched in the query
                 # above because it doesn't really exist.
-                toward = None
+                toward = 'your destination'
             else:
                 node = node_map[toward_node_id]
                 toward = self.get_different_name_from_intersection(name, node)
             direction['toward'] = toward
 
+        # TODO: Extract jogs?
+
         linestring = LineString(linestring_points)
-        distance = self.distance_dict(sum(edge.meters for edge in edges))
+        distance = self.distance_dict(total_distance)
         return directions, linestring, distance
 
     def distance_dict(self, meters):
@@ -387,7 +394,7 @@ class RouteService(AService):
             'meters': meters,
             'kilometers': meters * 0.001,
             'feet': meters * 3.28084,
-            'miles': meters * 0.000621371,
+            'miles': meters * 0.0006213712,
         }
 
     def get_different_name_from_intersection(self, name, node):

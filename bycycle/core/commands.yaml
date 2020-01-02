@@ -6,12 +6,10 @@ globals:
 
 envs:
   development:
+    bbox: [-122.7248, 45.4975, -122.6190, 45.5537]
     db:
       user: bycycle
       password: bycycle
       host: localhost
       port: 5432
       database: bycycle
-
-args:
-

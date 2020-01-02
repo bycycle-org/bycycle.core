@@ -1,10 +1,13 @@
 import code
 import csv
-import os
+import datetime
+import shutil
+import sys
 import unittest
 from getpass import getpass
+from pathlib import Path
 
-from runcommands import command
+from runcommands import arg, command
 from runcommands.commands import local
 from runcommands.util import abort, confirm, printer
 
@@ -20,6 +23,7 @@ from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
 
 
 __all__ = [
+    'clean',
     'clear_mvt_cache',
     'create_db',
     'create_graph',
@@ -31,6 +35,8 @@ __all__ = [
     'install',
     'load_osm_data',
     'load_usps_street_suffixes',
+    'make_dist',
+    'reload_graph',
     'shell',
     'test',
 ]
@@ -38,28 +44,86 @@ __all__ = [
 
 @command
 def init():
+    """Initialize project.
+
+    Steps:
+
+    - Install/upgrade packages
+    - Create database
+    - Create database schema
+    - Load USPS street suffixes
+    - Fetch OSM data
+    - Load OSM data and create routing graph
+
+    """
     install(upgrade=True)
     create_db()
     create_schema()
     load_usps_street_suffixes()
     fetch_osm_data()
     load_osm_data()
-    create_graph()
+
+
+@command
+def clean(all_=False):
+    """Clean up.
+
+    - Remove build directory
+    - Remove dist directory
+    - Remove __pycache__ directories
+
+    If --all:
+
+    - Remove egg-info directory
+    - Remove .venv directory
+
+    """
+    def rmdir(directory, quiet=False):
+        if directory.is_dir():
+            shutil.rmtree(directory)
+            if not quiet:
+                printer.info('Removed directory:', directory)
+        else:
+            if not quiet:
+                printer.warning('Directory does not exist:', directory)
+
+    cwd = Path.cwd()
+
+    rmdir(Path('./build'))
+    rmdir(Path('./dist'))
+
+    pycache_dirs = tuple(Path('.').glob('**/__pycache__/'))
+    num_pycache_dirs = len(pycache_dirs)
+    for pycache_dir in pycache_dirs:
+        rmdir(pycache_dir, quiet=True)
+    if num_pycache_dirs:
+        printer.info(
+            f'Removed {num_pycache_dirs} __pycache__'
+            f'director{"y" if num_pycache_dirs == 1 else "ies"}')
+    else:
+        printer.warning('No __pycache__ directories found')
+
+    if all_:
+        rmdir(cwd / '.venv')
+        rmdir(cwd / f'{cwd.name}.egg-info')
 
 
 @command
 def install(upgrade=False):
     if upgrade:
+        local('.venv/bin/pip install --upgrade --upgrade-strategy eager pip setuptools')
         local('poetry update')
     else:
         local('poetry install')
 
 
 @command
-def test(package, coverage=True, tests=(), verbose=False, fail_fast=False):
-    cwd = os.getcwd()
-    where = os.path.join(cwd, package.replace('.', os.sep))
-    top_level_dir = cwd
+def test(*tests, coverage=True, verbose=False, fail_fast=False):
+    top_level_dir = Path.cwd()
+
+    where = top_level_dir
+    for segment in top_level_dir.name.split('.'):
+        where = where / segment
 
     coverage = coverage and not tests
     verbosity = 2 if verbose else 1
@@ -81,6 +145,11 @@ def test(package, coverage=True, tests=(), verbose=False, fail_fast=False):
     if coverage:
         cover.stop()
         cover.report()
+
+
+@command
+def make_dist():
+    local('poetry build')
 
 
 @command
@@ -168,6 +237,7 @@ def create_db(db, superuser='postgres', superuser_password='postgres',
         create_user_statement += ('WITH PASSWORD', f"'{password}'")
 
     execute(postgres_engine, ('DROP DATABASE', database), condition=drop)
+    execute(postgres_engine, ('DROP USER', owner), condition=drop)
     execute(postgres_engine, create_user_statement)
     execute(postgres_engine, ('GRANT', owner, 'TO', superuser))
     execute(postgres_engine, ('CREATE DATABASE', database, 'OWNER', owner))
@@ -209,10 +279,23 @@ def create_schema(db):
 
 
 @command
+def clear_mvt_cache(db):
+    """Clear the MVT cache used in development.
+
+    This may be necessary if the cache contains stale data.
+
+    """
+    engine = create_engine(**db)
+    result = engine.execute(MVTCache.__table__.delete())
+    count = result.rowcount
+    ess = '' if count == 1 else 's'
+    printer.success(f'{count} MVT cache record{ess} deleted')
+
+
+@command
 def load_usps_street_suffixes(db):
     """Load USPS street suffixes into database."""
-    file_name = '{model.__tablename__}.csv'.format(model=USPSStreetSuffix)
-    path = asset_path('bycycle.core.model', file_name)
+    path = asset_path('bycycle.core.model', 'usps_street_suffixes.csv')
 
     engine = create_engine(**db)
     session_factory = sessionmaker(bind=engine)
@@ -237,39 +320,93 @@ def load_usps_street_suffixes(db):
 
 
 @command
-def clear_mvt_cache(db):
-    """Clear the MVT cache used in development.
-
-    This may be necessary if the cache contains stale data.
-
-    """
-    engine = create_engine(**db)
-    result = engine.execute(MVTCache.__table__.delete())
-    count = result.rowcount
-    ess = '' if count == 1 else 's'
-    printer.success(f'{count} MVT cache record{ess} deleted')
-
-
-@command
-def fetch_osm_data(bbox=(-122.7248, 45.4975, -122.6190, 45.5537), path='osm.data', url=None):
+def fetch_osm_data(
+    bbox: arg(type=float, nargs=4),
+    directory='../osm',
+    file_name=None,
+    query='highways',
+    url=None,
+    log_to=None
+):
     """Fetch OSM data and save to file.
 
     The bounding box must be passed as min X, min Y, max X, max Y.
 
     """
-    fetcher = OSMDataFetcher(bbox, path, 'highway', url)
+    if not file_name:
+        file_name = f'{query}.json'
+    path = Path(directory) / file_name
+    fetcher = OSMDataFetcher(bbox, path, query, url)
     fetcher.run()
+    if log_to:
+        message = f'Saved OSM data from {fetcher.url} to {fetcher.path}'
+        log_to_file(log_to, message)
 
 
 @command
-def load_osm_data(db, path='osm.data', actions=()):
+def load_osm_data(
+    db,
+    bbox: arg(type=float, nargs=4),
+    directory='../osm',
+    graph_path='../graph.marshal',
+    streets=True,
+    places=True,
+    actions: arg(container=tuple, type=int) = (),
+    show_actions: arg(short_option='-a') = False,
+    log_to=None
+):
     """Read OSM data from file and load into database."""
-    importer = OSMImporter(path, db, actions)
+    importer = OSMImporter(bbox, directory, graph_path, db, streets, places, actions)
+    if show_actions:
+        printer.header('Available actions:')
+        for action in importer.all_actions:
+            printer.info(action)
+        return
     importer.run()
+    if log_to:
+        message = f'Loaded OSM data from {importer.data_directory} to {importer.engine.url}'
+        log_to_file(log_to, message)
 
 
 @command
-def create_graph(db, clean=True):
+def create_graph(db, path='../graph.marshal', reload=True, log_to=None):
     """Read OSM data from database and write graph to path."""
-    builder = OSMGraphBuilder(db, clean)
+    builder = OSMGraphBuilder(path, db)
     builder.run()
+    if reload:
+        reload_graph()
+    if log_to:
+        message = f'Created graph from {builder.engine.url} and saved to {path}'
+        log_to_file(log_to, message)
+
+
+@command
+def reload_graph(log_to=None):
+    # XXX: Only works if `dijkstar serve --workers=1`; if workers is
+    #      greater than 1, the Dikstar server process must be restarted
+    #      instead.
+    local('curl -X POST "http://localhost:8000/reload-graph"')
+    print()
+    if log_to:
+        message = f'Reloaded graph'
+        log_to_file(log_to, message)
+
+
+def log_to_file(file, line, with_timestamp=True):
+    """Append line to file.
+
+    If file is a single dash, write to stdout instead.
+
+    """
+    line = f'{line.rstrip()}\n'
+    if with_timestamp:
+        timestamp = datetime.datetime.now().isoformat()
+        line = f'[{timestamp}] {line}'
+    if file == '-':
+        sys.stdout.write(line)
+    else:
+        path = Path(file)
+        if not path.exists():
+            path.touch(mode=0o664)
+        with path.open('a') as fp:
+            fp.write(line)

@@ -5,17 +5,17 @@ input string, which can have one of the following forms:
 
     - An object ID (e.g. 'intersection:42')
     - A pair of longitude, latitude coordinates (e.g. '-122,45')
+    - An intersection (e.g. '1st & Main'); the cross streets will be
+      normalized and then geocoded
 
 These forms will be supported soon:
 
     - A street address (e.g. '123 Main St); the address will be
       normalized and geocoded
-    - An intersection (e.g. '1st & Main'); the cross streets will be
-      normalized and then geocoded
     - A point of interest (e.g. a business or park)
 
 The lookup service will return a :class:`LookupResult` if a matching
-object is found. Otherwise it will return ``None``.
+object is found. Otherwise it will raise :class:`NoResultError`.
 
 """
 import logging
@@ -27,7 +27,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 
 from bycycle.core.exc import InputError
-from bycycle.core.geometry import DEFAULT_SRID, DEFAULT_INPUT_SRID, make_projector, Point
+from bycycle.core.geometry import DEFAULT_SRID, Point
 from bycycle.core.model import LookupResult, Intersection, Street
 from bycycle.core.service import AService
 
@@ -99,24 +99,36 @@ class LookupService(AService):
                 point = Point.from_string(s)
             except ValueError:
                 return None
+
         normalized_point = point
-        if self.is_lat_long(point):
-            point = point.reproject()
         geom = func.ST_GeomFromText(point.wkt, DEFAULT_SRID)
-        distance = func.ST_Distance(geom, Intersection.geom)
+        distance = func.ST_Distance(
+            func.ST_GeogFromWKB(geom),
+            func.ST_GeogFromWKB(Intersection.geom))
         distance = distance.label('distance')
+
+        # Distance threshold in meters
+        # TODO: Should this be scale-dependent?
+        distance_threshold = self.config.get('distance_threshold', 10)
+
         # Try to get an Intersection first
         q = self.session.query(Intersection, distance)
-        q = q.filter(distance < 5)  # 5 meters (TODO: make configurable)
+        q = q.filter(distance < distance_threshold)
         q = q.order_by(distance)
         result = q.first()
+
         if result is not None:
             closest_object = result.Intersection
             closest_point = closest_object.geom
+            name = closest_object.name
         else:
             # Otherwise, get a Street
             distance = func.ST_Distance(geom, Street.geom).label('distance')
             q = self.session.query(Street, distance)
+            q = q.filter(
+                Street.highway.in_(Street.routable_types) |
+                Street.bicycle.in_(Street.bicycle_allowed_types)
+            )
             q = q.order_by(distance)
             closest_object = q.first().Street
             # Get point on Street closest to input point
@@ -126,7 +138,8 @@ class LookupService(AService):
             q = q.filter_by(id=closest_object.id)
             closest_point = q.scalar()
             closest_point = Point.from_wkb(closest_point)
-        name = closest_object.name
+            name = closest_object.display_name
+
         return LookupResult(s, normalized_point, closest_point, closest_object, name)
 
     def match_cross_streets(self, s):
@@ -141,59 +154,46 @@ class LookupService(AService):
         regex_op = Street.name.op('~*')
 
         q = self.session.query(Intersection)
-        q = q.filter(Intersection.streets.any(regex_op(r'\m{street}\M'.format(**data))))
-        q = q.filter(Intersection.streets.any(regex_op(r'\m{cross_street}\M'.format(**data))))
+        q = q.filter(Intersection.streets.any(
+            regex_op(r'\m{street}\M'.format(**data)) &
+            Street.highway.in_(Street.road_types)
+        ))
+        q = q.filter(Intersection.streets.any(
+            regex_op(r'\m{cross_street}\M'.format(**data)) &
+            Street.highway.in_(Street.road_types)
+        ))
         q = q.distinct()
         q = q.options(joinedload(Intersection.streets))
 
-        matches = sorted(q, key=lambda i: i.name)
+        intersections = sorted(q, key=lambda i: i.name)
 
-        if not matches:
+        if not intersections:
             return None
 
-        filtered_matches = []
+        results = []
 
-        for intersection in matches:
-            buffer = intersection.geom.buffer(100)
-            for f, f_buffer in filtered_matches:
-                if buffer.overlaps(f_buffer):
-                    break
-            else:
-                filtered_matches.append((intersection, buffer))
-
-        filtered_matches = [f[0] for f in filtered_matches]
-
-        if len(filtered_matches) == 1:
-            intersection = filtered_matches[0]
+        for intersection in intersections:
             name = intersection.name
             geom = intersection.geom
-            return LookupResult(s, name, geom, intersection, name)
+            results.append(LookupResult(s, name, geom, intersection, name))
 
-        raise MultipleLookupResultsError(choices=filtered_matches)
+        if len(results) == 1:
+            return results[0]
+
+        raise MultipleLookupResultsError(choices=results)
 
     def match_via_mapbox(self, s):
-        try:
-            access_token = self.config['mapbox_access_token']
-        except KeyError:
+        access_token = self.config.get('mapbox_access_token')
+        if not access_token:
             log.warning(
-                'LookupService must configured with a mapbox_access_token to enable geocoding via '
-                'Mapbox')
+                'LookupService must be configured with a mapbox_access_token to enable geocoding '
+                'via Mapbox')
             return None
 
-        center = self.config.get('center')
-        if center is not None:
-            transformer = make_projector(DEFAULT_SRID, DEFAULT_INPUT_SRID)
-            longitude, latitude = transformer(*center)
-        else:
-            longitude, latitude = None, None
-
         bbox = self.config.get('bbox')
-        if bbox is not None:
-            minx, miny, maxx, maxy = bbox
-            transformer = make_projector(DEFAULT_SRID, DEFAULT_INPUT_SRID)
-            minx, miny = transformer(minx, miny)
-            maxx, maxy = transformer(maxx, maxy)
-            bbox = minx, miny, maxx, maxy
+        center = self.config.get('center')
+        longitude, latitude = center if center else (None, None)
+
         try:
             # REF: https://docs.mapbox.com/api/search/#geocoding
             geocoder = mapbox.Geocoder(access_token=access_token)
@@ -231,7 +231,7 @@ class LookupService(AService):
         if num_features == 0:
             if all_features:
                 # Fall back to the most-relevant feature
-                relevant_features = all_features[0]
+                relevant_features = [all_features[0]]
                 num_features = 1
             else:
                 return None
@@ -244,7 +244,11 @@ class LookupService(AService):
             raise MultipleLookupResultsError(choices=results)
 
     def _mapbox_result_to_lookup_result(self, s, result):
-        return LookupResult(s, )
+        name = result['place_name'].rsplit(', ', 1)[0]  # Remove country
+        long, lat = result['center']
+        geom = Point(long, lat)
+        closest_object = self.match_point(f'{lat},{long}').closest_object
+        return LookupResult(s, name, geom, closest_object, name, 'Mapbox')
 
 
 Service = LookupService

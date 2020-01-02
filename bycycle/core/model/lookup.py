@@ -26,19 +26,24 @@ class LookupResult(Entity):
             Nearest object (intersection or street)
         name (str):
             Address, cross streets, or whatever is appropriate for the
-            result
+            result; defaults to location as ``'{latitude}, {longitude}``
+        attribution (str):
+            Attribution for the result (i.e., it's source; e.g., Mapbox)
 
     """
 
     def __init__(self, original_input, normalized_input, geom, closest_object, name,
                  attribution=None):
-        self.id = '{0.__class__.__name__}:{0.id}'.format(closest_object).lower()
+        self.id = f'{closest_object.__class__.__name__}:{closest_object.id}'.lower()
         self.original_input = original_input
         self.normalized_input = normalized_input
         self.geom = geom
         self.closest_object = closest_object
-        self.name = name or '{lat_long.x:.5f}, {lat_long.y:.5f}'.format(lat_long=geom.lat_long)
+        self.name = name or f'{geom.y:.5f}, {geom.x:.5f}'
         self.attribution = attribution
 
     def __str__(self):
-        return '\n'.join(str(attr) for attr in (self.name, self.geom.lat_long))
+        return '\n'.join(str(attr) for attr in (self.name, self.geom))
+
+    def __eq__(self, other):
+        return self.id == other.id

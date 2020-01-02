@@ -20,11 +20,11 @@ class Test_A_Route(unittest.TestCase):
         return service.query(q, **kwargs)
 
     def test_should_have_specific_turns(self):
-        q = 'NE 9th and Holladay', 'NE 15th and Broadway'
+        q = 'NE 7th Ave & NE Schuyler St', '45.53649, -122.65827'
         route = self._query(q)
         self.assertIsInstance(route, Route)
         d = route.directions
-        expected_turns = ['east', 'left', 'right', 'left', 'left', 'right', 'left']
+        expected_turns = ['north', 'right']
         d_turns = [d[i]['turn'] for i in range(len(d))]
         self.assertEqual(d_turns, expected_turns)
 
@@ -61,19 +61,19 @@ class Test_A_Route(unittest.TestCase):
         *--O----*
 
         """
-        q = 'NW 18th and Couch', '-122.672655, 45.548242'
+        q = 'NE 7th Ave & NE Schuyler St', '45.53649, -122.65827'
         route = self._query(q)
         self.assertIsInstance(route, Route)
         d = route.directions
-        self.assertIs(d[-1]['toward'], None)
+        self.assertEqual(d[-1]['toward'], 'your destination')
 
     def test_same_start_and_end(self):
-        q = '3rd and Burnside', '3rd and Burnside'
+        q = 'NE 7th Ave & NE Schuyler St', 'NE 7th Ave & NE Schuyler St'
         route = self._query(q)
         self.assertEqual(route.start.id, route.end.id)
 
     def test_same_start_and_end_point(self):
-        q = '-122.69891, 45.53763', '-122.69891, 45.53763'
+        q = '45.53763, -122.69891', '45.53763, -122.69891'
         route = self._query(q)
         self.assertEqual(route.start.id, route.end.id)
 

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from urllib.request import urlretrieve
 
@@ -16,19 +17,19 @@ class OSMDataFetcher:
     """Fetch OSM data via Overpass API.
 
     Args:
-        bbox: Bounding box (S, W, N, E)
-        file_name: Path to save data to
+        bbox (tuple): Bounding box
+        path: Path to save data to
         query: Overpass API query or query type; pass a preset query
             type (highway or place) or a query
 
     """
 
     query_types = {
-        'highway': '(way[highway]({bbox});>;)',
-        'place': '',
+        'highways': '(way[highway]({bbox});>;)',
+        'buildings': '(way[building]({bbox});>;)',
     }
 
-    def __init__(self, bbox, file_name, query, url=DEFAULT_URL):
+    def __init__(self, bbox, path, query, url=DEFAULT_URL):
         # Convert bounding box to S, W, N, E as required by Overpass API.
         minx, miny, maxx, maxy = bbox
         bbox = miny, minx, maxy, maxx
@@ -43,7 +44,7 @@ class OSMDataFetcher:
 
         self.bbox = bbox
         self.url = url
-        self.file_name = file_name
+        self.path = Path(path).resolve()
 
     def run(self):
         def get_size_and_unit(size, gb=2 ** 30, mb=2 ** 20, kb=2 ** 10):
@@ -68,8 +69,10 @@ class OSMDataFetcher:
         def hook(num_blocks, block_size, total_size):
             show_progress(num_blocks * block_size, total_size)
 
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
         print('Fetching {self.url}...'.format_map(locals()), flush=True)
-        urlretrieve(self.url, self.file_name, hook)
-        stat = os.stat(self.file_name)
+        urlretrieve(self.url, self.path, hook)
+        stat = os.stat(self.path)
         show_progress(stat.st_size, stat.st_size)
-        print('\nSaved to {self.file_name}'.format_map(locals()))
+        print('\nSaved to {self.path}'.format_map(locals()))

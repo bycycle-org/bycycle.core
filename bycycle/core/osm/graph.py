@@ -1,73 +1,68 @@
-import io
+from pathlib import Path
 
 import dijkstar
 
-from bycycle.core.geometry import DEFAULT_SRID
-from bycycle.core.model import get_engine, get_session_factory, Graph, Street
+from bycycle.core.model import get_engine, get_session_factory, Street
 from bycycle.core.util import Timer
 
 
 class OSMGraphBuilder:
 
-    def __init__(self, connection_args, clean=True):
-        self.engine = get_engine(**connection_args)
-        self.session_factory = get_session_factory(self.engine)
-        self.clean = clean
+    """Build graph and save to disk.
+
+    Args:
+        path: Path to save graph to
+        connection_args: A dictionary containing SQLAlchemy connection
+            arguments (can be omitted if a ``session`` is passed)
+        session: An existing SQLAlchemy session to use
+
+    """
+
+    def __init__(self, path, connection_args=None, session=None, quiet=False):
+        self.path = Path(path).resolve()
+        self.quiet = quiet
+
+        if session:
+            self.session = session
+        else:
+            engine = get_engine(**connection_args)
+            session_factory = session or get_session_factory(engine)
+            self.session = session_factory()
+
+        self.engine = self.session.bind
 
     def run(self):
-        timer = Timer()
-        timer.start()
-
+        quiet = self.quiet
         graph = dijkstar.Graph()
-
         q = Street.__table__.select()
-        result = self.engine.execute(q)
+        result = self.session.execute(q)
         num_rows = result.rowcount
 
-        template = '\rBuilding graph from {} streets... {{:.0%}}'
-        template = template.format(num_rows)
-        print(template.format(0), end='')
+        if not quiet:
+            timer = Timer()
+            timer.start()
+            template = '\rBuilding graph from {} streets... {{:.0%}}'
+            template = template.format(num_rows)
+            print(template.format(0), end='')
 
         for i, r in enumerate(result):
-            edge = (
-                r.id,
-                r.geom.reproject(DEFAULT_SRID, 2913).length,
-                r.name,
-                r.highway,
-                r.bicycle,
-                r.cycleway,
-            )
-
+            edge = (r.id, r.base_cost, r.name or r.description)
             graph.add_edge(r.start_node_id, r.end_node_id, edge)
-
-            if r.oneway_bicycle:
-                # Ensure end node is in graph; this is relevant for one
-                # way streets near the boundary of the graph.
-                if r.end_node_id not in graph:
-                    graph.add_node(r.end_node_id)
-            else:
+            if not r.oneway_bicycle:
                 graph.add_edge(r.end_node_id, r.start_node_id, edge)
+            if not quiet:
+                print(template.format(i / num_rows), end='')
 
-            print(template.format(i / num_rows), end='')
+        if not quiet:
+            timer.stop()
+            print(template.format(1), timer)
+            timer.start()
 
-        timer.stop()
-        print(template.format(1), timer)
+        if not quiet:
+            print(f'Saving graph to {self.path}... ', end='', flush=True)
 
-        session = self.session_factory()
+        graph.marshal(str(self.path))
 
-        if self.clean:
-            print('Removing previous graphs...', end='')
-            count = session.query(Graph).delete()
-            print('Removed', count, 'previous graph%s' % ('' if count == 1 else 's'))
-
-        timer.start()
-        print('Saving graph to database... ', end='')
-
-        file = io.BytesIO()
-        graph.marshal(file)
-        file.seek(0)
-        session.add(Graph(data=file.getvalue()))
-        session.commit()
-
-        print('Done', timer)
-        timer.stop()
+        if not quiet:
+            print('Done', timer)
+            timer.stop()

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.0.0"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry]
@@ -38,24 +38,22 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.6"
-Dijkstar = { version = "3.0a3", extras = ["client"] }
+Dijkstar = { version = "3.0a4", extras = ["client"] }
 ijson = "^2.5.1"
 mapbox = "^0.18.0"
 mercantile = "^1.1.2"
 numpy = "^1.17.4"
 psycopg2-binary = "^2.8.4"
-pyproj = "^2.4.0"
-python-dateutil = ">=2.1,<2.8.1"
+pyproj = "^2.4.2"
 requests = "^2.22.0"
-runcommands = "1.0a43"
+runcommands = "^1.0a50"
 Shapely = "^1.6.4"
-SQLAlchemy = "^1.3.10"
+SQLAlchemy = "^1.3.12"
 tangled = "^1.0a12"
 
 [tool.poetry.dev-dependencies]
 bpython = "*"
 coverage = "*"
-Dijkstar = { version = "3.0a3", extras = ["server"] }
 
 [tool.poetry.scripts]
 bycycle = "bycycle.core.__main__:bycycle.console_script"
