@@ -49,7 +49,6 @@ requests = "^2.26.0"
 runcommands = "^1.0a68"
 Shapely = "^1.7.1"
 SQLAlchemy = "^1.4.25"
-tangled = "^1.0a12"
 
 [tool.poetry.dev-dependencies]
 bpython = "*"
