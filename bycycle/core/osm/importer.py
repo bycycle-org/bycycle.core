@@ -1,3 +1,4 @@
+from functools import cached_property
 from itertools import chain
 from pathlib import Path
 
@@ -9,8 +10,6 @@ from sqlalchemy.schema import Column
 from sqlalchemy.sql import select
 from sqlalchemy.types import BigInteger, Boolean
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-
-from tangled.decorators import cached_property
 
 from bycycle.core.geometry import DEFAULT_SRID
 from bycycle.core.geometry.sqltypes import POINT

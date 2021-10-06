@@ -1,8 +1,8 @@
+from functools import cached_property
+
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import BigInteger, Boolean, Float, Integer, String
-
-from tangled.decorators import cached_property
 
 from bycycle.core.geometry import DEFAULT_SRID, length_in_meters
 from bycycle.core.geometry.sqltypes import LINESTRING
