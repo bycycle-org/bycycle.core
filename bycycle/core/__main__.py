@@ -1,10 +1,10 @@
 import re
 import sys
 import time
+from importlib import import_module
 
 from runcommands import arg, command
 from runcommands.util import abort
-from tangled.util import load_object
 
 from bycycle.core.model import get_engine, get_session_factory
 
@@ -13,7 +13,8 @@ from bycycle.core.model import get_engine, get_session_factory
 def bycycle(service: arg(choices=('lookup', 'route')), q):
     """Run a byCycle service."""
     module_name = 'bycycle.core.service.{service}'.format(service=service)
-    service_factory = load_object(module_name, 'Service')
+    module = import_module(module_name)
+    service_factory = getattr(module, 'Service')
 
     if service == 'route':
         q = re.split('\s+to\s+', q, re.I)
