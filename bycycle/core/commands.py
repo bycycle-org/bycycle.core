@@ -1,10 +1,12 @@
 import code
 import csv
 import datetime
+import os.path
 import shutil
 import sys
 import unittest
 from getpass import getpass
+from importlib import import_module
 from pathlib import Path
 
 from runcommands import arg, command
@@ -15,8 +17,6 @@ from sqlalchemy.engine import create_engine as base_create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker
-
-from tangled.util import asset_path
 
 from bycycle.core.model import Base, MVTCache, USPSStreetSuffix
 from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
@@ -295,7 +295,9 @@ def clear_mvt_cache(db):
 @command
 def load_usps_street_suffixes(db):
     """Load USPS street suffixes into database."""
-    path = asset_path('bycycle.core.model', 'usps_street_suffixes.csv')
+    module = import_module('bycycle.core.model')
+    base_path = os.path.dirname(module.__file__)
+    path = os.path.join(base_path, 'usps_street_suffixes.csv')
 
     engine = create_engine(**db)
     session_factory = sessionmaker(bind=engine)
