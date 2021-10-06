@@ -34,8 +34,8 @@ class Street(Base):
     oneway = Column(Boolean)
     oneway_bicycle = Column(Boolean)
 
-    start_node = relationship(Intersection, primaryjoin=(start_node_id == Intersection.id))
-    end_node = relationship(Intersection, primaryjoin=(end_node_id == Intersection.id))
+    start_node = relationship(Intersection, primaryjoin=(start_node_id == Intersection.id), viewonly=True)
+    end_node = relationship(Intersection, primaryjoin=(end_node_id == Intersection.id), viewonly=True)
 
     # From https://wiki.openstreetmap.org/wiki/Key:highway
     road_types = (

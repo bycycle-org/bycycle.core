@@ -46,5 +46,6 @@ Intersection.streets = relationship(
     primaryjoin=(
         (Intersection.id == Street.start_node_id) |
         (Intersection.id == Street.end_node_id)
-    )
+    ),
+    viewonly=True,
 )

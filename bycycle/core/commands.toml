@@ -1,0 +1,11 @@
+[globals]
+env = "development"
+python.version = "3.8"
+
+[envs.development]
+bbox = [-122.7248, 45.4975, -122.6190, 45.5537]
+db.user = "bycycle"
+db.password = "bycycle"
+db.host = "localhost"
+db.port = 5432
+db.database = "bycycle"

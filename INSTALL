@@ -6,11 +6,11 @@ This document focuses on installation for development.
 Packages
 ========
 
-- Python 3.6
-- PostgreSQL 10
-- PostGIS 2
-- GEOS 3
-- Proj 4
+- Python 3.8
+- PostgreSQL 12
+- PostGIS 3
+- GEOS
+- Proj
 
 Installation
 ============

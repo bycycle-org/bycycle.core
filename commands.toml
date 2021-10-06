@@ -1,0 +1,4 @@
+extends = "bycycle.core:commands.toml"
+
+[globals]
+package = "bycycle.core"
