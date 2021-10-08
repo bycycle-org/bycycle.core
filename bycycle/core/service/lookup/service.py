@@ -22,6 +22,7 @@ import logging
 import re
 
 import mapbox
+import mapbox.errors
 
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
@@ -209,7 +210,7 @@ class LookupService(AService):
                 limit=3,
                 types=['address', 'poi'],
             )
-        except mapbox.ValidationError as mapbox_exc:
+        except mapbox.errors.ValidationError as mapbox_exc:
             raise LookupError('Unable to geocode via Mapbox geocoder', str(mapbox_exc))
 
         log.info('Mapbox geocoder service response status code: %d', response.status_code)
