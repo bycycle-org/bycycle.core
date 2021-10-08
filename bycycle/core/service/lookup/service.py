@@ -182,7 +182,7 @@ class LookupService(AService):
 
         raise MultipleLookupResultsError(choices=results)
 
-    def match_via_mapbox(self, s):
+    def match_via_mapbox(self, s, relevance_threshold=0.75):
         access_token = self.config.get('mapbox_access_token')
         if not access_token:
             log.warning(
@@ -223,8 +223,11 @@ class LookupService(AService):
         all_features = data['features']
 
         # Filter out less-relevant features
-        # XXX: What should the threshold be for deciding relevance?
-        relevant_features = [f for f in all_features if f['relevance'] > 0.9]
+        relevant_features = [f for f in all_features if f['relevance'] > relevance_threshold]
+
+        # Sort by relevance and prominence
+        relevant_features = sorted(
+            relevant_features, key=lambda f: (f['relevance'], f.get('score', 0)))
 
         num_features = len(relevant_features)
 
@@ -248,7 +251,11 @@ class LookupService(AService):
         long, lat = result['center']
         geom = Point(long, lat)
         closest_object = self.match_point(f'{lat},{long}').closest_object
-        return LookupResult(s, name, geom, closest_object, name, 'Mapbox')
+        data = {
+            'relevance': result['relevance'],
+            'score': result.get('score'),  # Mapbox prominence score
+        }
+        return LookupResult(s, name, geom, closest_object, name, 'Mapbox', data)
 
 
 Service = LookupService
