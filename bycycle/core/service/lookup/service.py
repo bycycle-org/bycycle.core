@@ -92,7 +92,7 @@ class LookupService(AService):
             else:
                 length = obj.geom.length
                 geom = Point(obj.geom.interpolate(length / 2))
-            return LookupResult(s, obj, geom, obj, obj.name)
+            return LookupResult(s, obj, geom, obj, obj.name, 'byCycle ID')
 
     def match_point(self, s):
         if isinstance(s, str):
@@ -141,7 +141,7 @@ class LookupService(AService):
             closest_point = Point.from_wkb(closest_point)
             name = closest_object.display_name
 
-        return LookupResult(s, normalized_point, closest_point, closest_object, name)
+        return LookupResult(s, normalized_point, closest_point, closest_object, name, 'byCycle point')
 
     def match_cross_streets(self, s):
         match = CROSS_STREETS_RE.search(s)
@@ -176,7 +176,7 @@ class LookupService(AService):
         for intersection in intersections:
             name = intersection.name
             geom = intersection.geom
-            results.append(LookupResult(s, name, geom, intersection, name))
+            results.append(LookupResult(s, name, geom, intersection, name, 'byCycle cross streets'))
 
         if len(results) == 1:
             return results[0]
