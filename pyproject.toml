@@ -37,18 +37,18 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.9"
-Dijkstar = { version = "3.0a4", extras = ["client"] }
-ijson = "^3.1.4"
-mapbox = "^0.18.0"
+python = "^3.12"
+Dijkstar = { version = "^3.0a5", extras = ["client"] }
+ijson = "^3.2.3"
+mapbox = "^0.18.1"
 mercantile = "^1.2.1"
-numpy = "^1.21.2"
-psycopg2-binary = "^2.9.1"
-pyproj = "^3.2.1"
-requests = "^2.26.0"
-runcommands = "^1.0a68"
-Shapely = "^1.7.1"
-SQLAlchemy = "^1.4.25"
+numpy = "^1.26.4"
+psycopg2-binary = "^2.9.9"
+pyproj = "^3.6.1"
+requests = "^2.31.0"
+runcommands = "^1.0a71"
+Shapely = "^2.0.3"
+SQLAlchemy = "^1.4.52"
 
 [tool.poetry.dev-dependencies]
 bpython = "*"

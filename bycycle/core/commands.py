@@ -25,6 +25,7 @@ from bycycle.core.osm import OSMDataFetcher, OSMGraphBuilder, OSMImporter
 __all__ = [
     'clean',
     'clear_mvt_cache',
+    'db',
     'create_db',
     'create_graph',
     'create_schema',
@@ -210,6 +211,11 @@ def dbshell(db):
         '--port', db['port'],
         '--dbname', db['database'],
     ))
+
+@command
+def db(data_dir="/opt/homebrew/var/postgresql@14"):
+    """Run postgres locally."""
+    local(("postgres", "-D", data_dir))
 
 
 @command

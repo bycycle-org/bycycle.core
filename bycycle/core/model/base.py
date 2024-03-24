@@ -1,4 +1,4 @@
-from collections import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from sqlalchemy.schema import MetaData
 from sqlalchemy.ext.declarative import declarative_base
