@@ -1,4 +1,4 @@
-from .base import Base, Entity
+from .base import Entity
 from .intersection import Intersection
 from .lookup import LookupResult
 from .mvt import MVTCache

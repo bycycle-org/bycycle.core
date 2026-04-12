@@ -24,6 +24,8 @@ import re
 
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.measure import D
+from django.db.models import Q
 
 import mapbox
 import mapbox.errors
@@ -104,44 +106,40 @@ class LookupService(AService):
             except ValueError:
                 return None
 
-        print(dir(point))
-        geos_point = GEOSGeometry(point._geom_prepared, srid=DEFAULT_SRID)
+        geos_point = GEOSGeometry(point.wkt, srid=DEFAULT_SRID)
 
         # Distance threshold in meters
-        # TODO: Should this be scale-dependent?
         distance_threshold = self.config.get("distance_threshold", 10)
 
         # Try to get an Intersection first
-        result = (
+        closest_object = (
             Intersection.objects.filter(
-                geom__distance_lt=(geos_point, distance_threshold)
+                geom__distance_lt=(geos_point, D(m=distance_threshold))
             )
             .annotate(distance=Distance("geom", geos_point))
             .order_by("distance")
             .first()
         )
 
-        if result is not None:
-            closest_object = result
+        if closest_object is not None:
             closest_point = closest_object.geom
             name = closest_object.name
         else:
             # Otherwise, get a Street
-            distance = func.ST_Distance(geom, Street.geom).label("distance")
-            q = self.session.query(Street, distance)
-            q = q.filter(
-                Street.highway.in_(Street.routable_types)
-                | Street.bicycle.in_(Street.bicycle_allowed_types)
+            closest_object = (
+                Street.objects.filter(
+                    Q(highway__in=Street.routable_types)
+                    | Q(bicycle__in=Street.bicycle_allowed_types)
+                )
+                .annotate(distance=Distance("geom", geos_point))
+                .order_by("distance")
+                .first()
             )
-            q = q.order_by(distance)
-            closest_object = q.first().Street
+
             # Get point on Street closest to input point
-            closest_point = func.ST_ClosestPoint(Street.geom, geom)
-            closest_point = closest_point.label("closest_point")
-            q = self.session.query(closest_point).select_from(Street)
-            q = q.filter_by(id=closest_object.id)
-            closest_point = q.scalar()
-            closest_point = Point.from_wkb(closest_point)
+            points = [Point(p) for p in closest_object.geom]
+            closest_point = min(points, key=lambda p: point.distance(p))
+
             name = closest_object.display_name
 
         return LookupResult(

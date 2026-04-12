@@ -33,7 +33,8 @@ class OSMGraphBuilder:
             template = template.format(f"{num_rows:,}")
             print(template.format(0), end="")
 
-        q = models.Street.objects.order_by("id")
+        q = models.Street.objects
+        q = q.prefetch_related("start_node", "end_node").order_by("id")
         chunk_size = 1000
         last_id = 0
         num_processed = 0
