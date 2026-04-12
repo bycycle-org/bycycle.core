@@ -1,58 +1,50 @@
 [build-system]
-requires = ["poetry>=1.0.0"]
-build-backend = "poetry.masonry.api"
+requires = ["uv_build>=0.11.6,<0.12"]
+build-backend = "uv_build"
 
-[tool.poetry]
+[tool.uv.build-backend]
+module-name = "bycycle.core"
+
+[project]
 name = "bycycle.core"
 version = "0.7.dev0"
 description = "byCycle core model and services"
+authors = [{ name = "Wyatt Baldwin", email = "code@wyattbaldwin.com" }]
 readme = "README.rst"
-license = "GPL-3.0+"
-authors = ["Wyatt Baldwin <wyatt@bycycle.org>"]
+license = "GPL-3.0-or-later"
+
+requires-python = ">=3.14"
+
+dependencies = [
+    "Django>=6.0.4",
+    "Dijkstar>=3.0a6", #extras = ["client"] }
+    "ijson>=3.5.0",
+    "mapbox>=0.18.1",
+    "mercantile>=1.2.1",
+    "numpy>=2.4.4",
+    "psycopg>=3.3.3",
+    "pydantic>=2.12.5",
+    "pyproj>=3.7.2",
+    "requests>=2.33.1",
+    "runcommands>=1.0a74.dev0",
+    "Shapely>=2.1.2",
+]
+
+[dependency-groups]
+dev = [
+    "coverage",
+    "ruff",
+]
+
+[tool.uv.sources]
+"runcommands" = { path = "../../runcommands", editable = true }
+
+[project.urls]
 homepage = "https://bycycle.org/"
 repository = "https://github.com/bycycle-org/bycycle.core"
 
-keywords = [
-    "bicycle",
-    "bike",
-    "directions",
-    "routing",
-    "trip planner",
-]
-
-packages = [
-    { include = "bycycle" },
-]
-
-include = [
-    "AUTHORS",
-    "CHANGELOG",
-    "INSTALL",
-    "LICENSE",
-    "Makefile",
-    "commands.py",
-    "commands.yaml",
-    "bycycle/core/commands.yaml",
-    "bycycle/core/model/usps_street_suffixes.csv",
-]
-
-[tool.poetry.dependencies]
-python = "^3.12"
-Dijkstar = { version = "^3.0a5", extras = ["client"] }
-ijson = "^3.2.3"
-mapbox = "^0.18.1"
-mercantile = "^1.2.1"
-numpy = "^1.26.4"
-psycopg2-binary = "^2.9.9"
-pyproj = "^3.6.1"
-requests = "^2.31.0"
-runcommands = "^1.0a71"
-Shapely = "^2.0.3"
-SQLAlchemy = "^1.4.52"
-
-[tool.poetry.dev-dependencies]
-bpython = "*"
-coverage = "*"
-
-[tool.poetry.scripts]
+[project.scripts]
 bycycle = "bycycle.core.__main__:bycycle.console_script"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
