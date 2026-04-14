@@ -15,13 +15,23 @@ class Street(models.Model):
 
     osm_id = models.BigIntegerField()
     osm_seq = models.IntegerField()
+
     geom = models.LineStringField(srid=DEFAULT_SRID)
 
     start_node = models.ForeignKey(
-        Intersection, related_name="start_street", on_delete=models.CASCADE
+        Intersection,
+        # Adds a property to the Intersection model named start_streets
+        # that includes all the streets that start at this node.
+        related_name="start_streets",
+        on_delete=models.CASCADE,
     )
+
     end_node = models.ForeignKey(
-        Intersection, related_name="end_street", on_delete=models.CASCADE
+        Intersection,
+        # Adds a property to the Intersection model named end_streets
+        # that includes all the streets that end at this node.
+        related_name="end_streets",
+        on_delete=models.CASCADE,
     )
 
     base_cost = models.FloatField(null=True)

@@ -15,24 +15,23 @@ These forms will be supported soon:
     - A point of interest (e.g. a business or park)
 
 The lookup service will return a :class:`LookupResult` if a matching
-object is found. Otherwise ,it will raise :class:`NoResultError`.
+object is found. Otherwise, it will raise :class:`NoResultError`.
 
 """
 
 import logging
 import re
 
-from django.contrib.gis.db.models.functions import Distance
-from django.contrib.gis.geos import GEOSGeometry
-from django.contrib.gis.measure import D
-from django.db.models import Q
-
 import mapbox
 import mapbox.errors
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
+from django.db.models import Q
+from shapely.geometry import Point
 
 from bycycle.core.exc import InputError
-from bycycle.core.geometry import DEFAULT_SRID, Point
-from bycycle.core.models import LookupResult, Intersection, Street
+from bycycle.core.geometry import as_geos, point_from_string
+from bycycle.core.models import Intersection, LookupResult, Street
 from bycycle.core.services import AService
 
 from .exc import LookupError, MultipleLookupResultsError, NoResultError
@@ -52,35 +51,50 @@ TYPE_MAP = {
 class LookupService(AService):
     name = "lookup"
 
-    def query(self, s, point_hint=None) -> LookupResult | None:
-        matchers = (
-            self.match_id,
-            self.match_point,
-            self.match_cross_streets,
+    center: tuple[float, float] | None
+    bbox: tuple[float, float, float, float] | None
+    distance_threshold: int  # meters
+    mapbox_access_token: str | None
+
+    def __init__(
+        self,
+        center: tuple[float, float] = None,
+        bbox: tuple[float, float, float, float] = None,
+        distance_threshold: int = 10,
+        mapbox_access_token: str | None = None,
+    ) -> None:
+        self.center = center
+        self.bbox = bbox
+        self.distance_threshold = distance_threshold
+        self.mapbox_access_token = mapbox_access_token
+
+    def query(self, query: str, point_hint: str | None = None) -> LookupResult | None:
+        """Query this service."""
+        result = (
+            self.match_id(query)
+            or self.match_point(query)
+            or self.match_cross_streets(query)
         )
 
-        for matcher in matchers:
-            result = matcher(s)
-            if result is not None:
-                return result
-
-        if point_hint:
-            result = self.match_point(point_hint)
-            result.original_input = s
-            result.normalized_input = result.name
-            return result
-
-        result = self.match_via_mapbox(s)
         if result is not None:
             return result
 
-        raise NoResultError(s)
+        if point_hint:
+            result = self.match_point(point_hint)
+            result.original_input = query
+            result.normalized_input = result.name
+            return result
+
+        if result := self.match_via_mapbox(query):
+            return result
+
+        raise NoResultError(query)
 
     def is_lat_long(self, point) -> bool:
         return abs(point.x) <= 180 and abs(point.y) <= 90
 
-    def match_id(self, s) -> LookupResult | None:
-        match = ID_RE.search(s)
+    def match_id(self, id_: str) -> LookupResult | None:
+        match = ID_RE.search(id_)
         if not match:
             return None
         type_ = match.group("type")
@@ -96,45 +110,44 @@ class LookupService(AService):
         else:
             length = obj.geom.length
             geom = Point(obj.geom.interpolate(length / 2))
-        return LookupResult(s, obj, geom, obj, obj.name, "byCycle ID")
+        return LookupResult(id_, obj, geom, obj, obj.name, "byCycle ID")
 
-    def match_point(self, s: Point | str) -> LookupResult | None:
-        """Get intersection or street closest to point"""
-        if isinstance(s, str):
+    def match_point(self, point: str | Point) -> LookupResult | None:
+        """Get intersection or street closest to point."""
+        if isinstance(point, str):
             try:
-                point = Point.from_string(s)
+                point = point_from_string(point)
             except ValueError:
                 return None
+            else:
+                if point is None:
+                    return None
 
-        geos_point = GEOSGeometry(point.wkt, srid=DEFAULT_SRID)
+        geos_point = as_geos(point)
 
         # Distance threshold in meters
-        distance_threshold = self.config.get("distance_threshold", 10)
+        distance_threshold = D(m=self.distance_threshold)
 
         # Try to get an Intersection first
-        closest_object = (
-            Intersection.objects.filter(
-                geom__distance_lt=(geos_point, D(m=distance_threshold))
-            )
-            .annotate(distance=Distance("geom", geos_point))
-            .order_by("distance")
-            .first()
+        q = Intersection.objects.filter(
+            geom__distance_lt=(geos_point, distance_threshold)
         )
+        q = q.annotate(distance=Distance("geom", geos_point))
+        q = q.order_by("distance")
+        closest_object = q.first()
 
         if closest_object is not None:
             closest_point = closest_object.geom
             name = closest_object.name
         else:
             # Otherwise, get a Street
-            closest_object = (
-                Street.objects.filter(
-                    Q(highway__in=Street.routable_types)
-                    | Q(bicycle__in=Street.bicycle_allowed_types)
-                )
-                .annotate(distance=Distance("geom", geos_point))
-                .order_by("distance")
-                .first()
+            q = Street.objects.filter(
+                Q(highway__in=Street.routable_types)
+                | Q(bicycle__in=Street.bicycle_allowed_types)
             )
+            q = q.annotate(distance=Distance("geom", geos_point))
+            q = q.order_by("distance")
+            closest_object = q.first()
 
             # Get point on Street closest to input point
             points = [Point(p) for p in closest_object.geom]
@@ -143,66 +156,69 @@ class LookupService(AService):
             name = closest_object.display_name
 
         return LookupResult(
-            s, point, closest_point, closest_object, name, "byCycle point"
+            point, point, closest_point, closest_object, name, "byCycle point"
         )
 
-    def match_cross_streets(self, s) -> LookupResult | None:
-        match = CROSS_STREETS_RE.search(s)
+    def match_cross_streets(self, cross_streets: str) -> LookupResult | None:
+        match = CROSS_STREETS_RE.search(cross_streets)
 
         if match is None:
             return None
 
         data = match.groupdict()
+        street = data["street"]
+        cross_street = data["cross_street"]
 
-        # Case-insensitive regex operator
-        regex_op = Street.name.op("~*")
-
-        q = self.session.query(Intersection)
+        q = Intersection.objects.distinct()
+        q = q.prefetch_related("start_streets", "end_streets")
         q = q.filter(
-            Intersection.streets.any(
-                regex_op(r"\m{street}\M".format(**data))
-                & Street.highway.in_(Street.road_types)
-            )
+            start_streets__highway__in=Street.road_types,
+            end_streets__highway__in=Street.road_types,
         )
         q = q.filter(
-            Intersection.streets.any(
-                regex_op(r"\m{cross_street}\M".format(**data))
-                & Street.highway.in_(Street.road_types)
+            (
+                Q(start_streets__name__iregex=street)
+                & Q(end_streets__name__iregex=cross_street)
+            )
+            | (
+                Q(start_streets__name__iregex=cross_street)
+                & Q(end_streets__name__iregex=street)
             )
         )
-        q = q.distinct()
-        q = q.options(joinedload(Intersection.streets))
 
         intersections = sorted(q, key=lambda i: i.name)
 
-        if not intersections:
-            return None
-
         results = []
-
         for intersection in intersections:
             name = intersection.name
             geom = intersection.geom
             results.append(
-                LookupResult(s, name, geom, intersection, name, "byCycle cross streets")
+                LookupResult(
+                    cross_streets,
+                    name,
+                    geom,
+                    intersection,
+                    name,
+                    "byCycle cross streets",
+                )
             )
 
-        if len(results) == 1:
-            return results[0]
-
-        raise MultipleLookupResultsError(choices=results)
+        match len(results):
+            case 0:
+                return None
+            case 1:
+                return results[0]
+            case _:
+                raise MultipleLookupResultsError(choices=results)
 
     def match_via_mapbox(self, s, relevance_threshold=0.75) -> LookupResult | None:
-        access_token = self.config.get("mapbox_access_token")
+        access_token = self.mapbox_access_token
+
         if not access_token:
-            log.warning(
-                "LookupService must be configured with a mapbox_access_token to enable geocoding "
-                "via Mapbox"
-            )
             return None
 
-        bbox = self.config.get("bbox")
-        center = self.config.get("center")
+        bbox = self.bbox
+        center = self.center
         longitude, latitude = center if center else (None, None)
 
         try:

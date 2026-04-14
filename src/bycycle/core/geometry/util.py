@@ -1,11 +1,32 @@
 import re
 
 import pyproj
+from django.contrib.gis.geos import GEOSGeometry
+from shapely import wkt
+from shapely.geometry import LineString, Point
 
-from bycycle.core.geometry import Point, LineString
+from .proj import DEFAULT_SRID
+
+__all__ = [
+    "as_geos",
+    "is_coord",
+    "length_in_meters",
+    "point_from_string",
+    "split_line",
+    "trim_line",
+]
 
 
-__all__ = ["is_coord", "length_in_meters", "split_line", "trim_line"]
+def as_geos(geom, srid=DEFAULT_SRID):
+    """Convert Shapely geometry object to GEOS object.
+
+    This is required for interoperation between Shapely and Django.
+
+    .. todo:: Shapely objects are GEOS objects under the hood, so it
+        should be possible to do this without marshaling through WKT.
+
+    """
+    return GEOSGeometry(geom.wkt, srid=srid)
 
 
 def is_coord(value):
@@ -32,6 +53,54 @@ def length_in_meters(geom, geod=pyproj.Geod(ellps="WGS84")):
         *azimuths, segment_distance = geod.inv(c[0], c[1], d[0], d[1])
         distance += segment_distance
     return distance
+
+
+def point_from_string(
+    string,
+    *,
+    string_re=re.compile(
+        r" *"
+        r"(?P<latitude>[+-]?\d+(?:\.\d*)?)"
+        r"(?: *, *| +)"
+        r"(?P<longitude>[+-]?\d+(?:\.\d*)?)"
+        r" *",
+    ),
+    wkt_re=re.compile(
+        r" *"
+        r"POINT *\("
+        r"[+-]?\d+(?:\.\d*)?"
+        r" +"
+        r"[+-]?\d+(?:\.\d*)?"
+        r" *\)"
+        r" *",
+    ),
+) -> Point | None:
+    """Create point from string.
+
+    Args:
+        string (str): Point string in "<latitude>, <longitude>" (comma
+            optional) or WKT format.
+        string_re(re.Pattern): Regular expression pattern used to match
+            "<latitude>, <longitude>" format.
+        wkt_re(re.Pattern): Regular expression pattern used to match WKT
+            format.
+
+    Returns:
+        Point when the string can be parsed as a point.
+        None when the string cannot be parsed as a point.
+
+    """
+    if match := string_re.fullmatch(string):
+        latitude = match.group("latitude")
+        longitude = match.group("longitude")
+        return Point(float(longitude), float(latitude))
+
+    if wkt_re.fullmatch(string):
+        point = wkt.loads(string)
+        assert isinstance(point, Point)
+        return point
+
+    return None
 
 
 def split_line(line, point):

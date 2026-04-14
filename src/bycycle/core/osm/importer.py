@@ -2,14 +2,11 @@ from functools import cached_property
 from itertools import chain
 from pathlib import Path
 
-from django.contrib.gis.geos import GEOSGeometry
-
 import ijson
-
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import Polygon
 
 from bycycle.core import models
-from bycycle.core.geometry import DEFAULT_SRID
+from bycycle.core.geometry import DEFAULT_SRID, LineString, Point
 from bycycle.core.models.compass import directions_ftoa
 from bycycle.core.models.street import base_cost
 from bycycle.core.util import PeriodicRunner, Timer
@@ -231,7 +228,7 @@ class OSMImporter:
             longitude = el["lon"]
             is_intersection = osm_id in intersections
             point = Point(longitude, latitude)
-            geom = GEOSGeometry(point.wkt, srid=DEFAULT_SRID)
+            geom = point.as_geos()
             append_node(models.OsmNode(osm_id, is_intersection, geom))
             if len(node_rows) > 1000:
                 insert_nodes()
@@ -370,10 +367,8 @@ class OSMImporter:
                 way_id += 1
                 start_node_id = way[0].id
                 end_node_id = way[-1].id
-                geom = GEOSGeometry(
-                    LineString(((n.geom.x, n.geom.y) for n in way)).wkt,
-                    srid=DEFAULT_SRID,
-                )
+                line = LineString(((n.geom.x, n.geom.y) for n in way))
+                geom = line.as_geos()
                 attrs = {
                     "id": way_id,
                     "osm_id": osm_id,

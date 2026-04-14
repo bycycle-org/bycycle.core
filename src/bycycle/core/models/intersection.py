@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models
+from django.db.models.manager import Manager
 
 from bycycle.core.geometry import DEFAULT_SRID
 
@@ -9,6 +10,9 @@ class Intersection(models.Model):
 
     id = models.BigAutoField(primary_key=True)
     geom = models.PointField(srid=DEFAULT_SRID)
+
+    start_streets: Manager[Street]
+    end_streets: Manager[Street]
 
     json_fields = {
         "include": ["*", "name"],
@@ -32,3 +36,10 @@ class Intersection(models.Model):
     @property
     def name(self):
         return self.name_for_cross_streets(self.streets)
+
+    @property
+    def streets(self) -> tuple[Street, ...]:
+        return tuple(self.start_streets.all()) + tuple(self.end_streets.all())
+
+
+from .street import Street  # noqa: E402

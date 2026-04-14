@@ -1,21 +1,16 @@
 import unittest
 
-from bycycle.core.models import get_engine, get_session_factory, Route
-from bycycle.core.services.route import RouteService
+from bycycle.core.util import django_setup
+
+django_setup()
+
+from bycycle.core.models import Route  # noqa
+from bycycle.core.services.route import RouteService  # noqa
 
 
 class Test_A_Route(unittest.TestCase):
-    def setUp(self):
-        self.engine = get_engine()
-        self.session_factory = get_session_factory(self.engine)
-        self.session = self.session_factory()
-
-    def tearDown(self):
-        self.engine.dispose()
-        self.session.close()
-
     def _query(self, q, **kwargs):
-        service = RouteService(self.session)
+        service = RouteService()
         return service.query(q, **kwargs)
 
     def test_should_have_specific_turns(self):
@@ -75,7 +70,3 @@ class Test_A_Route(unittest.TestCase):
         q = "45.53763, -122.69891", "45.53763, -122.69891"
         route = self._query(q)
         self.assertEqual(route.start.id, route.end.id)
-
-
-if __name__ == "__main__":
-    unittest.main()

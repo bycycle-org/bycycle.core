@@ -1,5 +1,4 @@
-0.5 (unreleased)
-----------------
+## 0.5 (unreleased)
 
 - Improved performance of Route service by using "joined loads" to load edges
   and nodes when creating directions list. The number of database queries was
@@ -8,8 +7,7 @@
 - Include list of bikemodes for each direction in directions list.
 
 
-0.5a1 (2012-12-07)
-------------------
+## 0.5a1 (2012-12-07)
 
 Made changes necessary to get things back up and running. Made a few other
 changes to clean things up a bit.
@@ -49,8 +47,7 @@ changes to clean things up a bit.
   bycycle-is-back:tip` for more details.
 
 
-0.4
----
+## 0.4
 
 - Migrated from MySQL to PostgreSQL
 - Uses SQLAlchemy to interact with the database instead of using raw SQL
@@ -63,8 +60,7 @@ changes to clean things up a bit.
 - Created a Route class
 
 
-Ancient History (<= 0.4)
-------------------------
+## Ancient History (<= 0.4)
 
 SVN
 * 2007-04-24:

@@ -3,15 +3,10 @@ from itertools import chain
 from math import atan2, degrees
 
 from dijkstar.server.client import Client, ClientError
+from shapely.geometry import LineString, Point
 
 from bycycle.core.exc import InputError
-from bycycle.core.geometry import (
-    length_in_meters,
-    split_line,
-    trim_line,
-    LineString,
-    Point,
-)
+from bycycle.core.geometry import length_in_meters, split_line, trim_line
 from bycycle.core.models import Intersection, LookupResult, Route, Street
 from bycycle.core.services import AService, LookupService
 from bycycle.core.services.lookup import MultipleLookupResultsError

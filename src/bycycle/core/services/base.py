@@ -5,14 +5,11 @@ from typing import Any
 class AService(metaclass=ABCMeta):
     """Base class for byCycle services."""
 
-    def __init__(self, **config):
-        """Initialize service.
-
-        Args:
-            config: Additional service-specific configuration
-
-        """
-        self.config = config
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Provides the name of this service."""
+        raise NotImplementedError
 
     @abstractmethod
     def query(self, q, **kwargs) -> Any:
