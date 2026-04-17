@@ -1,14 +1,10 @@
-import unittest
+from django.test import TestCase
 
-from bycycle.core.util import django_setup
-
-django_setup()
-
-from bycycle.core.models import Route  # noqa
-from bycycle.core.services.route import RouteService  # noqa
+from bycycle.core.models import Route
+from bycycle.core.services.route import RouteService
 
 
-class Test_A_Route(unittest.TestCase):
+class Test_A_Route(TestCase):
     def _query(self, q, **kwargs):
         service = RouteService()
         return service.query(q, **kwargs)

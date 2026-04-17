@@ -3,7 +3,6 @@ from functools import cached_property
 from django.contrib.gis.db import models
 
 from bycycle.core.geometry import DEFAULT_SRID, length_in_meters
-
 from .intersection import Intersection
 
 
@@ -65,15 +64,15 @@ class Street(models.Model):
     )
 
     routable_types = (
-        road_types
-        + path_types
-        + (
-            "motorway_link",
-            "trunk_link",
-            "primary_link",
-            "secondary_link",
-            "tertiary_link",
-        )
+            road_types
+            + path_types
+            + (
+                "motorway_link",
+                "trunk_link",
+                "primary_link",
+                "secondary_link",
+                "tertiary_link",
+            )
     )
 
     bicycle_allowed_types = (
@@ -84,8 +83,8 @@ class Street(models.Model):
     @cached_property
     def is_routable(self):
         return (
-            self.bicycle in self.bicycle_allowed_types
-            or self.highway in self.routable_types
+                self.bicycle in self.bicycle_allowed_types
+                or self.highway in self.routable_types
         )
 
     @cached_property
@@ -116,7 +115,7 @@ class Street(models.Model):
         return self.__class__(**attrs)
 
     def __str__(self):
-        return self.display_name
+        return f"Street {self.id}: {self.display_name or "[unnamed]"}"
 
 
 def base_cost(geom, highway, bicycle, cycleway, **attrs):

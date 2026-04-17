@@ -41,5 +41,8 @@ class Intersection(models.Model):
     def streets(self) -> tuple[Street, ...]:
         return tuple(self.start_streets.all()) + tuple(self.end_streets.all())
 
+    def __str__(self):
+        return f"Intersection {self.id}: {self.name or "[unnamed]"}"
+
 
 from .street import Street  # noqa: E402

@@ -8,8 +8,8 @@ directions_ftoa = {
     "southeast": "se",
     "southwest": "sw",
 }
-directions_atof = {v: k for k, v in directions_ftoa.items()}
 
+directions_atof = {v: k for k, v in directions_ftoa.items()}
 
 suffixes_ftoa = {
     "northbound": "nb",
@@ -17,4 +17,5 @@ suffixes_ftoa = {
     "eastbound": "eb",
     "westbound": "wb",
 }
+
 suffixes_atof = {v: k for k, v in suffixes_ftoa.items()}

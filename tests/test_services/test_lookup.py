@@ -1,18 +1,11 @@
-import unittest
-
-from bycycle.core.util import django_setup
-
-try:
-    django_setup()
-except RuntimeError:
-    pass
+from django.test import TestCase
 
 from bycycle.core.models import LookupResult
 from bycycle.core.services import LookupService
 from bycycle.core.services.lookup import MultipleLookupResultsError
 
 
-class TestLookupService(unittest.TestCase):
+class TestLookupService(TestCase):
     def _query(self, query, point_hint=None) -> LookupResult | None:
         service = LookupService()
         return service.query(query, point_hint)

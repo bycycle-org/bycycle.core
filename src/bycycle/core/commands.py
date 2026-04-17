@@ -17,6 +17,7 @@ __all__ = [
     "clean",
     "clear_mvt_cache",
     "db",
+    "django",
     "create_db",
     "create_graph",
     "fetch_osm_data",
@@ -107,17 +108,19 @@ def install(upgrade=False):
 
 @command
 def test(
-    *tests: Annotated[
-        str,
-        arg(help="Specific tests to run"),
-    ],
-    fail_fast=False,
-    verbosity=1,
-    with_coverage: Annotated[
-        bool,
-        arg(short_option="-c"),
-    ] = True,
+        *tests: Annotated[
+            str,
+            arg(help="Specific tests to run"),
+        ],
+        fail_fast=False,
+        verbosity=1,
+        with_coverage: Annotated[
+            bool,
+            arg(short_option="-c"),
+        ] = True,
 ):
+    django_setup()
+
     top_level_dir = find_project_root()
     os.chdir(top_level_dir)
 
@@ -169,16 +172,39 @@ def format_code(check=False, where="./"):
     return result
 
 
+@command
+def django(
+        *args: Annotated[
+            str,
+            arg(help="Django command, args, and options (specify options after --)"),
+        ],
+):
+    """Run a Django command
+
+    Runs `django-admin` with `DJANGO_SETTINGS_MODULE` set to `bycycle.core.settings`.
+
+    Options for the Django command must be specified after `--`:
+
+        run django migrate -- --help
+
+    """
+    local(
+        ("uv", "run", "django-admin", *args),
+        environ={"DJANGO_SETTINGS_MODULE": "bycycle.core.settings"},
+        echo=True,
+    )
+
+
 # Database -------------------------------------------------------------
 
 
 @command
 def create_db(
-    name="bycycle",
-    postgres_bin: Annotated[
-        str | None,
-        arg(envvar="BYCYCLE_POSTGRES_BIN"),
-    ] = None,
+        name="bycycle",
+        postgres_bin: Annotated[
+            str | None,
+            arg(envvar="BYCYCLE_POSTGRES_BIN"),
+        ] = None,
 ):
     """Create local byCycle database."""
     commands = [
@@ -200,10 +226,10 @@ def create_db(
 
 @command
 def db(
-    postgres_bin: Annotated[str | None, arg(envvar="BYCYCLE_POSTGRES_BIN")] = None,
-    postgres_data: Annotated[
-        str | None, arg(envvar="BYCYCLE_POSTGRES_DATA_DIR")
-    ] = None,
+        postgres_bin: Annotated[str | None, arg(envvar="BYCYCLE_POSTGRES_BIN")] = None,
+        postgres_data: Annotated[
+            str | None, arg(envvar="BYCYCLE_POSTGRES_DATA_DIR")
+        ] = None,
 ):
     """Run postgres locally."""
     if not postgres_data:
@@ -255,12 +281,12 @@ def load_usps_street_suffixes():
 
 @command
 def fetch_osm_data(
-    bbox: arg(type=float, nargs=4),
-    directory="../osm",
-    file_name=None,
-    query="highways",
-    url=None,
-    log_to=None,
+        bbox: arg(type=float, nargs=4),
+        directory="../osm",
+        file_name=None,
+        query="highways",
+        url=None,
+        log_to=None,
 ):
     """Fetch OSM data and save to file.
 
@@ -282,14 +308,14 @@ def fetch_osm_data(
 
 @command
 def load_osm_data(
-    bbox: Annotated[float, arg(type=float, nargs=4)],
-    directory="../osm",
-    graph_path="../graph.marshal",
-    streets=True,
-    places=True,
-    actions: Annotated[tuple[int, ...], arg(container=tuple, type=int)] = (),
-    show_actions: Annotated[bool, arg(short_option="-a")] = False,
-    log_to=None,
+        bbox: Annotated[float, arg(type=float, nargs=4)],
+        directory="../osm",
+        graph_path="../graph.marshal",
+        streets=True,
+        places=True,
+        actions: Annotated[tuple[int, ...], arg(container=tuple, type=int)] = (),
+        show_actions: Annotated[bool, arg(short_option="-a")] = False,
+        log_to=None,
 ):
     """Read OSM data from file and load into database."""
     django_setup()

@@ -10,3 +10,7 @@ class OsmNode(models.Model):
     id = models.BigIntegerField(primary_key=True)
     is_intersection = models.BooleanField(default=False)
     geom = models.PointField(srid=DEFAULT_SRID)
+
+    def __str__(self):
+        intersection = " (intersection)" if self.is_intersection else ""
+        return f"OSM Node {self.id}{intersection}"
